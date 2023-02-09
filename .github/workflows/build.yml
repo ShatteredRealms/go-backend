@@ -1,0 +1,105 @@
+name: Build CI
+
+on:
+  push:
+    branches:
+      - main
+      - qa
+      - dev
+  pull_request:
+    branches: [ '**' ]
+
+env:
+  BASE_REGISTRY: ${{ secrets.BASE_REGISTRY }}
+  REGISTRY: '${{ secrets.BASE_REGISTRY }}/sro'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.17
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test ./... -v -race -covermode=atomic -coverprofile=coverage.out
+      
+    - uses: codecov/codecov-action@v2
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: unittests
+        verbose: true
+  
+  deploy:
+    needs: test
+    name: Deploy
+    runs-on: ubuntu-latest
+    if: |
+      contains('
+        refs/heads/dev
+        refs/heads/qa
+        refs/heads/main
+      ', github.ref) &&
+      github.event_name == 'push'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_SRO_ECR }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_SRO_ECR }}
+        aws-region: ${{ secrets.AWS_REGION_SRO_ECR }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to Amazon Dev ECR
+      if: github.ref == 'refs/heads/dev'
+      id: build-dev-image
+      run: |
+        cd ./build
+        make push-dev
+      
+    - name: Build, tag, and push image to Amazon Dev ECR
+      if: github.ref == 'refs/heads/qa'
+      id: build-qa-image
+      run: |
+        cd ./build
+        make push-dev
+      
+    - name: Build, tag, and push image to Amazon Dev ECR
+      if: github.ref == 'refs/heads/main'
+      id: build-image
+      run: |
+        cd ./build
+        make push-dev
+
+#     - name: Deploy dev to cluster
+#       uses: kodermax/kubectl-aws-eks@master
+#       if: github.ref == 'refs/heads/dev'
+#       with:
+#         args: rollout restart deployment/frontend -n sro-dev      
+    
+#     - name: Deploy qa to cluster
+#       uses: kodermax/kubectl-aws-eks@master
+#       if: github.ref == 'refs/heads/qa'
+#       with:
+#         args: rollout restart deployment/frontend -n sro-qa
+        
+    
+#     - name: Deploy prod to cluster
+#       uses: kodermax/kubectl-aws-eks@master
+#       if: github.ref == 'refs/heads/main'
+#       with:
+#         args: rollout restart deployment/frontend -n sro
