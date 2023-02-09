@@ -2,6 +2,8 @@
 
 * `accounts` - User accounts authentication and and authorization.
 * `characters` - User playable characters management.
+* `chat` - Chat channels and direct messaging
+* `gamebackend` - Managing game servers
 
 # Development
 The `Makefile` is located within the `build` folder within the project root directory. All make commands should be run from there.
