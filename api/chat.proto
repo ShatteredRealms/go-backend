@@ -1,0 +1,111 @@
+syntax = "proto3";
+package sro.chat;
+option go_package = "pkg/pb";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+service ChatService {
+
+  rpc ConnectChannel(ChannelIdMessage) returns (stream ChatMessage) {
+    option (google.api.http) = {
+      get: "/v1/connect/{channel_id}"
+    };
+  }
+
+  rpc ConnectDirectMessage(google.protobuf.Empty) returns (stream ChatMessage) {
+    option (google.api.http) = {
+      get: "/v1/connect"
+      additional_bindings {
+        get: "/v2/connect"
+      };
+    };
+  }
+
+  rpc SendChatMessage(SendChatMessageRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/message/channel/{channel_id}"
+      body: "*"
+    };
+  }
+
+  rpc SendDirectMessage(SendDirectMessageRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/message/user/{username}"
+      body: "*"
+    };
+  }
+
+  rpc GetChannel(ChannelIdMessage) returns (ChatChannel) {
+    option (google.api.http) = {
+      get: "/v1/channels/{channel_id}"
+    };
+  }
+
+  rpc CreateChannel(CreateChannelMessage) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/channels"
+      body: "*"
+    };
+  }
+
+  rpc DeleteChannel(ChannelIdMessage) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/channels/{channel_id}"
+    };
+  }
+
+  rpc EditChannel(UpdateChatChannelRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/v1/channels/{channel_id}"
+      body: "*"
+    };
+  }
+
+  rpc AllChatChannels(google.protobuf.Empty) returns (ChatChannels) {
+    option (google.api.http) = {
+      get: "/v1/channels"
+    };
+  }
+}
+
+message ChatChannel {
+  uint64 id = 1;
+  string name = 2;
+  bool public = 3;
+}
+
+message ChatChannels {
+  repeated ChatChannel channels = 1;
+}
+
+message CreateChannelMessage {
+  string name = 1;
+  bool public = 2;
+}
+
+message ChannelIdMessage {
+  uint64 channel_id = 1;
+}
+
+message ChatMessage {
+  string message = 1;
+  string username = 2;
+}
+
+message SendChatMessageRequest {
+  uint64 channel_id = 1;
+  string message = 2;
+}
+
+message SendDirectMessageRequest {
+  string username = 1;
+  string message = 2;
+}
+
+message UpdateChatChannelRequest {
+  uint64 channel_id = 1;
+  google.protobuf.StringValue name = 2;
+  google.protobuf.BoolValue public = 3;
+}

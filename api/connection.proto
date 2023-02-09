@@ -1,0 +1,22 @@
+syntax = "proto3";
+package sro.gamebackend;
+option go_package = "pkg/pb";
+
+import "google/api/annotations.proto";
+
+service ConnectionService {
+  rpc ConnectGameServer(ConnectGameServerRequest) returns (ConnectGameServerResponse) {
+    option (google.api.http) = {
+      get: "/v1/connect/{character_id}"
+    };
+  }
+}
+
+message ConnectGameServerRequest {
+  uint64 character_id = 1;
+}
+
+message ConnectGameServerResponse {
+  string address = 1;
+  uint32 port = 2;
+}

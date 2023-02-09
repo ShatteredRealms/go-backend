@@ -1,0 +1,12 @@
+agones:
+  namespace: 'default'
+  allocator:
+    remote:
+      host: 'localhost'
+uptrace:
+  host: "localhost"
+  port: 14317
+  id: "2"
+  token: "project2_secret_token"
+authFile: "./test/auth"
+keyDir: "./test/auth"

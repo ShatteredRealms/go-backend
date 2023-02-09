@@ -1,0 +1,225 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/config"
+	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
+	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/repository"
+	"github.com/segmentio/kafka-go"
+	"go.opentelemetry.io/otel"
+)
+
+var (
+	tracer = otel.Tracer("Inner-ChatService")
+)
+
+type ChatService interface {
+	AllChannels(ctx context.Context) ([]*model.ChatChannel, error)
+	GetChannel(ctx context.Context, id uint) (*model.ChatChannel, error)
+	UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) error
+	CreateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error)
+	DeleteChannel(ctx context.Context, channel *model.ChatChannel) error
+
+	SendChannelMessage(ctx context.Context, username string, message string, channelId uint) error
+	SendDirectMessage(ctx context.Context, username string, message string, receiverUsername string) error
+
+	ChannelMessagesReader(ctx context.Context, channelId uint) *kafka.Reader
+	DirectMessagesReader(ctx context.Context, username string) *kafka.Reader
+}
+
+type chatService struct {
+	chatRepo  repository.ChatRepository
+	kafkaConn *kafka.Conn
+
+	channelMessageWriters map[uint]*kafka.Writer
+	directMessageWriters  map[string]*kafka.Writer
+}
+
+func (s chatService) UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) error {
+	ctx, span := tracer.Start(ctx, "UpdateChannel")
+	defer span.End()
+
+	channel, err := s.GetChannel(ctx, uint(pb.ChannelId))
+	if err != nil {
+		return err
+	}
+
+	if pb.Name != nil {
+		channel.Name = pb.Name.Value
+	}
+
+	if pb.Public != nil {
+		channel.Public = pb.Public.Value
+	}
+
+	return s.chatRepo.UpdateChannel(ctx, channel)
+}
+
+func (s chatService) GetChannel(ctx context.Context, id uint) (*model.ChatChannel, error) {
+	return s.chatRepo.GetChannel(ctx, id)
+}
+
+func (s chatService) ChannelMessagesReader(ctx context.Context, channelId uint) *kafka.Reader {
+	ctx, span := tracer.Start(ctx, "ChannelMessagesReader")
+	defer span.End()
+
+	r := kafka.NewReader(kafka.ReaderConfig{
+		Brokers:  []string{s.kafkaConn.RemoteAddr().String()},
+		Topic:    topicNameFromChannel(channelId),
+		MinBytes: 1,
+		MaxBytes: 10e3,
+	})
+	_ = r.SetOffset(kafka.LastOffset)
+
+	return r
+}
+
+func (s chatService) DirectMessagesReader(ctx context.Context, username string) *kafka.Reader {
+	ctx, span := tracer.Start(ctx, "DirectMessagesReader")
+	defer span.End()
+
+	r := kafka.NewReader(kafka.ReaderConfig{
+		Brokers:  []string{s.kafkaConn.RemoteAddr().String()},
+		Topic:    topicNameFromUser(username),
+		MinBytes: 1,
+		MaxBytes: 10e3,
+	})
+	_ = r.SetOffset(kafka.LastOffset)
+
+	return r
+}
+
+// TODO: verify message not empty
+func (s chatService) SendChannelMessage(ctx context.Context, username string, message string, channelId uint) error {
+	ctx, span := tracer.Start(ctx, "SendChannelMessage")
+	defer span.End()
+	w := s.getChannelMessageWriter(ctx, channelId)
+
+	return w.WriteMessages(ctx,
+		kafka.Message{
+			Key:   []byte(username),
+			Value: []byte(message),
+		},
+	)
+}
+
+// TODO: verify message not empty
+func (s chatService) SendDirectMessage(ctx context.Context, username string, message string, receiverUsername string) error {
+	w := s.getUserMessageWriter(ctx, receiverUsername)
+
+	return w.WriteMessages(ctx,
+		kafka.Message{
+			Key:   []byte(username),
+			Value: []byte(message),
+		},
+	)
+}
+
+func (s chatService) AllChannels(ctx context.Context) ([]*model.ChatChannel, error) {
+	return s.chatRepo.AllChannels(ctx)
+}
+
+func (s chatService) CreateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error) {
+	newChannel, err := s.chatRepo.CreateChannel(ctx, channel)
+	if err != nil {
+		return nil, err
+	}
+
+	_ = s.kafkaConn.CreateTopics(createTopicConfigFromChannel(newChannel))
+	return newChannel, nil
+}
+
+func (s chatService) DeleteChannel(ctx context.Context, channel *model.ChatChannel) error {
+	err := s.chatRepo.DeleteChannel(ctx, channel)
+	if err != nil {
+		return err
+	}
+
+	_ = s.kafkaConn.DeleteTopics(topicNameFromChannel(channel.ID))
+
+	return nil
+}
+
+func NewChatService(ctx context.Context, chatRepo repository.ChatRepository, kafkaAddress config.ServerAddress) (ChatService, error) {
+	ctx, span := tracer.Start(ctx, "NewChatService")
+	defer span.End()
+
+	conn, err := repository.ConnectKafka(ctx, kafkaAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	service := chatService{
+		chatRepo:              chatRepo,
+		kafkaConn:             conn,
+		channelMessageWriters: map[uint]*kafka.Writer{},
+		directMessageWriters:  map[string]*kafka.Writer{},
+	}
+
+	channels, err := service.AllChannels(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	topicConfigs := make([]kafka.TopicConfig, len(channels))
+
+	for idx, channel := range channels {
+		topicConfigs[idx] = createTopicConfigFromChannel(channel)
+	}
+
+	err = service.kafkaConn.CreateTopics(topicConfigs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return service, nil
+}
+
+func createTopicConfigFromChannel(channel *model.ChatChannel) kafka.TopicConfig {
+	return kafka.TopicConfig{
+		Topic:             topicNameFromChannel(channel.ID),
+		NumPartitions:     1,
+		ReplicationFactor: 1,
+	}
+}
+
+func topicNameFromChannel(channelId uint) string {
+	return fmt.Sprintf("chat-channel-%d", channelId)
+}
+
+func topicNameFromUser(username string) string {
+	return fmt.Sprintf("chat-user-%s", username)
+}
+
+func (s chatService) getChannelMessageWriter(ctx context.Context, channelId uint) *kafka.Writer {
+	ctx, span := tracer.Start(ctx, "GetChannelMessageWriter")
+	defer span.End()
+
+	if s.channelMessageWriters[channelId] == nil {
+		s.channelMessageWriters[channelId] = &kafka.Writer{
+			Addr:     s.kafkaConn.RemoteAddr(),
+			Topic:    topicNameFromChannel(channelId),
+			Balancer: &kafka.LeastBytes{},
+			Async:    true,
+		}
+	}
+
+	return s.channelMessageWriters[channelId]
+}
+
+func (s chatService) getUserMessageWriter(ctx context.Context, username string) *kafka.Writer {
+	ctx, span := tracer.Start(ctx, "GetChannelMessageWriter")
+	defer span.End()
+
+	if s.directMessageWriters[username] == nil {
+		s.directMessageWriters[username] = &kafka.Writer{
+			Addr:     s.kafkaConn.RemoteAddr(),
+			Topic:    topicNameFromUser(username),
+			Balancer: &kafka.LeastBytes{},
+		}
+	}
+
+	return s.directMessageWriters[username]
+}

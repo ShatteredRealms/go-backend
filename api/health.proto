@@ -1,0 +1,18 @@
+syntax = "proto3";
+package sro.accounts;
+option go_package = "pkg/pb";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+service HealthService {
+  rpc Health(google.protobuf.Empty) returns (HealthMessage) {
+    option (google.api.http) = {
+      get: "/v1/health"
+    };
+  }
+}
+
+message HealthMessage {
+  string status = 1;
+}
