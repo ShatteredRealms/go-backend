@@ -14,12 +14,9 @@ service ChatService {
     };
   }
 
-  rpc ConnectDirectMessage(google.protobuf.Empty) returns (stream ChatMessage) {
+  rpc ConnectDirectMessage(CharacterName) returns (stream ChatMessage) {
     option (google.api.http) = {
-      get: "/v1/connect"
-      additional_bindings {
-        get: "/v2/connect"
-      };
+      get: "/v1/direct/{character_name}"
     };
   }
 
@@ -32,7 +29,7 @@ service ChatService {
 
   rpc SendDirectMessage(SendDirectMessageRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/v1/message/user/{username}"
+      post: "/v1/message/characters/{character_name}"
       body: "*"
     };
   }
@@ -68,6 +65,33 @@ service ChatService {
       get: "/v1/channels"
     };
   }
+
+  rpc GetAuthorizedChatChannels(RequestAuthorizedChatChannels) returns (ChatChannels) {
+    option (google.api.http) = {
+      get: "/v1/characters/{character_id}/channels"
+    };
+  }
+
+  rpc AuthorizeUserForChatChannel(RequestChatChannelAuthChange) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/authorizations/characters/{character_id}/add"
+    };
+  }
+
+  rpc DeauthorizeUserForChatChannel(RequestChatChannelAuthChange) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/authorizations/characters/{character_id}/remove"
+    };
+  }
+}
+
+message RequestChatChannelAuthChange {
+  uint64 character_id = 1;
+  repeated uint64 ids = 2;
+}
+
+message RequestAuthorizedChatChannels {
+  uint64 character_id = 1;
 }
 
 message ChatChannel {
@@ -91,21 +115,25 @@ message ChannelIdMessage {
 
 message ChatMessage {
   string message = 1;
-  string username = 2;
+  string character_name = 2;
 }
 
 message SendChatMessageRequest {
   uint64 channel_id = 1;
-  string message = 2;
+  ChatMessage chat_message = 2;
 }
 
 message SendDirectMessageRequest {
-  string username = 1;
-  string message = 2;
+  string character_name = 1;
+  ChatMessage chat_message = 2;
 }
 
 message UpdateChatChannelRequest {
   uint64 channel_id = 1;
   google.protobuf.StringValue name = 2;
   google.protobuf.BoolValue public = 3;
+}
+
+message CharacterName {
+  string character_name = 1;
 }

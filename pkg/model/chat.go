@@ -11,9 +11,9 @@ type ChatChannel struct {
 	Public bool   `json:"public"`
 }
 
-type ChatPermission struct {
-	ChannelId uint `gorm:"unique_index:idx_permission" json:"channelId"`
-	UserId    uint `gorm:"unique_index:idx_permission" json:"userId"`
+type ChatChannelPermission struct {
+	ChannelId   uint `gorm:"unique_index:idx_permission" json:"channelId"`
+	CharacterId uint `gorm:"unique_index:idx_permission" json:"characterId"`
 }
 
 func (c ChatChannel) ToPb() *pb.ChatChannel {

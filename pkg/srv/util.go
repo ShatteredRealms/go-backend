@@ -150,7 +150,8 @@ func serverAuthContext(ctx context.Context, jwtService service.JWTService, autho
 			),
 		},
 	)
-	return metadata.NewOutgoingContext(context.Background(), md)
+
+	return metadata.AppendToOutgoingContext(metadata.NewOutgoingContext(context.Background(), md))
 }
 
 func DialOtelGrpc(address string) (*grpc.ClientConn, error) {

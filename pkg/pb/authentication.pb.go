@@ -7,11 +7,11 @@
 package pb
 
 import (
-	empty "github.com/golang/protobuf/ptypes/empty"
-	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -83,15 +83,15 @@ type LoginResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Token     string                `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	Id        uint64                `protobuf:"varint,2,opt,name=id,proto3" json:"id,omitempty"`
-	Email     string                `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	FirstName string                `protobuf:"bytes,4,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
-	LastName  string                `protobuf:"bytes,5,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
-	Username  string                `protobuf:"bytes,6,opt,name=username,proto3" json:"username,omitempty"`
-	CreatedAt string                `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	Roles     []*UserRole           `protobuf:"bytes,8,rep,name=roles,proto3" json:"roles,omitempty"`
-	BannedAt  *wrappers.StringValue `protobuf:"bytes,9,opt,name=bannedAt,proto3" json:"bannedAt,omitempty"`
+	Token     string                  `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	Id        uint64                  `protobuf:"varint,2,opt,name=id,proto3" json:"id,omitempty"`
+	Email     string                  `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	FirstName string                  `protobuf:"bytes,4,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
+	LastName  string                  `protobuf:"bytes,5,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
+	Username  string                  `protobuf:"bytes,6,opt,name=username,proto3" json:"username,omitempty"`
+	CreatedAt string                  `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Roles     []*UserRole             `protobuf:"bytes,8,rep,name=roles,proto3" json:"roles,omitempty"`
+	BannedAt  *wrapperspb.StringValue `protobuf:"bytes,9,opt,name=bannedAt,proto3" json:"bannedAt,omitempty"`
 }
 
 func (x *LoginResponse) Reset() {
@@ -182,7 +182,7 @@ func (x *LoginResponse) GetRoles() []*UserRole {
 	return nil
 }
 
-func (x *LoginResponse) GetBannedAt() *wrappers.StringValue {
+func (x *LoginResponse) GetBannedAt() *wrapperspb.StringValue {
 	if x != nil {
 		return x.BannedAt
 	}
@@ -597,8 +597,8 @@ var file_authentication_proto_goTypes = []interface{}{
 	(*RestPasswordMessage)(nil),    // 5: sro.accounts.RestPasswordMessage
 	(*AuthToken)(nil),              // 6: sro.accounts.AuthToken
 	(*UserRole)(nil),               // 7: sro.accounts.UserRole
-	(*wrappers.StringValue)(nil),   // 8: google.protobuf.StringValue
-	(*empty.Empty)(nil),            // 9: google.protobuf.Empty
+	(*wrapperspb.StringValue)(nil), // 8: google.protobuf.StringValue
+	(*emptypb.Empty)(nil),          // 9: google.protobuf.Empty
 }
 var file_authentication_proto_depIdxs = []int32{
 	7, // 0: sro.accounts.LoginResponse.roles:type_name -> sro.accounts.UserRole

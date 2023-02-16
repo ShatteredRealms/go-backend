@@ -8,10 +8,10 @@ package pb
 
 import (
 	context "context"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -23,14 +23,14 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserServiceClient interface {
-	GetAll(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetAllUsersResponse, error)
+	GetAll(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetAllUsersResponse, error)
 	Get(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*GetUserResponse, error)
-	Edit(ctx context.Context, in *EditUserDetailsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	Ban(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*empty.Empty, error)
-	UnBan(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*empty.Empty, error)
+	Edit(ctx context.Context, in *EditUserDetailsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Ban(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UnBan(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetStatus(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*StatusResponse, error)
-	SetStatus(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	SetStatus(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type userServiceClient struct {
@@ -41,7 +41,7 @@ func NewUserServiceClient(cc grpc.ClientConnInterface) UserServiceClient {
 	return &userServiceClient{cc}
 }
 
-func (c *userServiceClient) GetAll(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetAllUsersResponse, error) {
+func (c *userServiceClient) GetAll(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetAllUsersResponse, error) {
 	out := new(GetAllUsersResponse)
 	err := c.cc.Invoke(ctx, "/sro.accounts.UserService/GetAll", in, out, opts...)
 	if err != nil {
@@ -59,8 +59,8 @@ func (c *userServiceClient) Get(ctx context.Context, in *GetUserMessage, opts ..
 	return out, nil
 }
 
-func (c *userServiceClient) Edit(ctx context.Context, in *EditUserDetailsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *userServiceClient) Edit(ctx context.Context, in *EditUserDetailsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.accounts.UserService/Edit", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -68,8 +68,8 @@ func (c *userServiceClient) Edit(ctx context.Context, in *EditUserDetailsRequest
 	return out, nil
 }
 
-func (c *userServiceClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *userServiceClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.accounts.UserService/ChangePassword", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -77,8 +77,8 @@ func (c *userServiceClient) ChangePassword(ctx context.Context, in *ChangePasswo
 	return out, nil
 }
 
-func (c *userServiceClient) Ban(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *userServiceClient) Ban(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.accounts.UserService/Ban", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -86,8 +86,8 @@ func (c *userServiceClient) Ban(ctx context.Context, in *GetUserMessage, opts ..
 	return out, nil
 }
 
-func (c *userServiceClient) UnBan(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *userServiceClient) UnBan(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.accounts.UserService/UnBan", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -104,8 +104,8 @@ func (c *userServiceClient) GetStatus(ctx context.Context, in *GetUserMessage, o
 	return out, nil
 }
 
-func (c *userServiceClient) SetStatus(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *userServiceClient) SetStatus(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.accounts.UserService/SetStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -117,14 +117,14 @@ func (c *userServiceClient) SetStatus(ctx context.Context, in *StatusRequest, op
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
 type UserServiceServer interface {
-	GetAll(context.Context, *empty.Empty) (*GetAllUsersResponse, error)
+	GetAll(context.Context, *emptypb.Empty) (*GetAllUsersResponse, error)
 	Get(context.Context, *GetUserMessage) (*GetUserResponse, error)
-	Edit(context.Context, *EditUserDetailsRequest) (*empty.Empty, error)
-	ChangePassword(context.Context, *ChangePasswordRequest) (*empty.Empty, error)
-	Ban(context.Context, *GetUserMessage) (*empty.Empty, error)
-	UnBan(context.Context, *GetUserMessage) (*empty.Empty, error)
+	Edit(context.Context, *EditUserDetailsRequest) (*emptypb.Empty, error)
+	ChangePassword(context.Context, *ChangePasswordRequest) (*emptypb.Empty, error)
+	Ban(context.Context, *GetUserMessage) (*emptypb.Empty, error)
+	UnBan(context.Context, *GetUserMessage) (*emptypb.Empty, error)
 	GetStatus(context.Context, *GetUserMessage) (*StatusResponse, error)
-	SetStatus(context.Context, *StatusRequest) (*empty.Empty, error)
+	SetStatus(context.Context, *StatusRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -132,28 +132,28 @@ type UserServiceServer interface {
 type UnimplementedUserServiceServer struct {
 }
 
-func (UnimplementedUserServiceServer) GetAll(context.Context, *empty.Empty) (*GetAllUsersResponse, error) {
+func (UnimplementedUserServiceServer) GetAll(context.Context, *emptypb.Empty) (*GetAllUsersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAll not implemented")
 }
 func (UnimplementedUserServiceServer) Get(context.Context, *GetUserMessage) (*GetUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedUserServiceServer) Edit(context.Context, *EditUserDetailsRequest) (*empty.Empty, error) {
+func (UnimplementedUserServiceServer) Edit(context.Context, *EditUserDetailsRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Edit not implemented")
 }
-func (UnimplementedUserServiceServer) ChangePassword(context.Context, *ChangePasswordRequest) (*empty.Empty, error) {
+func (UnimplementedUserServiceServer) ChangePassword(context.Context, *ChangePasswordRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChangePassword not implemented")
 }
-func (UnimplementedUserServiceServer) Ban(context.Context, *GetUserMessage) (*empty.Empty, error) {
+func (UnimplementedUserServiceServer) Ban(context.Context, *GetUserMessage) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ban not implemented")
 }
-func (UnimplementedUserServiceServer) UnBan(context.Context, *GetUserMessage) (*empty.Empty, error) {
+func (UnimplementedUserServiceServer) UnBan(context.Context, *GetUserMessage) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnBan not implemented")
 }
 func (UnimplementedUserServiceServer) GetStatus(context.Context, *GetUserMessage) (*StatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStatus not implemented")
 }
-func (UnimplementedUserServiceServer) SetStatus(context.Context, *StatusRequest) (*empty.Empty, error) {
+func (UnimplementedUserServiceServer) SetStatus(context.Context, *StatusRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetStatus not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
@@ -170,7 +170,7 @@ func RegisterUserServiceServer(s grpc.ServiceRegistrar, srv UserServiceServer) {
 }
 
 func _UserService_GetAll_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -182,7 +182,7 @@ func _UserService_GetAll_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: "/sro.accounts.UserService/GetAll",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).GetAll(ctx, req.(*empty.Empty))
+		return srv.(UserServiceServer).GetAll(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }

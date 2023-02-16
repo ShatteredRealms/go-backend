@@ -8,10 +8,10 @@ package pb
 
 import (
 	context "context"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -24,14 +24,17 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChatServiceClient interface {
 	ConnectChannel(ctx context.Context, in *ChannelIdMessage, opts ...grpc.CallOption) (ChatService_ConnectChannelClient, error)
-	ConnectDirectMessage(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (ChatService_ConnectDirectMessageClient, error)
-	SendChatMessage(ctx context.Context, in *SendChatMessageRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	SendDirectMessage(ctx context.Context, in *SendDirectMessageRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	ConnectDirectMessage(ctx context.Context, in *CharacterName, opts ...grpc.CallOption) (ChatService_ConnectDirectMessageClient, error)
+	SendChatMessage(ctx context.Context, in *SendChatMessageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	SendDirectMessage(ctx context.Context, in *SendDirectMessageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetChannel(ctx context.Context, in *ChannelIdMessage, opts ...grpc.CallOption) (*ChatChannel, error)
-	CreateChannel(ctx context.Context, in *CreateChannelMessage, opts ...grpc.CallOption) (*empty.Empty, error)
-	DeleteChannel(ctx context.Context, in *ChannelIdMessage, opts ...grpc.CallOption) (*empty.Empty, error)
-	EditChannel(ctx context.Context, in *UpdateChatChannelRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	AllChatChannels(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ChatChannels, error)
+	CreateChannel(ctx context.Context, in *CreateChannelMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteChannel(ctx context.Context, in *ChannelIdMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	EditChannel(ctx context.Context, in *UpdateChatChannelRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	AllChatChannels(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ChatChannels, error)
+	GetAuthorizedChatChannels(ctx context.Context, in *RequestAuthorizedChatChannels, opts ...grpc.CallOption) (*ChatChannels, error)
+	AuthorizeUserForChatChannel(ctx context.Context, in *RequestChatChannelAuthChange, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeauthorizeUserForChatChannel(ctx context.Context, in *RequestChatChannelAuthChange, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type chatServiceClient struct {
@@ -74,7 +77,7 @@ func (x *chatServiceConnectChannelClient) Recv() (*ChatMessage, error) {
 	return m, nil
 }
 
-func (c *chatServiceClient) ConnectDirectMessage(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (ChatService_ConnectDirectMessageClient, error) {
+func (c *chatServiceClient) ConnectDirectMessage(ctx context.Context, in *CharacterName, opts ...grpc.CallOption) (ChatService_ConnectDirectMessageClient, error) {
 	stream, err := c.cc.NewStream(ctx, &ChatService_ServiceDesc.Streams[1], "/sro.chat.ChatService/ConnectDirectMessage", opts...)
 	if err != nil {
 		return nil, err
@@ -106,8 +109,8 @@ func (x *chatServiceConnectDirectMessageClient) Recv() (*ChatMessage, error) {
 	return m, nil
 }
 
-func (c *chatServiceClient) SendChatMessage(ctx context.Context, in *SendChatMessageRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *chatServiceClient) SendChatMessage(ctx context.Context, in *SendChatMessageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.chat.ChatService/SendChatMessage", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -115,8 +118,8 @@ func (c *chatServiceClient) SendChatMessage(ctx context.Context, in *SendChatMes
 	return out, nil
 }
 
-func (c *chatServiceClient) SendDirectMessage(ctx context.Context, in *SendDirectMessageRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *chatServiceClient) SendDirectMessage(ctx context.Context, in *SendDirectMessageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.chat.ChatService/SendDirectMessage", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -133,8 +136,8 @@ func (c *chatServiceClient) GetChannel(ctx context.Context, in *ChannelIdMessage
 	return out, nil
 }
 
-func (c *chatServiceClient) CreateChannel(ctx context.Context, in *CreateChannelMessage, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *chatServiceClient) CreateChannel(ctx context.Context, in *CreateChannelMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.chat.ChatService/CreateChannel", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -142,8 +145,8 @@ func (c *chatServiceClient) CreateChannel(ctx context.Context, in *CreateChannel
 	return out, nil
 }
 
-func (c *chatServiceClient) DeleteChannel(ctx context.Context, in *ChannelIdMessage, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *chatServiceClient) DeleteChannel(ctx context.Context, in *ChannelIdMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.chat.ChatService/DeleteChannel", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -151,8 +154,8 @@ func (c *chatServiceClient) DeleteChannel(ctx context.Context, in *ChannelIdMess
 	return out, nil
 }
 
-func (c *chatServiceClient) EditChannel(ctx context.Context, in *UpdateChatChannelRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *chatServiceClient) EditChannel(ctx context.Context, in *UpdateChatChannelRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.chat.ChatService/EditChannel", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -160,9 +163,36 @@ func (c *chatServiceClient) EditChannel(ctx context.Context, in *UpdateChatChann
 	return out, nil
 }
 
-func (c *chatServiceClient) AllChatChannels(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*ChatChannels, error) {
+func (c *chatServiceClient) AllChatChannels(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ChatChannels, error) {
 	out := new(ChatChannels)
 	err := c.cc.Invoke(ctx, "/sro.chat.ChatService/AllChatChannels", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) GetAuthorizedChatChannels(ctx context.Context, in *RequestAuthorizedChatChannels, opts ...grpc.CallOption) (*ChatChannels, error) {
+	out := new(ChatChannels)
+	err := c.cc.Invoke(ctx, "/sro.chat.ChatService/GetAuthorizedChatChannels", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) AuthorizeUserForChatChannel(ctx context.Context, in *RequestChatChannelAuthChange, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/sro.chat.ChatService/AuthorizeUserForChatChannel", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) DeauthorizeUserForChatChannel(ctx context.Context, in *RequestChatChannelAuthChange, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/sro.chat.ChatService/DeauthorizeUserForChatChannel", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -174,14 +204,17 @@ func (c *chatServiceClient) AllChatChannels(ctx context.Context, in *empty.Empty
 // for forward compatibility
 type ChatServiceServer interface {
 	ConnectChannel(*ChannelIdMessage, ChatService_ConnectChannelServer) error
-	ConnectDirectMessage(*empty.Empty, ChatService_ConnectDirectMessageServer) error
-	SendChatMessage(context.Context, *SendChatMessageRequest) (*empty.Empty, error)
-	SendDirectMessage(context.Context, *SendDirectMessageRequest) (*empty.Empty, error)
+	ConnectDirectMessage(*CharacterName, ChatService_ConnectDirectMessageServer) error
+	SendChatMessage(context.Context, *SendChatMessageRequest) (*emptypb.Empty, error)
+	SendDirectMessage(context.Context, *SendDirectMessageRequest) (*emptypb.Empty, error)
 	GetChannel(context.Context, *ChannelIdMessage) (*ChatChannel, error)
-	CreateChannel(context.Context, *CreateChannelMessage) (*empty.Empty, error)
-	DeleteChannel(context.Context, *ChannelIdMessage) (*empty.Empty, error)
-	EditChannel(context.Context, *UpdateChatChannelRequest) (*empty.Empty, error)
-	AllChatChannels(context.Context, *empty.Empty) (*ChatChannels, error)
+	CreateChannel(context.Context, *CreateChannelMessage) (*emptypb.Empty, error)
+	DeleteChannel(context.Context, *ChannelIdMessage) (*emptypb.Empty, error)
+	EditChannel(context.Context, *UpdateChatChannelRequest) (*emptypb.Empty, error)
+	AllChatChannels(context.Context, *emptypb.Empty) (*ChatChannels, error)
+	GetAuthorizedChatChannels(context.Context, *RequestAuthorizedChatChannels) (*ChatChannels, error)
+	AuthorizeUserForChatChannel(context.Context, *RequestChatChannelAuthChange) (*emptypb.Empty, error)
+	DeauthorizeUserForChatChannel(context.Context, *RequestChatChannelAuthChange) (*emptypb.Empty, error)
 	mustEmbedUnimplementedChatServiceServer()
 }
 
@@ -192,29 +225,38 @@ type UnimplementedChatServiceServer struct {
 func (UnimplementedChatServiceServer) ConnectChannel(*ChannelIdMessage, ChatService_ConnectChannelServer) error {
 	return status.Errorf(codes.Unimplemented, "method ConnectChannel not implemented")
 }
-func (UnimplementedChatServiceServer) ConnectDirectMessage(*empty.Empty, ChatService_ConnectDirectMessageServer) error {
+func (UnimplementedChatServiceServer) ConnectDirectMessage(*CharacterName, ChatService_ConnectDirectMessageServer) error {
 	return status.Errorf(codes.Unimplemented, "method ConnectDirectMessage not implemented")
 }
-func (UnimplementedChatServiceServer) SendChatMessage(context.Context, *SendChatMessageRequest) (*empty.Empty, error) {
+func (UnimplementedChatServiceServer) SendChatMessage(context.Context, *SendChatMessageRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendChatMessage not implemented")
 }
-func (UnimplementedChatServiceServer) SendDirectMessage(context.Context, *SendDirectMessageRequest) (*empty.Empty, error) {
+func (UnimplementedChatServiceServer) SendDirectMessage(context.Context, *SendDirectMessageRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendDirectMessage not implemented")
 }
 func (UnimplementedChatServiceServer) GetChannel(context.Context, *ChannelIdMessage) (*ChatChannel, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetChannel not implemented")
 }
-func (UnimplementedChatServiceServer) CreateChannel(context.Context, *CreateChannelMessage) (*empty.Empty, error) {
+func (UnimplementedChatServiceServer) CreateChannel(context.Context, *CreateChannelMessage) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateChannel not implemented")
 }
-func (UnimplementedChatServiceServer) DeleteChannel(context.Context, *ChannelIdMessage) (*empty.Empty, error) {
+func (UnimplementedChatServiceServer) DeleteChannel(context.Context, *ChannelIdMessage) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteChannel not implemented")
 }
-func (UnimplementedChatServiceServer) EditChannel(context.Context, *UpdateChatChannelRequest) (*empty.Empty, error) {
+func (UnimplementedChatServiceServer) EditChannel(context.Context, *UpdateChatChannelRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EditChannel not implemented")
 }
-func (UnimplementedChatServiceServer) AllChatChannels(context.Context, *empty.Empty) (*ChatChannels, error) {
+func (UnimplementedChatServiceServer) AllChatChannels(context.Context, *emptypb.Empty) (*ChatChannels, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AllChatChannels not implemented")
+}
+func (UnimplementedChatServiceServer) GetAuthorizedChatChannels(context.Context, *RequestAuthorizedChatChannels) (*ChatChannels, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAuthorizedChatChannels not implemented")
+}
+func (UnimplementedChatServiceServer) AuthorizeUserForChatChannel(context.Context, *RequestChatChannelAuthChange) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AuthorizeUserForChatChannel not implemented")
+}
+func (UnimplementedChatServiceServer) DeauthorizeUserForChatChannel(context.Context, *RequestChatChannelAuthChange) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeauthorizeUserForChatChannel not implemented")
 }
 func (UnimplementedChatServiceServer) mustEmbedUnimplementedChatServiceServer() {}
 
@@ -251,7 +293,7 @@ func (x *chatServiceConnectChannelServer) Send(m *ChatMessage) error {
 }
 
 func _ChatService_ConnectDirectMessage_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(empty.Empty)
+	m := new(CharacterName)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
@@ -380,7 +422,7 @@ func _ChatService_EditChannel_Handler(srv interface{}, ctx context.Context, dec 
 }
 
 func _ChatService_AllChatChannels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -392,7 +434,61 @@ func _ChatService_AllChatChannels_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: "/sro.chat.ChatService/AllChatChannels",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChatServiceServer).AllChatChannels(ctx, req.(*empty.Empty))
+		return srv.(ChatServiceServer).AllChatChannels(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_GetAuthorizedChatChannels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestAuthorizedChatChannels)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).GetAuthorizedChatChannels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/sro.chat.ChatService/GetAuthorizedChatChannels",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).GetAuthorizedChatChannels(ctx, req.(*RequestAuthorizedChatChannels))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_AuthorizeUserForChatChannel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestChatChannelAuthChange)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).AuthorizeUserForChatChannel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/sro.chat.ChatService/AuthorizeUserForChatChannel",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).AuthorizeUserForChatChannel(ctx, req.(*RequestChatChannelAuthChange))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_DeauthorizeUserForChatChannel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestChatChannelAuthChange)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).DeauthorizeUserForChatChannel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/sro.chat.ChatService/DeauthorizeUserForChatChannel",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).DeauthorizeUserForChatChannel(ctx, req.(*RequestChatChannelAuthChange))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -431,6 +527,18 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AllChatChannels",
 			Handler:    _ChatService_AllChatChannels_Handler,
+		},
+		{
+			MethodName: "GetAuthorizedChatChannels",
+			Handler:    _ChatService_GetAuthorizedChatChannels_Handler,
+		},
+		{
+			MethodName: "AuthorizeUserForChatChannel",
+			Handler:    _ChatService_AuthorizeUserForChatChannel_Handler,
+		},
+		{
+			MethodName: "DeauthorizeUserForChatChannel",
+			Handler:    _ChatService_DeauthorizeUserForChatChannel_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

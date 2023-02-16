@@ -13,7 +13,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/utilities"
 	"google.golang.org/grpc"
@@ -22,6 +21,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // Suppress "imported and not used" errors
@@ -33,7 +33,7 @@ var _ = utilities.NewDoubleArray
 var _ = metadata.Join
 
 func request_CharactersService_GetAllGenders_0(ctx context.Context, marshaler runtime.Marshaler, client CharactersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq emptypb.Empty
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.GetAllGenders(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -42,7 +42,7 @@ func request_CharactersService_GetAllGenders_0(ctx context.Context, marshaler ru
 }
 
 func local_request_CharactersService_GetAllGenders_0(ctx context.Context, marshaler runtime.Marshaler, server CharactersServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq emptypb.Empty
 	var metadata runtime.ServerMetadata
 
 	msg, err := server.GetAllGenders(ctx, &protoReq)
@@ -51,7 +51,7 @@ func local_request_CharactersService_GetAllGenders_0(ctx context.Context, marsha
 }
 
 func request_CharactersService_GetAllRealms_0(ctx context.Context, marshaler runtime.Marshaler, client CharactersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq emptypb.Empty
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.GetAllRealms(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -60,7 +60,7 @@ func request_CharactersService_GetAllRealms_0(ctx context.Context, marshaler run
 }
 
 func local_request_CharactersService_GetAllRealms_0(ctx context.Context, marshaler runtime.Marshaler, server CharactersServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq emptypb.Empty
 	var metadata runtime.ServerMetadata
 
 	msg, err := server.GetAllRealms(ctx, &protoReq)
@@ -69,7 +69,7 @@ func local_request_CharactersService_GetAllRealms_0(ctx context.Context, marshal
 }
 
 func request_CharactersService_GetAllCharacters_0(ctx context.Context, marshaler runtime.Marshaler, client CharactersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq emptypb.Empty
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.GetAllCharacters(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -78,7 +78,7 @@ func request_CharactersService_GetAllCharacters_0(ctx context.Context, marshaler
 }
 
 func local_request_CharactersService_GetAllCharacters_0(ctx context.Context, marshaler runtime.Marshaler, server CharactersServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq emptypb.Empty
 	var metadata runtime.ServerMetadata
 
 	msg, err := server.GetAllCharacters(ctx, &protoReq)

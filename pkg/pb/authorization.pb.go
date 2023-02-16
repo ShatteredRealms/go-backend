@@ -7,11 +7,11 @@
 package pb
 
 import (
-	empty "github.com/golang/protobuf/ptypes/empty"
-	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -76,7 +76,7 @@ type Permission struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The gRPC method the permission is for
-	Permission *wrappers.StringValue `protobuf:"bytes,1,opt,name=permission,proto3" json:"permission,omitempty"`
+	Permission *wrapperspb.StringValue `protobuf:"bytes,1,opt,name=permission,proto3" json:"permission,omitempty"`
 }
 
 func (x *Permission) Reset() {
@@ -111,7 +111,7 @@ func (*Permission) Descriptor() ([]byte, []int) {
 	return file_authorization_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Permission) GetPermission() *wrappers.StringValue {
+func (x *Permission) GetPermission() *wrapperspb.StringValue {
 	if x != nil {
 		return x.Permission
 	}
@@ -124,7 +124,7 @@ type UserPermission struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The gRPC method the permission is for
-	Permission *wrappers.StringValue `protobuf:"bytes,1,opt,name=permission,proto3" json:"permission,omitempty"`
+	Permission *wrapperspb.StringValue `protobuf:"bytes,1,opt,name=permission,proto3" json:"permission,omitempty"`
 	// If true then the permission is allowed for other users and for itself. If false, then it is only allowed for
 	// making calls to or for itself.
 	Other bool `protobuf:"varint,2,opt,name=other,proto3" json:"other,omitempty"`
@@ -162,7 +162,7 @@ func (*UserPermission) Descriptor() ([]byte, []int) {
 	return file_authorization_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *UserPermission) GetPermission() *wrappers.StringValue {
+func (x *UserPermission) GetPermission() *wrapperspb.StringValue {
 	if x != nil {
 		return x.Permission
 	}
@@ -228,9 +228,9 @@ type UserRole struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id          uint64                `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name        *wrappers.StringValue `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Permissions []*UserPermission     `protobuf:"bytes,3,rep,name=permissions,proto3" json:"permissions,omitempty"`
+	Id          uint64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name        *wrapperspb.StringValue `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Permissions []*UserPermission       `protobuf:"bytes,3,rep,name=permissions,proto3" json:"permissions,omitempty"`
 }
 
 func (x *UserRole) Reset() {
@@ -272,7 +272,7 @@ func (x *UserRole) GetId() uint64 {
 	return 0
 }
 
-func (x *UserRole) GetName() *wrappers.StringValue {
+func (x *UserRole) GetName() *wrapperspb.StringValue {
 	if x != nil {
 		return x.Name
 	}
@@ -543,15 +543,15 @@ func file_authorization_proto_rawDescGZIP() []byte {
 
 var file_authorization_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_authorization_proto_goTypes = []interface{}{
-	(*IDMessage)(nil),            // 0: sro.accounts.IDMessage
-	(*Permission)(nil),           // 1: sro.accounts.Permission
-	(*UserPermission)(nil),       // 2: sro.accounts.UserPermission
-	(*UserPermissions)(nil),      // 3: sro.accounts.UserPermissions
-	(*UserRole)(nil),             // 4: sro.accounts.UserRole
-	(*UserRoles)(nil),            // 5: sro.accounts.UserRoles
-	(*AuthorizationMessage)(nil), // 6: sro.accounts.AuthorizationMessage
-	(*wrappers.StringValue)(nil), // 7: google.protobuf.StringValue
-	(*empty.Empty)(nil),          // 8: google.protobuf.Empty
+	(*IDMessage)(nil),              // 0: sro.accounts.IDMessage
+	(*Permission)(nil),             // 1: sro.accounts.Permission
+	(*UserPermission)(nil),         // 2: sro.accounts.UserPermission
+	(*UserPermissions)(nil),        // 3: sro.accounts.UserPermissions
+	(*UserRole)(nil),               // 4: sro.accounts.UserRole
+	(*UserRoles)(nil),              // 5: sro.accounts.UserRoles
+	(*AuthorizationMessage)(nil),   // 6: sro.accounts.AuthorizationMessage
+	(*wrapperspb.StringValue)(nil), // 7: google.protobuf.StringValue
+	(*emptypb.Empty)(nil),          // 8: google.protobuf.Empty
 }
 var file_authorization_proto_depIdxs = []int32{
 	7,  // 0: sro.accounts.Permission.permission:type_name -> google.protobuf.StringValue

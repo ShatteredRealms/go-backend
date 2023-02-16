@@ -7,11 +7,11 @@
 package pb
 
 import (
-	empty "github.com/golang/protobuf/ptypes/empty"
-	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -75,13 +75,13 @@ type UserMessage struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id                 uint64                `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Email              string                `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	Username           string                `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
-	CreatedAt          string                `protobuf:"bytes,4,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	Roles              []*UserRole           `protobuf:"bytes,5,rep,name=roles,proto3" json:"roles,omitempty"`
-	BannedAt           *wrappers.StringValue `protobuf:"bytes,6,opt,name=bannedAt,proto3" json:"bannedAt,omitempty"`
-	CurrentCharacterId *wrappers.UInt64Value `protobuf:"bytes,7,opt,name=current_character_id,json=currentCharacterId,proto3" json:"current_character_id,omitempty"`
+	Id                 uint64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Email              string                  `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Username           string                  `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
+	CreatedAt          string                  `protobuf:"bytes,4,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	Roles              []*UserRole             `protobuf:"bytes,5,rep,name=roles,proto3" json:"roles,omitempty"`
+	BannedAt           *wrapperspb.StringValue `protobuf:"bytes,6,opt,name=bannedAt,proto3" json:"bannedAt,omitempty"`
+	CurrentCharacterId *wrapperspb.UInt64Value `protobuf:"bytes,7,opt,name=current_character_id,json=currentCharacterId,proto3" json:"current_character_id,omitempty"`
 }
 
 func (x *UserMessage) Reset() {
@@ -151,14 +151,14 @@ func (x *UserMessage) GetRoles() []*UserRole {
 	return nil
 }
 
-func (x *UserMessage) GetBannedAt() *wrappers.StringValue {
+func (x *UserMessage) GetBannedAt() *wrapperspb.StringValue {
 	if x != nil {
 		return x.BannedAt
 	}
 	return nil
 }
 
-func (x *UserMessage) GetCurrentCharacterId() *wrappers.UInt64Value {
+func (x *UserMessage) GetCurrentCharacterId() *wrapperspb.UInt64Value {
 	if x != nil {
 		return x.CurrentCharacterId
 	}
@@ -170,16 +170,16 @@ type GetUserResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id                 uint64                `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Email              string                `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	Username           string                `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
-	FirstName          string                `protobuf:"bytes,4,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
-	LastName           string                `protobuf:"bytes,5,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
-	CreatedAt          string                `protobuf:"bytes,6,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	Roles              []*UserRole           `protobuf:"bytes,7,rep,name=roles,proto3" json:"roles,omitempty"`
-	Permissions        []*UserPermission     `protobuf:"bytes,8,rep,name=permissions,proto3" json:"permissions,omitempty"`
-	BannedAt           *wrappers.StringValue `protobuf:"bytes,9,opt,name=bannedAt,proto3" json:"bannedAt,omitempty"`
-	CurrentCharacterId *wrappers.UInt64Value `protobuf:"bytes,10,opt,name=current_character_id,json=currentCharacterId,proto3" json:"current_character_id,omitempty"`
+	Id                 uint64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Email              string                  `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Username           string                  `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
+	FirstName          string                  `protobuf:"bytes,4,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
+	LastName           string                  `protobuf:"bytes,5,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
+	CreatedAt          string                  `protobuf:"bytes,6,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	Roles              []*UserRole             `protobuf:"bytes,7,rep,name=roles,proto3" json:"roles,omitempty"`
+	Permissions        []*UserPermission       `protobuf:"bytes,8,rep,name=permissions,proto3" json:"permissions,omitempty"`
+	BannedAt           *wrapperspb.StringValue `protobuf:"bytes,9,opt,name=bannedAt,proto3" json:"bannedAt,omitempty"`
+	CurrentCharacterId *wrapperspb.UInt64Value `protobuf:"bytes,10,opt,name=current_character_id,json=currentCharacterId,proto3" json:"current_character_id,omitempty"`
 }
 
 func (x *GetUserResponse) Reset() {
@@ -270,14 +270,14 @@ func (x *GetUserResponse) GetPermissions() []*UserPermission {
 	return nil
 }
 
-func (x *GetUserResponse) GetBannedAt() *wrappers.StringValue {
+func (x *GetUserResponse) GetBannedAt() *wrapperspb.StringValue {
 	if x != nil {
 		return x.BannedAt
 	}
 	return nil
 }
 
-func (x *GetUserResponse) GetCurrentCharacterId() *wrappers.UInt64Value {
+func (x *GetUserResponse) GetCurrentCharacterId() *wrapperspb.UInt64Value {
 	if x != nil {
 		return x.CurrentCharacterId
 	}
@@ -336,11 +336,11 @@ type EditUserDetailsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	UserId    uint64                `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Email     *wrappers.StringValue `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	Username  *wrappers.StringValue `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"`
-	FirstName *wrappers.StringValue `protobuf:"bytes,5,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
-	LastName  *wrappers.StringValue `protobuf:"bytes,6,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
+	UserId    uint64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Email     *wrapperspb.StringValue `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Username  *wrapperspb.StringValue `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"`
+	FirstName *wrapperspb.StringValue `protobuf:"bytes,5,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
+	LastName  *wrapperspb.StringValue `protobuf:"bytes,6,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
 }
 
 func (x *EditUserDetailsRequest) Reset() {
@@ -382,28 +382,28 @@ func (x *EditUserDetailsRequest) GetUserId() uint64 {
 	return 0
 }
 
-func (x *EditUserDetailsRequest) GetEmail() *wrappers.StringValue {
+func (x *EditUserDetailsRequest) GetEmail() *wrapperspb.StringValue {
 	if x != nil {
 		return x.Email
 	}
 	return nil
 }
 
-func (x *EditUserDetailsRequest) GetUsername() *wrappers.StringValue {
+func (x *EditUserDetailsRequest) GetUsername() *wrapperspb.StringValue {
 	if x != nil {
 		return x.Username
 	}
 	return nil
 }
 
-func (x *EditUserDetailsRequest) GetFirstName() *wrappers.StringValue {
+func (x *EditUserDetailsRequest) GetFirstName() *wrapperspb.StringValue {
 	if x != nil {
 		return x.FirstName
 	}
 	return nil
 }
 
-func (x *EditUserDetailsRequest) GetLastName() *wrappers.StringValue {
+func (x *EditUserDetailsRequest) GetLastName() *wrapperspb.StringValue {
 	if x != nil {
 		return x.LastName
 	}
@@ -479,7 +479,7 @@ type StatusResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The character id that is currently playing. If 0, then the user is not signed in.
-	CharacterId *wrappers.UInt64Value `protobuf:"bytes,1,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
+	CharacterId *wrapperspb.UInt64Value `protobuf:"bytes,1,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
 }
 
 func (x *StatusResponse) Reset() {
@@ -514,7 +514,7 @@ func (*StatusResponse) Descriptor() ([]byte, []int) {
 	return file_user_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *StatusResponse) GetCharacterId() *wrappers.UInt64Value {
+func (x *StatusResponse) GetCharacterId() *wrapperspb.UInt64Value {
 	if x != nil {
 		return x.CharacterId
 	}
@@ -528,7 +528,7 @@ type StatusRequest struct {
 
 	UserId uint64 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	// The character id that is currently playing. If 0, then the user is not signed in.
-	CharacterId *wrappers.UInt64Value `protobuf:"bytes,2,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
+	CharacterId *wrapperspb.UInt64Value `protobuf:"bytes,2,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
 }
 
 func (x *StatusRequest) Reset() {
@@ -570,7 +570,7 @@ func (x *StatusRequest) GetUserId() uint64 {
 	return 0
 }
 
-func (x *StatusRequest) GetCharacterId() *wrappers.UInt64Value {
+func (x *StatusRequest) GetCharacterId() *wrapperspb.UInt64Value {
 	if x != nil {
 		return x.CharacterId
 	}
@@ -757,10 +757,10 @@ var file_user_proto_goTypes = []interface{}{
 	(*StatusResponse)(nil),         // 6: sro.accounts.StatusResponse
 	(*StatusRequest)(nil),          // 7: sro.accounts.StatusRequest
 	(*UserRole)(nil),               // 8: sro.accounts.UserRole
-	(*wrappers.StringValue)(nil),   // 9: google.protobuf.StringValue
-	(*wrappers.UInt64Value)(nil),   // 10: google.protobuf.UInt64Value
+	(*wrapperspb.StringValue)(nil), // 9: google.protobuf.StringValue
+	(*wrapperspb.UInt64Value)(nil), // 10: google.protobuf.UInt64Value
 	(*UserPermission)(nil),         // 11: sro.accounts.UserPermission
-	(*empty.Empty)(nil),            // 12: google.protobuf.Empty
+	(*emptypb.Empty)(nil),          // 12: google.protobuf.Empty
 }
 var file_user_proto_depIdxs = []int32{
 	8,  // 0: sro.accounts.UserMessage.roles:type_name -> sro.accounts.UserRole

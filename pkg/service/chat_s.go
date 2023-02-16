@@ -23,10 +23,13 @@ type ChatService interface {
 	DeleteChannel(ctx context.Context, channel *model.ChatChannel) error
 
 	SendChannelMessage(ctx context.Context, username string, message string, channelId uint) error
-	SendDirectMessage(ctx context.Context, username string, message string, receiverUsername string) error
+	SendDirectMessage(ctx context.Context, senderCharacter string, message string, targetCharacter string) error
 
 	ChannelMessagesReader(ctx context.Context, channelId uint) *kafka.Reader
 	DirectMessagesReader(ctx context.Context, username string) *kafka.Reader
+
+	AuthorizedChannelsForCharacter(ctx context.Context, characterId uint64) ([]*model.ChatChannel, error)
+	ChangeAuthorizationForCharacter(ctx context.Context, characterId uint64, channelIds []uint64, addAuth bool) error
 }
 
 type chatService struct {
@@ -35,6 +38,14 @@ type chatService struct {
 
 	channelMessageWriters map[uint]*kafka.Writer
 	directMessageWriters  map[string]*kafka.Writer
+}
+
+func (s chatService) ChangeAuthorizationForCharacter(ctx context.Context, userId uint64, channelIds []uint64, addAuth bool) error {
+	return s.chatRepo.ChangeAuthorizationForCharacter(ctx, userId, channelIds, addAuth)
+}
+
+func (s chatService) AuthorizedChannelsForCharacter(ctx context.Context, userId uint64) ([]*model.ChatChannel, error) {
+	return s.chatRepo.AuthorizedChannelsForCharactger(ctx, userId)
 }
 
 func (s chatService) UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) error {
@@ -76,13 +87,13 @@ func (s chatService) ChannelMessagesReader(ctx context.Context, channelId uint) 
 	return r
 }
 
-func (s chatService) DirectMessagesReader(ctx context.Context, username string) *kafka.Reader {
+func (s chatService) DirectMessagesReader(ctx context.Context, characterName string) *kafka.Reader {
 	ctx, span := tracer.Start(ctx, "DirectMessagesReader")
 	defer span.End()
 
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  []string{s.kafkaConn.RemoteAddr().String()},
-		Topic:    topicNameFromUser(username),
+		Topic:    topicNameFromUser(characterName),
 		MinBytes: 1,
 		MaxBytes: 10e3,
 	})
@@ -92,26 +103,26 @@ func (s chatService) DirectMessagesReader(ctx context.Context, username string) 
 }
 
 // TODO: verify message not empty
-func (s chatService) SendChannelMessage(ctx context.Context, username string, message string, channelId uint) error {
+func (s chatService) SendChannelMessage(ctx context.Context, characterName string, message string, channelId uint) error {
 	ctx, span := tracer.Start(ctx, "SendChannelMessage")
 	defer span.End()
 	w := s.getChannelMessageWriter(ctx, channelId)
 
 	return w.WriteMessages(ctx,
 		kafka.Message{
-			Key:   []byte(username),
+			Key:   []byte(characterName),
 			Value: []byte(message),
 		},
 	)
 }
 
 // TODO: verify message not empty
-func (s chatService) SendDirectMessage(ctx context.Context, username string, message string, receiverUsername string) error {
-	w := s.getUserMessageWriter(ctx, receiverUsername)
+func (s chatService) SendDirectMessage(ctx context.Context, characterName string, message string, targetCharacterName string) error {
+	w := s.getUserMessageWriter(ctx, targetCharacterName)
 
 	return w.WriteMessages(ctx,
 		kafka.Message{
-			Key:   []byte(username),
+			Key:   []byte(characterName),
 			Value: []byte(message),
 		},
 	)

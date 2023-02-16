@@ -13,7 +13,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/utilities"
 	"google.golang.org/grpc"
@@ -22,6 +21,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // Suppress "imported and not used" errors
@@ -221,7 +221,7 @@ func local_request_AuthorizationService_RemoveAuthorization_0(ctx context.Contex
 }
 
 func request_AuthorizationService_GetRoles_0(ctx context.Context, marshaler runtime.Marshaler, client AuthorizationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq emptypb.Empty
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.GetRoles(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -230,7 +230,7 @@ func request_AuthorizationService_GetRoles_0(ctx context.Context, marshaler runt
 }
 
 func local_request_AuthorizationService_GetRoles_0(ctx context.Context, marshaler runtime.Marshaler, server AuthorizationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq emptypb.Empty
 	var metadata runtime.ServerMetadata
 
 	msg, err := server.GetRoles(ctx, &protoReq)
@@ -463,7 +463,7 @@ func local_request_AuthorizationService_DeleteRole_0(ctx context.Context, marsha
 }
 
 func request_AuthorizationService_GetAllPermissions_0(ctx context.Context, marshaler runtime.Marshaler, client AuthorizationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq emptypb.Empty
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.GetAllPermissions(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -472,7 +472,7 @@ func request_AuthorizationService_GetAllPermissions_0(ctx context.Context, marsh
 }
 
 func local_request_AuthorizationService_GetAllPermissions_0(ctx context.Context, marshaler runtime.Marshaler, server AuthorizationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq emptypb.Empty
 	var metadata runtime.ServerMetadata
 
 	msg, err := server.GetAllPermissions(ctx, &protoReq)
@@ -481,7 +481,7 @@ func local_request_AuthorizationService_GetAllPermissions_0(ctx context.Context,
 }
 
 func request_AuthorizationService_SubscribeUserUpdates_0(ctx context.Context, marshaler runtime.Marshaler, client AuthorizationServiceClient, req *http.Request, pathParams map[string]string) (AuthorizationService_SubscribeUserUpdatesClient, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq emptypb.Empty
 	var metadata runtime.ServerMetadata
 
 	stream, err := client.SubscribeUserUpdates(ctx, &protoReq)
@@ -498,7 +498,7 @@ func request_AuthorizationService_SubscribeUserUpdates_0(ctx context.Context, ma
 }
 
 func request_AuthorizationService_SubscribeRoleUpdates_0(ctx context.Context, marshaler runtime.Marshaler, client AuthorizationServiceClient, req *http.Request, pathParams map[string]string) (AuthorizationService_SubscribeRoleUpdatesClient, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq emptypb.Empty
 	var metadata runtime.ServerMetadata
 
 	stream, err := client.SubscribeRoleUpdates(ctx, &protoReq)

@@ -7,11 +7,11 @@
 package pb
 
 import (
-	empty "github.com/golang/protobuf/ptypes/empty"
-	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -297,13 +297,13 @@ type Character struct {
 
 	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The user account that owns the character
-	Owner  *wrappers.UInt64Value `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
-	Name   *wrappers.StringValue `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Gender *wrappers.UInt64Value `protobuf:"bytes,4,opt,name=gender,proto3" json:"gender,omitempty"`
-	Realm  *wrappers.UInt64Value `protobuf:"bytes,5,opt,name=realm,proto3" json:"realm,omitempty"`
+	Owner  *wrapperspb.UInt64Value `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
+	Name   *wrapperspb.StringValue `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Gender *wrapperspb.UInt64Value `protobuf:"bytes,4,opt,name=gender,proto3" json:"gender,omitempty"`
+	Realm  *wrapperspb.UInt64Value `protobuf:"bytes,5,opt,name=realm,proto3" json:"realm,omitempty"`
 	// Total play time in minutes
-	PlayTime *wrappers.UInt64Value `protobuf:"bytes,7,opt,name=play_time,json=playTime,proto3" json:"play_time,omitempty"`
-	Location *Location             `protobuf:"bytes,8,opt,name=location,proto3" json:"location,omitempty"`
+	PlayTime *wrapperspb.UInt64Value `protobuf:"bytes,7,opt,name=play_time,json=playTime,proto3" json:"play_time,omitempty"`
+	Location *Location               `protobuf:"bytes,8,opt,name=location,proto3" json:"location,omitempty"`
 }
 
 func (x *Character) Reset() {
@@ -345,35 +345,35 @@ func (x *Character) GetId() uint64 {
 	return 0
 }
 
-func (x *Character) GetOwner() *wrappers.UInt64Value {
+func (x *Character) GetOwner() *wrapperspb.UInt64Value {
 	if x != nil {
 		return x.Owner
 	}
 	return nil
 }
 
-func (x *Character) GetName() *wrappers.StringValue {
+func (x *Character) GetName() *wrapperspb.StringValue {
 	if x != nil {
 		return x.Name
 	}
 	return nil
 }
 
-func (x *Character) GetGender() *wrappers.UInt64Value {
+func (x *Character) GetGender() *wrapperspb.UInt64Value {
 	if x != nil {
 		return x.Gender
 	}
 	return nil
 }
 
-func (x *Character) GetRealm() *wrappers.UInt64Value {
+func (x *Character) GetRealm() *wrapperspb.UInt64Value {
 	if x != nil {
 		return x.Realm
 	}
 	return nil
 }
 
-func (x *Character) GetPlayTime() *wrappers.UInt64Value {
+func (x *Character) GetPlayTime() *wrapperspb.UInt64Value {
 	if x != nil {
 		return x.PlayTime
 	}
@@ -878,9 +878,9 @@ var file_characters_proto_goTypes = []interface{}{
 	(*Realm)(nil),                  // 9: sro.characters.Realm
 	(*Genders)(nil),                // 10: sro.characters.Genders
 	(*Realms)(nil),                 // 11: sro.characters.Realms
-	(*wrappers.UInt64Value)(nil),   // 12: google.protobuf.UInt64Value
-	(*wrappers.StringValue)(nil),   // 13: google.protobuf.StringValue
-	(*empty.Empty)(nil),            // 14: google.protobuf.Empty
+	(*wrapperspb.UInt64Value)(nil), // 12: google.protobuf.UInt64Value
+	(*wrapperspb.StringValue)(nil), // 13: google.protobuf.StringValue
+	(*emptypb.Empty)(nil),          // 14: google.protobuf.Empty
 }
 var file_characters_proto_depIdxs = []int32{
 	12, // 0: sro.characters.Character.owner:type_name -> google.protobuf.UInt64Value

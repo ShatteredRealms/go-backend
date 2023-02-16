@@ -7,14 +7,23 @@ import (
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
 	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 )
+
+type characterTarget struct {
+	Id   uint64
+	Name string
+}
 
 type chatServiceServer struct {
 	pb.UnimplementedChatServiceServer
 	chatService service.ChatService
 	jwtService  service.JWTService
+
+	charactersServiceClient pb.CharactersServiceClient
 }
 
 func (s chatServiceServer) ConnectChannel(request *pb.ChannelIdMessage, server pb.ChatService_ConnectChannelServer) error {
@@ -28,8 +37,8 @@ func (s chatServiceServer) ConnectChannel(request *pb.ChannelIdMessage, server p
 		}
 
 		err = server.Send(&pb.ChatMessage{
-			Username: string(msg.Key),
-			Message:  string(msg.Value),
+			CharacterName: string(msg.Key),
+			Message:       string(msg.Value),
 		})
 
 		if err != nil {
@@ -40,30 +49,30 @@ func (s chatServiceServer) ConnectChannel(request *pb.ChannelIdMessage, server p
 }
 
 func (s chatServiceServer) SendChatMessage(ctx context.Context, request *pb.SendChatMessageRequest) (*empty.Empty, error) {
-	claims, err := interceptor.ExtractCtxClaims(ctx, s.jwtService)
-	if err != nil {
+	if err := s.verifyUserOwnsCharacter(ctx, characterTarget{Name: request.ChatMessage.CharacterName}); err != nil {
 		return nil, err
 	}
 
-	return &empty.Empty{}, s.chatService.SendChannelMessage(ctx, claims["preferred_username"].(string), request.Message, uint(request.ChannelId))
+	return &empty.Empty{}, s.chatService.SendChannelMessage(ctx, request.ChatMessage.CharacterName, request.ChatMessage.Message, uint(request.ChannelId))
 }
 
 func (s chatServiceServer) SendDirectMessage(ctx context.Context, request *pb.SendDirectMessageRequest) (*empty.Empty, error) {
-	claims, err := interceptor.ExtractCtxClaims(ctx, s.jwtService)
-	if err != nil {
+	// Only the owning user can send messages. Do not allow even super admins to spoof.
+	if err := s.verifyUserOwnsCharacter(ctx, characterTarget{Name: request.ChatMessage.CharacterName}); err != nil {
 		return nil, err
 	}
 
-	return &empty.Empty{}, s.chatService.SendDirectMessage(ctx, claims["preferred_username"].(string), request.Message, request.Username)
+	return &empty.Empty{}, s.chatService.SendDirectMessage(ctx, request.ChatMessage.CharacterName, request.ChatMessage.Message, request.CharacterName)
 }
 
-func (s chatServiceServer) ConnectDirectMessage(_ *empty.Empty, srv pb.ChatService_ConnectDirectMessageServer) error {
-	claims, err := interceptor.ExtractCtxClaims(srv.Context(), s.jwtService)
-	if err != nil {
-		return err
+func (s chatServiceServer) ConnectDirectMessage(msg *pb.CharacterName, srv pb.ChatService_ConnectDirectMessageServer) error {
+	if !interceptor.AuthorizedForOther(srv.Context()) {
+		if err := s.verifyUserOwnsCharacter(srv.Context(), characterTarget{Name: msg.CharacterName}); err != nil {
+			return err
+		}
 	}
 
-	r := s.chatService.DirectMessagesReader(srv.Context(), claims["preferred_username"].(string))
+	r := s.chatService.DirectMessagesReader(srv.Context(), msg.CharacterName)
 	for {
 		msg, err := r.ReadMessage(srv.Context())
 		if err != nil {
@@ -72,8 +81,8 @@ func (s chatServiceServer) ConnectDirectMessage(_ *empty.Empty, srv pb.ChatServi
 		}
 
 		err = srv.Send(&pb.ChatMessage{
-			Message:  string(msg.Value),
-			Username: string(msg.Key),
+			CharacterName: string(msg.Key),
+			Message:       string(msg.Value),
 		})
 
 		if err != nil {
@@ -134,9 +143,68 @@ func (s chatServiceServer) EditChannel(ctx context.Context, msg *pb.UpdateChatCh
 	return &emptypb.Empty{}, s.chatService.UpdateChannel(ctx, msg)
 }
 
-func NewChatServiceServer(chatService service.ChatService, jwtService service.JWTService) pb.ChatServiceServer {
+func (s chatServiceServer) GetAuthorizedChatChannels(ctx context.Context, msg *pb.RequestAuthorizedChatChannels) (*pb.ChatChannels, error) {
+	if !interceptor.AuthorizedForOther(ctx) {
+		if err := s.verifyUserOwnsCharacter(ctx, characterTarget{Id: msg.CharacterId}); err != nil {
+			return nil, err
+		}
+	}
+
+	channels, err := s.chatService.AuthorizedChannelsForCharacter(ctx, msg.CharacterId)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &pb.ChatChannels{
+		Channels: make([]*pb.ChatChannel, len(channels)),
+	}
+
+	for i, c := range channels {
+		resp.Channels[i] = c.ToPb()
+	}
+
+	return resp, nil
+}
+
+func (s chatServiceServer) AuthorizeUserForChatChannel(ctx context.Context, msg *pb.RequestChatChannelAuthChange) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, s.chatService.ChangeAuthorizationForCharacter(ctx, msg.CharacterId, msg.Ids, true)
+}
+
+func (s chatServiceServer) DeauthorizeUserForChatChannel(ctx context.Context, msg *pb.RequestChatChannelAuthChange) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, s.chatService.ChangeAuthorizationForCharacter(ctx, msg.CharacterId, msg.Ids, false)
+}
+
+// verifyUserOwnsCharacter returns an error if the user doesn't own the given characterName or characterId
+func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, target characterTarget) error {
+	userId, err := interceptor.ExtractSubject(ctx, s.jwtService)
+	if err != nil {
+		return status.Error(codes.Internal, "Unable to parse auth token")
+	}
+
+	characters, err := s.charactersServiceClient.GetAllCharactersForUser(serverAuthContext(ctx, s.jwtService, "sro.com/chat"), &pb.UserTarget{UserId: uint64(userId)})
+	if err != nil {
+		return status.Error(codes.Internal, "Unable to parse auth token")
+	}
+
+	found := false
+	for _, character := range characters.Characters {
+		if character.Name.Value == target.Name || character.Id == target.Id {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return status.Error(codes.Unauthenticated, "Unauthorized for this character")
+	}
+
+	return nil
+}
+
+func NewChatServiceServer(chatService service.ChatService, jwtService service.JWTService, csc pb.CharactersServiceClient) pb.ChatServiceServer {
 	return chatServiceServer{
-		chatService: chatService,
-		jwtService:  jwtService,
+		chatService:             chatService,
+		jwtService:              jwtService,
+		charactersServiceClient: csc,
 	}
 }

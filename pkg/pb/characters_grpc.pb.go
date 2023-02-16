@@ -8,10 +8,10 @@ package pb
 
 import (
 	context "context"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -23,13 +23,13 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CharactersServiceClient interface {
-	GetAllGenders(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Genders, error)
-	GetAllRealms(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Realms, error)
-	GetAllCharacters(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Characters, error)
+	GetAllGenders(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Genders, error)
+	GetAllRealms(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Realms, error)
+	GetAllCharacters(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Characters, error)
 	GetAllCharactersForUser(ctx context.Context, in *UserTarget, opts ...grpc.CallOption) (*Characters, error)
 	GetCharacter(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*Character, error)
 	CreateCharacter(ctx context.Context, in *CreateCharacterRequest, opts ...grpc.CallOption) (*Character, error)
-	DeleteCharacter(ctx context.Context, in *Character, opts ...grpc.CallOption) (*empty.Empty, error)
+	DeleteCharacter(ctx context.Context, in *Character, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	EditCharacter(ctx context.Context, in *Character, opts ...grpc.CallOption) (*Character, error)
 	// Adds the given amount of playtime to the character and returns the total playtime
 	AddCharacterPlayTime(ctx context.Context, in *PlayTimeMessage, opts ...grpc.CallOption) (*PlayTimeMessage, error)
@@ -43,7 +43,7 @@ func NewCharactersServiceClient(cc grpc.ClientConnInterface) CharactersServiceCl
 	return &charactersServiceClient{cc}
 }
 
-func (c *charactersServiceClient) GetAllGenders(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Genders, error) {
+func (c *charactersServiceClient) GetAllGenders(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Genders, error) {
 	out := new(Genders)
 	err := c.cc.Invoke(ctx, "/sro.characters.CharactersService/GetAllGenders", in, out, opts...)
 	if err != nil {
@@ -52,7 +52,7 @@ func (c *charactersServiceClient) GetAllGenders(ctx context.Context, in *empty.E
 	return out, nil
 }
 
-func (c *charactersServiceClient) GetAllRealms(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Realms, error) {
+func (c *charactersServiceClient) GetAllRealms(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Realms, error) {
 	out := new(Realms)
 	err := c.cc.Invoke(ctx, "/sro.characters.CharactersService/GetAllRealms", in, out, opts...)
 	if err != nil {
@@ -61,7 +61,7 @@ func (c *charactersServiceClient) GetAllRealms(ctx context.Context, in *empty.Em
 	return out, nil
 }
 
-func (c *charactersServiceClient) GetAllCharacters(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Characters, error) {
+func (c *charactersServiceClient) GetAllCharacters(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Characters, error) {
 	out := new(Characters)
 	err := c.cc.Invoke(ctx, "/sro.characters.CharactersService/GetAllCharacters", in, out, opts...)
 	if err != nil {
@@ -97,8 +97,8 @@ func (c *charactersServiceClient) CreateCharacter(ctx context.Context, in *Creat
 	return out, nil
 }
 
-func (c *charactersServiceClient) DeleteCharacter(ctx context.Context, in *Character, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *charactersServiceClient) DeleteCharacter(ctx context.Context, in *Character, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.characters.CharactersService/DeleteCharacter", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -128,13 +128,13 @@ func (c *charactersServiceClient) AddCharacterPlayTime(ctx context.Context, in *
 // All implementations must embed UnimplementedCharactersServiceServer
 // for forward compatibility
 type CharactersServiceServer interface {
-	GetAllGenders(context.Context, *empty.Empty) (*Genders, error)
-	GetAllRealms(context.Context, *empty.Empty) (*Realms, error)
-	GetAllCharacters(context.Context, *empty.Empty) (*Characters, error)
+	GetAllGenders(context.Context, *emptypb.Empty) (*Genders, error)
+	GetAllRealms(context.Context, *emptypb.Empty) (*Realms, error)
+	GetAllCharacters(context.Context, *emptypb.Empty) (*Characters, error)
 	GetAllCharactersForUser(context.Context, *UserTarget) (*Characters, error)
 	GetCharacter(context.Context, *CharacterTarget) (*Character, error)
 	CreateCharacter(context.Context, *CreateCharacterRequest) (*Character, error)
-	DeleteCharacter(context.Context, *Character) (*empty.Empty, error)
+	DeleteCharacter(context.Context, *Character) (*emptypb.Empty, error)
 	EditCharacter(context.Context, *Character) (*Character, error)
 	// Adds the given amount of playtime to the character and returns the total playtime
 	AddCharacterPlayTime(context.Context, *PlayTimeMessage) (*PlayTimeMessage, error)
@@ -145,13 +145,13 @@ type CharactersServiceServer interface {
 type UnimplementedCharactersServiceServer struct {
 }
 
-func (UnimplementedCharactersServiceServer) GetAllGenders(context.Context, *empty.Empty) (*Genders, error) {
+func (UnimplementedCharactersServiceServer) GetAllGenders(context.Context, *emptypb.Empty) (*Genders, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllGenders not implemented")
 }
-func (UnimplementedCharactersServiceServer) GetAllRealms(context.Context, *empty.Empty) (*Realms, error) {
+func (UnimplementedCharactersServiceServer) GetAllRealms(context.Context, *emptypb.Empty) (*Realms, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllRealms not implemented")
 }
-func (UnimplementedCharactersServiceServer) GetAllCharacters(context.Context, *empty.Empty) (*Characters, error) {
+func (UnimplementedCharactersServiceServer) GetAllCharacters(context.Context, *emptypb.Empty) (*Characters, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllCharacters not implemented")
 }
 func (UnimplementedCharactersServiceServer) GetAllCharactersForUser(context.Context, *UserTarget) (*Characters, error) {
@@ -163,7 +163,7 @@ func (UnimplementedCharactersServiceServer) GetCharacter(context.Context, *Chara
 func (UnimplementedCharactersServiceServer) CreateCharacter(context.Context, *CreateCharacterRequest) (*Character, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateCharacter not implemented")
 }
-func (UnimplementedCharactersServiceServer) DeleteCharacter(context.Context, *Character) (*empty.Empty, error) {
+func (UnimplementedCharactersServiceServer) DeleteCharacter(context.Context, *Character) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteCharacter not implemented")
 }
 func (UnimplementedCharactersServiceServer) EditCharacter(context.Context, *Character) (*Character, error) {
@@ -186,7 +186,7 @@ func RegisterCharactersServiceServer(s grpc.ServiceRegistrar, srv CharactersServ
 }
 
 func _CharactersService_GetAllGenders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -198,13 +198,13 @@ func _CharactersService_GetAllGenders_Handler(srv interface{}, ctx context.Conte
 		FullMethod: "/sro.characters.CharactersService/GetAllGenders",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CharactersServiceServer).GetAllGenders(ctx, req.(*empty.Empty))
+		return srv.(CharactersServiceServer).GetAllGenders(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _CharactersService_GetAllRealms_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -216,13 +216,13 @@ func _CharactersService_GetAllRealms_Handler(srv interface{}, ctx context.Contex
 		FullMethod: "/sro.characters.CharactersService/GetAllRealms",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CharactersServiceServer).GetAllRealms(ctx, req.(*empty.Empty))
+		return srv.(CharactersServiceServer).GetAllRealms(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _CharactersService_GetAllCharacters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ func _CharactersService_GetAllCharacters_Handler(srv interface{}, ctx context.Co
 		FullMethod: "/sro.characters.CharactersService/GetAllCharacters",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CharactersServiceServer).GetAllCharacters(ctx, req.(*empty.Empty))
+		return srv.(CharactersServiceServer).GetAllCharacters(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }

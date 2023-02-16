@@ -7,10 +7,10 @@
 package pb
 
 import (
-	empty "github.com/golang/protobuf/ptypes/empty"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -105,7 +105,7 @@ func file_health_proto_rawDescGZIP() []byte {
 var file_health_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_health_proto_goTypes = []interface{}{
 	(*HealthMessage)(nil), // 0: sro.accounts.HealthMessage
-	(*empty.Empty)(nil),   // 1: google.protobuf.Empty
+	(*emptypb.Empty)(nil), // 1: google.protobuf.Empty
 }
 var file_health_proto_depIdxs = []int32{
 	1, // 0: sro.accounts.HealthService.Health:input_type -> google.protobuf.Empty

@@ -8,10 +8,10 @@ package pb
 
 import (
 	context "context"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -23,12 +23,12 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthenticationServiceClient interface {
-	Register(ctx context.Context, in *RegisterAccountMessage, opts ...grpc.CallOption) (*empty.Empty, error)
+	Register(ctx context.Context, in *RegisterAccountMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Login(ctx context.Context, in *LoginMessage, opts ...grpc.CallOption) (*LoginResponse, error)
-	Refresh(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*AuthToken, error)
-	ForgotUsername(ctx context.Context, in *ForgotUsernameMessage, opts ...grpc.CallOption) (*empty.Empty, error)
-	ForgotPassword(ctx context.Context, in *ForgotPasswordMessage, opts ...grpc.CallOption) (*empty.Empty, error)
-	ResetPassword(ctx context.Context, in *RestPasswordMessage, opts ...grpc.CallOption) (*empty.Empty, error)
+	Refresh(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*AuthToken, error)
+	ForgotUsername(ctx context.Context, in *ForgotUsernameMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ForgotPassword(ctx context.Context, in *ForgotPasswordMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ResetPassword(ctx context.Context, in *RestPasswordMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type authenticationServiceClient struct {
@@ -39,8 +39,8 @@ func NewAuthenticationServiceClient(cc grpc.ClientConnInterface) AuthenticationS
 	return &authenticationServiceClient{cc}
 }
 
-func (c *authenticationServiceClient) Register(ctx context.Context, in *RegisterAccountMessage, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *authenticationServiceClient) Register(ctx context.Context, in *RegisterAccountMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.accounts.AuthenticationService/Register", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func (c *authenticationServiceClient) Login(ctx context.Context, in *LoginMessag
 	return out, nil
 }
 
-func (c *authenticationServiceClient) Refresh(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*AuthToken, error) {
+func (c *authenticationServiceClient) Refresh(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*AuthToken, error) {
 	out := new(AuthToken)
 	err := c.cc.Invoke(ctx, "/sro.accounts.AuthenticationService/Refresh", in, out, opts...)
 	if err != nil {
@@ -66,8 +66,8 @@ func (c *authenticationServiceClient) Refresh(ctx context.Context, in *empty.Emp
 	return out, nil
 }
 
-func (c *authenticationServiceClient) ForgotUsername(ctx context.Context, in *ForgotUsernameMessage, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *authenticationServiceClient) ForgotUsername(ctx context.Context, in *ForgotUsernameMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.accounts.AuthenticationService/ForgotUsername", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -75,8 +75,8 @@ func (c *authenticationServiceClient) ForgotUsername(ctx context.Context, in *Fo
 	return out, nil
 }
 
-func (c *authenticationServiceClient) ForgotPassword(ctx context.Context, in *ForgotPasswordMessage, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *authenticationServiceClient) ForgotPassword(ctx context.Context, in *ForgotPasswordMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.accounts.AuthenticationService/ForgotPassword", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -84,8 +84,8 @@ func (c *authenticationServiceClient) ForgotPassword(ctx context.Context, in *Fo
 	return out, nil
 }
 
-func (c *authenticationServiceClient) ResetPassword(ctx context.Context, in *RestPasswordMessage, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *authenticationServiceClient) ResetPassword(ctx context.Context, in *RestPasswordMessage, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.accounts.AuthenticationService/ResetPassword", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -97,12 +97,12 @@ func (c *authenticationServiceClient) ResetPassword(ctx context.Context, in *Res
 // All implementations must embed UnimplementedAuthenticationServiceServer
 // for forward compatibility
 type AuthenticationServiceServer interface {
-	Register(context.Context, *RegisterAccountMessage) (*empty.Empty, error)
+	Register(context.Context, *RegisterAccountMessage) (*emptypb.Empty, error)
 	Login(context.Context, *LoginMessage) (*LoginResponse, error)
-	Refresh(context.Context, *empty.Empty) (*AuthToken, error)
-	ForgotUsername(context.Context, *ForgotUsernameMessage) (*empty.Empty, error)
-	ForgotPassword(context.Context, *ForgotPasswordMessage) (*empty.Empty, error)
-	ResetPassword(context.Context, *RestPasswordMessage) (*empty.Empty, error)
+	Refresh(context.Context, *emptypb.Empty) (*AuthToken, error)
+	ForgotUsername(context.Context, *ForgotUsernameMessage) (*emptypb.Empty, error)
+	ForgotPassword(context.Context, *ForgotPasswordMessage) (*emptypb.Empty, error)
+	ResetPassword(context.Context, *RestPasswordMessage) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAuthenticationServiceServer()
 }
 
@@ -110,22 +110,22 @@ type AuthenticationServiceServer interface {
 type UnimplementedAuthenticationServiceServer struct {
 }
 
-func (UnimplementedAuthenticationServiceServer) Register(context.Context, *RegisterAccountMessage) (*empty.Empty, error) {
+func (UnimplementedAuthenticationServiceServer) Register(context.Context, *RegisterAccountMessage) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
 func (UnimplementedAuthenticationServiceServer) Login(context.Context, *LoginMessage) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
-func (UnimplementedAuthenticationServiceServer) Refresh(context.Context, *empty.Empty) (*AuthToken, error) {
+func (UnimplementedAuthenticationServiceServer) Refresh(context.Context, *emptypb.Empty) (*AuthToken, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Refresh not implemented")
 }
-func (UnimplementedAuthenticationServiceServer) ForgotUsername(context.Context, *ForgotUsernameMessage) (*empty.Empty, error) {
+func (UnimplementedAuthenticationServiceServer) ForgotUsername(context.Context, *ForgotUsernameMessage) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ForgotUsername not implemented")
 }
-func (UnimplementedAuthenticationServiceServer) ForgotPassword(context.Context, *ForgotPasswordMessage) (*empty.Empty, error) {
+func (UnimplementedAuthenticationServiceServer) ForgotPassword(context.Context, *ForgotPasswordMessage) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ForgotPassword not implemented")
 }
-func (UnimplementedAuthenticationServiceServer) ResetPassword(context.Context, *RestPasswordMessage) (*empty.Empty, error) {
+func (UnimplementedAuthenticationServiceServer) ResetPassword(context.Context, *RestPasswordMessage) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResetPassword not implemented")
 }
 func (UnimplementedAuthenticationServiceServer) mustEmbedUnimplementedAuthenticationServiceServer() {}
@@ -178,7 +178,7 @@ func _AuthenticationService_Login_Handler(srv interface{}, ctx context.Context, 
 }
 
 func _AuthenticationService_Refresh_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -190,7 +190,7 @@ func _AuthenticationService_Refresh_Handler(srv interface{}, ctx context.Context
 		FullMethod: "/sro.accounts.AuthenticationService/Refresh",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthenticationServiceServer).Refresh(ctx, req.(*empty.Empty))
+		return srv.(AuthenticationServiceServer).Refresh(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }

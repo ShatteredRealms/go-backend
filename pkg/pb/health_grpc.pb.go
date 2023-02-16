@@ -8,10 +8,10 @@ package pb
 
 import (
 	context "context"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type HealthServiceClient interface {
-	Health(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*HealthMessage, error)
+	Health(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*HealthMessage, error)
 }
 
 type healthServiceClient struct {
@@ -34,7 +34,7 @@ func NewHealthServiceClient(cc grpc.ClientConnInterface) HealthServiceClient {
 	return &healthServiceClient{cc}
 }
 
-func (c *healthServiceClient) Health(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*HealthMessage, error) {
+func (c *healthServiceClient) Health(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*HealthMessage, error) {
 	out := new(HealthMessage)
 	err := c.cc.Invoke(ctx, "/sro.accounts.HealthService/Health", in, out, opts...)
 	if err != nil {
@@ -47,7 +47,7 @@ func (c *healthServiceClient) Health(ctx context.Context, in *empty.Empty, opts 
 // All implementations must embed UnimplementedHealthServiceServer
 // for forward compatibility
 type HealthServiceServer interface {
-	Health(context.Context, *empty.Empty) (*HealthMessage, error)
+	Health(context.Context, *emptypb.Empty) (*HealthMessage, error)
 	mustEmbedUnimplementedHealthServiceServer()
 }
 
@@ -55,7 +55,7 @@ type HealthServiceServer interface {
 type UnimplementedHealthServiceServer struct {
 }
 
-func (UnimplementedHealthServiceServer) Health(context.Context, *empty.Empty) (*HealthMessage, error) {
+func (UnimplementedHealthServiceServer) Health(context.Context, *emptypb.Empty) (*HealthMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Health not implemented")
 }
 func (UnimplementedHealthServiceServer) mustEmbedUnimplementedHealthServiceServer() {}
@@ -72,7 +72,7 @@ func RegisterHealthServiceServer(s grpc.ServiceRegistrar, srv HealthServiceServe
 }
 
 func _HealthService_Health_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func _HealthService_Health_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: "/sro.accounts.HealthService/Health",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HealthServiceServer).Health(ctx, req.(*empty.Empty))
+		return srv.(HealthServiceServer).Health(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
