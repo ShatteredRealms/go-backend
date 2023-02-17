@@ -13,14 +13,25 @@ type CharacterRepository interface {
 	FindById(ctx context.Context, id uint64) (*model.Character, error)
 	FindAll(context.Context) ([]*model.Character, error)
 
-	FindAllByOwner(ctx context.Context, id uint64) ([]*model.Character, error)
+	FindAllByOwner(ctx context.Context, owner string) ([]*model.Character, error)
 
 	WithTrx(trx *gorm.DB) CharacterRepository
 	Migrate() error
+	FindByName(ctx context.Context, name string) (*model.Character, error)
 }
 
 type characterRepository struct {
 	DB *gorm.DB
+}
+
+func (r characterRepository) FindByName(ctx context.Context, name string) (*model.Character, error) {
+	var character *model.Character = nil
+	err := r.DB.WithContext(ctx).Where("name = ?", name).Find(&character).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return character, nil
 }
 
 func NewCharacterRepository(db *gorm.DB) CharacterRepository {
@@ -56,9 +67,13 @@ func (r characterRepository) Delete(ctx context.Context, character *model.Charac
 
 func (r characterRepository) FindById(ctx context.Context, id uint64) (*model.Character, error) {
 	var character *model.Character = nil
-	err := r.DB.WithContext(ctx).First(&character, id).Error
-	if err != nil {
-		return nil, err
+	result := r.DB.WithContext(ctx).First(&character, id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if r.DB.RowsAffected == 0 {
+		return nil, nil
 	}
 
 	return character, nil
@@ -69,9 +84,9 @@ func (r characterRepository) FindAll(ctx context.Context) ([]*model.Character, e
 	return characters, r.DB.WithContext(ctx).Find(&characters).Error
 }
 
-func (r characterRepository) FindAllByOwner(ctx context.Context, id uint64) ([]*model.Character, error) {
+func (r characterRepository) FindAllByOwner(ctx context.Context, owner string) ([]*model.Character, error) {
 	var characters []*model.Character
-	return characters, r.DB.WithContext(ctx).Where("owner_id = ?", id).Find(&characters).Error
+	return characters, r.DB.WithContext(ctx).Where("owner = ?", owner).Find(&characters).Error
 }
 
 func (r characterRepository) WithTrx(trx *gorm.DB) CharacterRepository {

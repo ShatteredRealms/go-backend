@@ -30,7 +30,7 @@ type UserServiceClient interface {
 	Ban(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnBan(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetStatus(ctx context.Context, in *GetUserMessage, opts ...grpc.CallOption) (*StatusResponse, error)
-	SetStatus(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	SetStatus(ctx context.Context, in *RequestSetStatus, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type userServiceClient struct {
@@ -104,7 +104,7 @@ func (c *userServiceClient) GetStatus(ctx context.Context, in *GetUserMessage, o
 	return out, nil
 }
 
-func (c *userServiceClient) SetStatus(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *userServiceClient) SetStatus(ctx context.Context, in *RequestSetStatus, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.accounts.UserService/SetStatus", in, out, opts...)
 	if err != nil {
@@ -124,7 +124,7 @@ type UserServiceServer interface {
 	Ban(context.Context, *GetUserMessage) (*emptypb.Empty, error)
 	UnBan(context.Context, *GetUserMessage) (*emptypb.Empty, error)
 	GetStatus(context.Context, *GetUserMessage) (*StatusResponse, error)
-	SetStatus(context.Context, *StatusRequest) (*emptypb.Empty, error)
+	SetStatus(context.Context, *RequestSetStatus) (*emptypb.Empty, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -153,7 +153,7 @@ func (UnimplementedUserServiceServer) UnBan(context.Context, *GetUserMessage) (*
 func (UnimplementedUserServiceServer) GetStatus(context.Context, *GetUserMessage) (*StatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStatus not implemented")
 }
-func (UnimplementedUserServiceServer) SetStatus(context.Context, *StatusRequest) (*emptypb.Empty, error) {
+func (UnimplementedUserServiceServer) SetStatus(context.Context, *RequestSetStatus) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetStatus not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
@@ -296,7 +296,7 @@ func _UserService_GetStatus_Handler(srv interface{}, ctx context.Context, dec fu
 }
 
 func _UserService_SetStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StatusRequest)
+	in := new(RequestSetStatus)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -308,7 +308,7 @@ func _UserService_SetStatus_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: "/sro.accounts.UserService/SetStatus",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).SetStatus(ctx, req.(*StatusRequest))
+		return srv.(UserServiceServer).SetStatus(ctx, req.(*RequestSetStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }

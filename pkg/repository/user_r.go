@@ -21,7 +21,6 @@ type UserRepository interface {
 	AddToRole(context.Context, *model.User, *model.Role) error
 	RemFromRole(context.Context, *model.User, *model.Role) error
 	WithTrx(*gorm.DB) UserRepository
-	FindById(ctx context.Context, id uint) *model.User
 	FindByEmail(ctx context.Context, email string) []*model.User
 	FindByUsername(ctx context.Context, username string) *model.User
 	Migrate() error
@@ -43,7 +42,7 @@ func (u userRepository) Create(ctx context.Context, user *model.User) (*model.Us
 	}
 
 	conflict := u.FindByUsername(ctx, user.Username)
-	if conflict.Exists() {
+	if conflict != nil {
 		return user, fmt.Errorf("username is already taken")
 	}
 
@@ -60,11 +59,21 @@ func (u userRepository) Create(ctx context.Context, user *model.User) (*model.Us
 
 func (u userRepository) Save(ctx context.Context, user *model.User) (*model.User, error) {
 	conflict := u.FindByUsername(ctx, user.Username)
-	if conflict.Exists() && user.ID != conflict.ID {
-		return user, fmt.Errorf("username is already taken")
+	if conflict != nil {
+		return nil, fmt.Errorf("username is already taken")
 	}
 
-	return user, u.DB.WithContext(ctx).Save(&user).Error
+	result := u.DB.WithContext(ctx).Save(&user)
+
+	if result.Error != nil {
+		return nil, u.DB.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return nil, nil
+	}
+
+	return user, nil
 }
 
 func (u userRepository) AddToRole(ctx context.Context, user *model.User, role *model.Role) error {
@@ -84,12 +93,6 @@ func (u userRepository) WithTrx(trx *gorm.DB) UserRepository {
 	return u
 }
 
-func (u userRepository) FindById(ctx context.Context, id uint) *model.User {
-	var user *model.User
-	u.DB.WithContext(ctx).Where("id=?", id).Preload("Roles").Find(&user)
-	return user
-}
-
 func (u userRepository) FindByEmail(ctx context.Context, email string) []*model.User {
 	var users []*model.User
 	u.DB.WithContext(ctx).Where("email=?", email).Preload("Roles").Find(&users)
@@ -98,7 +101,11 @@ func (u userRepository) FindByEmail(ctx context.Context, email string) []*model.
 
 func (u userRepository) FindByUsername(ctx context.Context, username string) *model.User {
 	var user *model.User
-	u.DB.WithContext(ctx).Where("username=?", username).Preload("Roles").Find(&user)
+	result := u.DB.WithContext(ctx).Where("username=?", username).Preload("Roles").Find(&user)
+	if result.RowsAffected == 0 {
+		return nil
+	}
+
 	return user
 }
 

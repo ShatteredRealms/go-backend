@@ -71,8 +71,8 @@ var (
 type Character struct {
 	gorm.Model
 
-	// OwnerId The user account that owns the character
-	OwnerId  uint64 `gorm:"not null" json:"owner_id"`
+	// Owner The username/account that owns the character
+	Owner    string `gorm:"not null" json:"owner"`
 	Name     string `gorm:"not null;unique" json:"name"`
 	GenderId uint64 `gorm:"not null" json:"gender_id"`
 	RealmId  uint64 `gorm:"not null" json:"realm_id"`

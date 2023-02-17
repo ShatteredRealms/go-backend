@@ -18,13 +18,12 @@ type JWTService interface {
 	Validate(context.Context, string) (jwt.MapClaims, error)
 }
 
-type SROCLaims struct {
+type SROClaims struct {
 	ExpiresAt int64  `json:"exp"`
 	IssuedAt  int64  `json:"iat"`
 	NotBefore int64  `json:"nbf"`
 	Issuer    string `json:"iss"`
-	Subject   uint   `json:"sub"`
-	Username  string `json:"preferred_username"`
+	Subject   string `json:"sub"`
 }
 
 type jwtService struct {

@@ -7,18 +7,18 @@ import (
 
 type ChatChannel struct {
 	gorm.Model
-	Name   string `gorm:"unique" json:"name"`
-	Public bool   `json:"public"`
+	Name      string `gorm:"unique_index:idx_channel" json:"name"`
+	Dimension string `gorm:"unique_index:idx_channel" json:"dimension"`
+	Public    bool   `json:"public"`
 }
 
 type ChatChannelPermission struct {
-	ChannelId   uint `gorm:"unique_index:idx_permission" json:"channelId"`
-	CharacterId uint `gorm:"unique_index:idx_permission" json:"characterId"`
+	ChannelId     uint   `gorm:"unique_index:idx_permission" json:"channelId"`
+	CharacterName string `gorm:"unique_index:idx_permission" json:"characterId"`
 }
 
 func (c ChatChannel) ToPb() *pb.ChatChannel {
 	return &pb.ChatChannel{
-		Id:     uint64(c.ID),
 		Name:   c.Name,
 		Public: c.Public,
 	}

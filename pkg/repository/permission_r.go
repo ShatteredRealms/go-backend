@@ -1,88 +1,93 @@
 package repository
 
 import (
-    "context"
-    "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
-    "gorm.io/gorm"
+	"context"
+	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
+	"gorm.io/gorm"
 )
 
 type PermissionRepository interface {
-    AddPermissionForUser(ctx context.Context, permission *model.UserPermission) error
-    AddPermissionForRole(ctx context.Context, permission *model.RolePermission) error
+	AddPermissionForUser(ctx context.Context, permission *model.UserPermission) error
+	AddPermissionForRole(ctx context.Context, permission *model.RolePermission) error
 
-    RemPermissionForUser(ctx context.Context, permission *model.UserPermission) error
-    RemPermissionForRole(ctx context.Context, permission *model.RolePermission) error
+	RemPermissionForUser(ctx context.Context, permission *model.UserPermission) error
+	RemPermissionForRole(ctx context.Context, permission *model.RolePermission) error
 
-    FindPermissionsForUserID(ctx context.Context, id uint) model.UserPermissions
-    FindPermissionsForRoleID(ctx context.Context, id uint) model.RolePermissions
+	FindPermissionsForUsername(ctx context.Context, username string) model.UserPermissions
+	FindPermissionsForRole(ctx context.Context, role string) model.RolePermissions
 
-    ClearPermissionsForRole(ctx context.Context, id uint) error
-    ClearPermissionsForUser(ctx context.Context, id uint) error
+	ClearPermissionsForRole(ctx context.Context, role string) error
+	ClearPermissionsForUsername(ctx context.Context, username string) error
 
-    WithTrx(*gorm.DB) PermissionRepository
-    Migrate() error
+	WithTrx(*gorm.DB) PermissionRepository
+	Migrate() error
+	UpdateRoleName(ctx context.Context, oldName string, newName string) error
 }
 
 type permissionRepository struct {
-    DB *gorm.DB
+	DB *gorm.DB
+}
+
+func (r permissionRepository) UpdateRoleName(ctx context.Context, oldName string, newName string) error {
+	return r.DB.WithContext(ctx).Where("name = ?", oldName).Update("name", newName).Error
 }
 
 func NewPermissionRepository(db *gorm.DB) PermissionRepository {
-    return permissionRepository{
-        DB: db,
-    }
+	return permissionRepository{
+		DB: db,
+	}
 }
 
 func (r permissionRepository) AddPermissionForUser(ctx context.Context, permission *model.UserPermission) error {
-    return r.DB.WithContext(ctx).Create(&permission).Error
+	return r.DB.WithContext(ctx).Create(&permission).Error
 }
 
 func (r permissionRepository) AddPermissionForRole(ctx context.Context, permission *model.RolePermission) error {
-    return r.DB.WithContext(ctx).Create(&permission).Error
+	return r.DB.WithContext(ctx).Create(&permission).Error
 }
 
 func (r permissionRepository) RemPermissionForUser(ctx context.Context, permission *model.UserPermission) error {
-    return r.DB.WithContext(ctx).Delete(&permission).Error
+	return r.DB.WithContext(ctx).Delete(&permission).Error
 }
 
 func (r permissionRepository) RemPermissionForRole(ctx context.Context, permission *model.RolePermission) error {
-    return r.DB.WithContext(ctx).Delete(&permission).Error
+	return r.DB.WithContext(ctx).Delete(&permission).Error
 }
 
-func (r permissionRepository) FindPermissionsForUserID(ctx context.Context, id uint) model.UserPermissions {
-    var permissions model.UserPermissions
-    r.DB.WithContext(ctx).Where("user_id = ?", id).Find(&permissions)
-    return permissions
+func (r permissionRepository) FindPermissionsForUsername(ctx context.Context, username string) model.UserPermissions {
+	var permissions model.UserPermissions
+	r.DB.WithContext(ctx).Where("username = ?", username).Find(&permissions)
+	return permissions
 }
 
-func (r permissionRepository) FindPermissionsForRoleID(ctx context.Context, id uint) model.RolePermissions {
-    var permissions model.RolePermissions
-    r.DB.WithContext(ctx).Where("role_id = ?", id).Find(&permissions)
-    return permissions
+func (r permissionRepository) FindPermissionsForRole(ctx context.Context, role string) model.RolePermissions {
+	var permissions model.RolePermissions
+	r.DB.WithContext(ctx).Where("role = ?", role).Find(&permissions)
+	return permissions
 }
 
-func (r permissionRepository) ClearPermissionsForRole(ctx context.Context, id uint) error {
-    return r.DB.WithContext(ctx).Delete(&model.RolePermission{}, "role_id = ?", id).Error
+func (r permissionRepository) ClearPermissionsForRole(ctx context.Context, role string) error {
+	return r.DB.WithContext(ctx).Delete(&model.RolePermission{}, "role = ?", role).Error
 }
 
-func (r permissionRepository) ClearPermissionsForUser(ctx context.Context, id uint) error {
-    return r.DB.WithContext(ctx).Delete(&model.UserPermission{}, "user_id = ?", id).Error
+func (r permissionRepository) ClearPermissionsForUsername(ctx context.Context, username string) error {
+	return r.DB.WithContext(ctx).Delete(&model.UserPermission{}, "username = ?", username).Error
 }
 
 func (r permissionRepository) WithTrx(trx *gorm.DB) PermissionRepository {
-    if trx == nil {
-        return r
-    }
+	if trx == nil {
+		return r
+	}
 
-    r.DB = trx
-    return r
+	r.DB = trx
+	return r
 }
 
 func (r permissionRepository) Migrate() error {
-    err := r.DB.AutoMigrate(&model.UserPermission{})
-    if err != nil {
-        return err
-    }
+	err := r.DB.AutoMigrate(&model.UserPermission{})
+	if err != nil {
+		return err
+	}
 
-    return r.DB.AutoMigrate(&model.RolePermission{})
+	return r.DB.AutoMigrate(&model.RolePermission{})
 }

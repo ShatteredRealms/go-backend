@@ -28,8 +28,8 @@ func GetPermissions(
 	authorizationService pb.AuthorizationServiceClient,
 	jwtService service.JWTService,
 	requestingHost string,
-) func(userID uint) map[string]bool {
-	return func(userID uint) map[string]bool {
+) func(username string) map[string]bool {
+	return func(username string) map[string]bool {
 		md := metadata.New(
 			map[string]string{
 				"authorization": fmt.Sprintf(
@@ -38,7 +38,7 @@ func GetPermissions(
 			},
 		)
 		ctx := metadata.NewOutgoingContext(context.Background(), md)
-		authorizations, err := authorizationService.GetAuthorization(ctx, &pb.IDMessage{Id: uint64(userID)})
+		authorizations, err := authorizationService.GetAuthorization(ctx, &pb.Username{Username: username})
 
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
@@ -62,7 +62,7 @@ func GetPermissions(
 }
 
 func generateTemporaryServerToken(ctx context.Context, jwtService service.JWTService, requestingHost string) string {
-	out, _ := jwtService.Create(ctx, time.Second, requestingHost, jwt.MapClaims{"sub": 0})
+	out, _ := jwtService.Create(ctx, time.Minute, requestingHost, jwt.MapClaims{"sub": "sro.com"})
 	return out
 }
 func ProcessUserUpdates(
@@ -84,8 +84,8 @@ func ProcessUserUpdates(
 		msg, err := userUpdatesClient.Recv()
 
 		if err == nil {
-			log.Debugf("Update to user %d permissions. Clearing permissions cache for that user.", msg.Id)
-			err = interceptor.ClearUserCache(uint(msg.Id))
+			log.Debugf("Update to user %s permissions. Clearing permissions cache for that user.", msg.Username)
+			err = interceptor.ClearUserCache(msg.Username)
 			if err != nil {
 				log.WithContext(ctx).Warning("Clearing cache: %v", err)
 			}
@@ -122,7 +122,7 @@ func ProcessRoleUpdates(
 	for {
 		msg, err := roleUpdatesClient.Recv()
 		if err == nil {
-			log.Debugf("Update to role %d permissions. Clearing permissions cache for all users.", msg.Id)
+			log.Debugf("Update to role %s permissions. Clearing permissions cache for all users.", msg.Name)
 			err = interceptor.ClearCache()
 			if err != nil {
 				log.WithContext(ctx).Warning("Clearing cache: %v", err)

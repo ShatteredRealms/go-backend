@@ -10,13 +10,13 @@ service ChatService {
 
   rpc ConnectChannel(ChannelIdMessage) returns (stream ChatMessage) {
     option (google.api.http) = {
-      get: "/v1/connect/{channel_id}"
+      get: "/v1/message/channel/{channel_id}"
     };
   }
 
   rpc ConnectDirectMessage(CharacterName) returns (stream ChatMessage) {
     option (google.api.http) = {
-      get: "/v1/direct/{character_name}"
+      get: "/v1/message/characters/{character}"
     };
   }
 
@@ -29,7 +29,7 @@ service ChatService {
 
   rpc SendDirectMessage(SendDirectMessageRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/v1/message/characters/{character_name}"
+      post: "/v1/message/characters/{character}"
       body: "*"
     };
   }
@@ -68,30 +68,30 @@ service ChatService {
 
   rpc GetAuthorizedChatChannels(RequestAuthorizedChatChannels) returns (ChatChannels) {
     option (google.api.http) = {
-      get: "/v1/characters/{character_id}/channels"
+      get: "/v1/characters/{character}/channels"
     };
   }
 
   rpc AuthorizeUserForChatChannel(RequestChatChannelAuthChange) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/v1/authorizations/characters/{character_id}/add"
+      post: "/v1/authorizations/characters/{character}/add"
     };
   }
 
   rpc DeauthorizeUserForChatChannel(RequestChatChannelAuthChange) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/v1/authorizations/characters/{character_id}/remove"
+      post: "/v1/authorizations/characters/{character}/remove"
     };
   }
 }
 
 message RequestChatChannelAuthChange {
-  uint64 character_id = 1;
+  string character = 1;
   repeated uint64 ids = 2;
 }
 
 message RequestAuthorizedChatChannels {
-  uint64 character_id = 1;
+  string character = 1;
 }
 
 message ChatChannel {
@@ -124,7 +124,7 @@ message SendChatMessageRequest {
 }
 
 message SendDirectMessageRequest {
-  string character_name = 1;
+  string character = 1;
   ChatMessage chat_message = 2;
 }
 
@@ -135,5 +135,5 @@ message UpdateChatChannelRequest {
 }
 
 message CharacterName {
-  string character_name = 1;
+  string character = 1;
 }

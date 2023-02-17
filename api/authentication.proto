@@ -58,11 +58,10 @@ message LoginMessage {
 
 message LoginResponse {
   string token = 1;
-  uint64 id = 2;
+  string username = 2;
   string email = 3;
   string first_name = 4;
   string last_name = 5;
-  string username = 6;
   string created_at = 7;
   repeated UserRole roles = 8;
   google.protobuf.StringValue bannedAt = 9;

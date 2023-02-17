@@ -83,7 +83,7 @@ func (s *authenticationServiceServer) Login(
 	}
 
 	user := s.userService.FindByUsername(ctx, message.Username)
-	if !user.Exists() {
+	if user == nil {
 		span.RecordError(ErrorInvalidEmailOrPass)
 		span.SetStatus(otelcodes.Error, "username not used")
 		return nil, ErrorInvalidEmailOrPass
@@ -106,7 +106,6 @@ func (s *authenticationServiceServer) Login(
 
 	return &pb.LoginResponse{
 		Token:     token,
-		Id:        uint64(user.ID),
 		Email:     user.Email,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
@@ -138,8 +137,7 @@ func (s *authenticationServiceServer) Refresh(ctx context.Context, _ *emptypb.Em
 
 func (s *authenticationServiceServer) tokenForUser(ctx context.Context, u *accountModel.User) (t string, err error) {
 	claims := jwt.MapClaims{
-		"sub":                u.ID,
-		"preferred_username": u.Username,
+		"sub": u.Username,
 		//"given_name":  u.FirstName,
 		//"family_name": u.LastName,
 		//"email":       u.Email,

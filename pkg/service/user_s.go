@@ -13,7 +13,6 @@ type UserService interface {
 	AddToRole(context.Context, *model.User, *model.Role) error
 	RemFromRole(context.Context, *model.User, *model.Role) error
 	WithTrx(*gorm.DB) UserService
-	FindById(ctx context.Context, id uint) *model.User
 	FindByEmail(ctx context.Context, email string) []*model.User
 	FindByUsername(ctx context.Context, username string) *model.User
 	FindAll(context.Context) []*model.User
@@ -52,10 +51,6 @@ func (u userService) WithTrx(trx *gorm.DB) UserService {
 	return u
 }
 
-func (u userService) FindById(ctx context.Context, id uint) *model.User {
-	return u.userRepository.FindById(ctx, id)
-}
-
 func (u userService) FindByEmail(ctx context.Context, email string) []*model.User {
 	return u.userRepository.FindByEmail(ctx, email)
 }
@@ -70,7 +65,6 @@ func (u userService) FindAll(ctx context.Context) []*model.User {
 
 func (u userService) Ban(ctx context.Context, user *model.User) error {
 	return u.userRepository.Ban(ctx, user)
-
 }
 
 func (u userService) UnBan(ctx context.Context, user *model.User) error {

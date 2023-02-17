@@ -97,10 +97,10 @@ func NewServer(
 func getPermissions(
 	ctx context.Context,
 	server *srv.AuthorizationServiceServer,
-) func(userID uint) map[string]bool {
-	return func(userID uint) map[string]bool {
+) func(username string) map[string]bool {
+	return func(username string) map[string]bool {
 		// UserID 0 is for server communication
-		if userID == 0 {
+		if username == "sro.com" {
 			allPerms := make(map[string]bool, len(server.AllPermissions.Permissions))
 			for _, perm := range server.AllPermissions.Permissions {
 				allPerms[perm.Permission.Value] = true
@@ -109,20 +109,20 @@ func getPermissions(
 			return allPerms
 		}
 
-		user := server.UserService.FindById(ctx, userID)
-		if user == nil || !user.Exists() {
+		user := server.UserService.FindByUsername(ctx, username)
+		if user == nil {
 			return map[string]bool{}
 		}
 
 		resp := make(map[string]bool)
 
 		for _, role := range user.Roles {
-			for _, rolePermission := range server.PermissionService.FindPermissionsForRoleID(ctx, role.ID) {
+			for _, rolePermission := range server.PermissionService.FindPermissionsForRole(ctx, role.Name) {
 				resp[rolePermission.Permission] = resp[rolePermission.Permission] || rolePermission.Other
 			}
 		}
 
-		for _, userPermission := range server.PermissionService.FindPermissionsForUserID(ctx, userID) {
+		for _, userPermission := range server.PermissionService.FindPermissionsForUsername(ctx, username) {
 			resp[userPermission.Permission] = resp[userPermission.Permission] || userPermission.Other
 		}
 

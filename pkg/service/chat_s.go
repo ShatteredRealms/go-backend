@@ -28,8 +28,8 @@ type ChatService interface {
 	ChannelMessagesReader(ctx context.Context, channelId uint) *kafka.Reader
 	DirectMessagesReader(ctx context.Context, username string) *kafka.Reader
 
-	AuthorizedChannelsForCharacter(ctx context.Context, characterId uint64) ([]*model.ChatChannel, error)
-	ChangeAuthorizationForCharacter(ctx context.Context, characterId uint64, channelIds []uint64, addAuth bool) error
+	AuthorizedChannelsForCharacter(ctx context.Context, character string) ([]*model.ChatChannel, error)
+	ChangeAuthorizationForCharacter(ctx context.Context, character string, channelIds []uint, addAuth bool) error
 }
 
 type chatService struct {
@@ -40,12 +40,12 @@ type chatService struct {
 	directMessageWriters  map[string]*kafka.Writer
 }
 
-func (s chatService) ChangeAuthorizationForCharacter(ctx context.Context, userId uint64, channelIds []uint64, addAuth bool) error {
-	return s.chatRepo.ChangeAuthorizationForCharacter(ctx, userId, channelIds, addAuth)
+func (s chatService) ChangeAuthorizationForCharacter(ctx context.Context, character string, channelIds []uint, addAuth bool) error {
+	return s.chatRepo.ChangeAuthorizationForCharacter(ctx, character, channelIds, addAuth)
 }
 
-func (s chatService) AuthorizedChannelsForCharacter(ctx context.Context, userId uint64) ([]*model.ChatChannel, error) {
-	return s.chatRepo.AuthorizedChannelsForCharactger(ctx, userId)
+func (s chatService) AuthorizedChannelsForCharacter(ctx context.Context, character string) ([]*model.ChatChannel, error) {
+	return s.chatRepo.AuthorizedChannelsForCharacter(ctx, character)
 }
 
 func (s chatService) UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) error {

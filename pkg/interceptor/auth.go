@@ -17,7 +17,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -45,7 +44,7 @@ type AuthInterceptor struct {
 
 	// getUserPermissions function called when a users permissions are not in the cache. Should get the current
 	// permissions for the user and put them in a map, the value of the "Other" field for the permission.
-	getCurrentUserPermissions func(userID uint) map[string]bool
+	getCurrentUserPermissions func(username string) map[string]bool
 
 	tracer trace.Tracer
 }
@@ -53,7 +52,7 @@ type AuthInterceptor struct {
 func NewAuthInterceptor(
 	jwtService service.JWTService,
 	publicRPCs map[string]struct{},
-	getCurrentUserPermissions func(userID uint) map[string]bool,
+	getCurrentUserPermissions func(username string) map[string]bool,
 ) *AuthInterceptor {
 	cache, err := bigcache.NewBigCache(bigcache.DefaultConfig(10 * time.Minute))
 	if err != nil {
@@ -69,18 +68,18 @@ func NewAuthInterceptor(
 	}
 }
 
-func (interceptor *AuthInterceptor) updateUserPermissionsCache(userID string, permissions map[string]bool) error {
+func (interceptor *AuthInterceptor) updateUserPermissionsCache(username string, permissions map[string]bool) error {
 	buf := &bytes.Buffer{}
 	err := gob.NewEncoder(buf).Encode(permissions)
 	if err != nil {
 		return err
 	}
 
-	return interceptor.userPermissionsCache.Set(userID, buf.Bytes())
+	return interceptor.userPermissionsCache.Set(username, buf.Bytes())
 }
 
-func (interceptor *AuthInterceptor) getCachedUserPermissions(userID string) (map[string]bool, error) {
-	raw, err := interceptor.userPermissionsCache.Get(userID)
+func (interceptor *AuthInterceptor) getCachedUserPermissions(username string) (map[string]bool, error) {
+	raw, err := interceptor.userPermissionsCache.Get(username)
 	if err != nil {
 		return nil, err
 	}
@@ -90,25 +89,19 @@ func (interceptor *AuthInterceptor) getCachedUserPermissions(userID string) (map
 	return permissions, gob.NewDecoder(buf).Decode(&permissions)
 }
 
-func (interceptor *AuthInterceptor) getUserPermissions(userID string) map[string]bool {
-	permissions, err := interceptor.getCachedUserPermissions(userID)
+func (interceptor *AuthInterceptor) getUserPermissions(username string) map[string]bool {
+	permissions, err := interceptor.getCachedUserPermissions(username)
 
 	if err != nil {
-		// Permissions not found in cache, get then update them
-		id, err := strconv.ParseUint(userID, 10, 64)
-		if err != nil {
-			return nil
-		}
-
-		permissions = interceptor.getCurrentUserPermissions(uint(id))
-		_ = interceptor.updateUserPermissionsCache(userID, permissions)
+		permissions = interceptor.getCurrentUserPermissions(username)
+		_ = interceptor.updateUserPermissionsCache(username, permissions)
 	}
 
 	return permissions
 }
 
-func (interceptor *AuthInterceptor) ClearUserCache(userID uint) error {
-	return interceptor.userPermissionsCache.Delete(strconv.FormatUint(uint64(userID), 10))
+func (interceptor *AuthInterceptor) ClearUserCache(username string) error {
+	return interceptor.userPermissionsCache.Delete(username)
 }
 
 func (interceptor *AuthInterceptor) ClearCache() error {
@@ -169,15 +162,20 @@ func (interceptor *AuthInterceptor) authorize(ctx context.Context, method string
 	}
 
 	// Get the username from the claim
-	userID, err := ExtractSubFromToken(ctx, token, interceptor.jwtService)
+	username, err := ExtractSubFromToken(ctx, token, interceptor.jwtService)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(otelcodes.Error, "no sub")
 		return false, status.Error(codes.Unauthenticated, err.Error())
 	}
 
+	// server sending request
+	if username == "sro.com" {
+		return true, nil
+	}
+
 	// Check the permission
-	permissions := interceptor.getUserPermissions(strconv.FormatUint(uint64(userID), 10))
+	permissions := interceptor.getUserPermissions(username)
 	if other, ok := permissions[method]; ok {
 		return other, nil
 	}
@@ -200,24 +198,24 @@ func ExtractAuthToken(ctx context.Context) (string, error) {
 	return strings.TrimPrefix(val, AuthorizationScheme), nil
 }
 
-func ExtractSubFromToken(ctx context.Context, token string, jwtService service.JWTService) (uint, error) {
+func ExtractSubFromToken(ctx context.Context, token string, jwtService service.JWTService) (string, error) {
 	claims, err := jwtService.Validate(ctx, token)
 	if err != nil {
-		return 0, fmt.Errorf("invalid authentication token")
+		return "", fmt.Errorf("invalid authentication token")
 	}
 
 	if claims["sub"] == nil {
-		return 0, fmt.Errorf("token missing subject")
+		return "", fmt.Errorf("token missing subject")
 	}
 
 	// Need to cast to float64 since that is JSON default for all numbers
 	// SEE https://github.com/dgrijalva/jwt-go/issues/287
-	float64ID, ok := claims["sub"].(float64)
+	username, ok := claims["sub"].(string)
 	if !ok {
-		return 0, fmt.Errorf("unable to cast sub to float64")
+		return "", fmt.Errorf("unable to cast sub to string")
 	}
 
-	return uint(float64ID), nil
+	return username, nil
 }
 
 func AuthorizedForOther(ctx context.Context) bool {
@@ -227,36 +225,36 @@ func AuthorizedForOther(ctx context.Context) bool {
 // AuthorizedForTarget Checks the context for the jwt sub (account id) and checks if it matches the targetId.
 // if it does match then it's authorized. Otherwise, checks if the ctx has been marked as authorized for
 // other and returns true if it is. Should only be called after the interceptor.
-func AuthorizedForTarget(ctx context.Context, jwtService service.JWTService, targetId uint) (bool, error) {
+func AuthorizedForTarget(ctx context.Context, jwtService service.JWTService, targetUsername string) (bool, error) {
 	token, err := ExtractAuthToken(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	subId, err := ExtractSubFromToken(ctx, token, jwtService)
+	subUsername, err := ExtractSubFromToken(ctx, token, jwtService)
 	if err != nil {
 		return false, err
 	}
 
-	if subId == targetId {
+	if subUsername == targetUsername {
 		return true, nil
 	}
 
 	return AuthorizedForOther(ctx), nil
 }
 
-func ExtractSubject(ctx context.Context, jwtService service.JWTService) (uint, error) {
+func ExtractSubject(ctx context.Context, jwtService service.JWTService) (string, error) {
 	token, err := ExtractAuthToken(ctx)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
-	subId, err := ExtractSubFromToken(ctx, token, jwtService)
+	subUsername, err := ExtractSubFromToken(ctx, token, jwtService)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
-	return subId, nil
+	return subUsername, nil
 }
 
 func ExtractCtxClaims(ctx context.Context, jwtService service.JWTService) (jwt.MapClaims, error) {
@@ -274,15 +272,6 @@ func ExtractCtxClaims(ctx context.Context, jwtService service.JWTService) (jwt.M
 	if claims["sub"] == nil {
 		return nil, fmt.Errorf("token missing subject")
 	}
-
-	// Need to cast to float64 since that is JSON default for all numbers
-	// SEE https://github.com/dgrijalva/jwt-go/issues/287
-	float64ID, ok := claims["sub"].(float64)
-	if !ok {
-		return nil, fmt.Errorf("unable to cast sub to float64")
-	}
-
-	claims["sub"] = float64ID
 
 	span.End()
 

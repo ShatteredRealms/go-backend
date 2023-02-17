@@ -8,17 +8,22 @@ import (
 )
 
 type CharacterService interface {
-	Create(ctx context.Context, ownerId uint64, name string, genderId uint64, realmId uint64) (*model.Character, error)
+	Create(ctx context.Context, owner string, name string, genderId uint64, realmId uint64) (*model.Character, error)
 	FindById(ctx context.Context, id uint64) (*model.Character, error)
+	FindByName(ctx context.Context, name string) (*model.Character, error)
 	Edit(ctx context.Context, character *pb.Character) (*model.Character, error)
 	Delete(ctx context.Context, id uint64) error
 	FindAll(context.Context) ([]*model.Character, error)
-	FindAllByOwner(ctx context.Context, ownerId uint64) ([]*model.Character, error)
+	FindAllByOwner(ctx context.Context, owner string) ([]*model.Character, error)
 	AddPlayTime(ctx context.Context, characterId uint64, amount uint64) (uint64, error)
 }
 
 type characterService struct {
 	repo repository.CharacterRepository
+}
+
+func (s characterService) FindByName(ctx context.Context, name string) (*model.Character, error) {
+	return s.repo.FindByName(ctx, name)
 }
 
 func NewCharacterService(r repository.CharacterRepository) CharacterService {
@@ -27,9 +32,9 @@ func NewCharacterService(r repository.CharacterRepository) CharacterService {
 	}
 }
 
-func (s characterService) Create(ctx context.Context, ownerId uint64, name string, genderId uint64, realmId uint64) (*model.Character, error) {
+func (s characterService) Create(ctx context.Context, owner string, name string, genderId uint64, realmId uint64) (*model.Character, error) {
 	character := model.Character{
-		OwnerId:  ownerId,
+		Owner:    owner,
 		Name:     name,
 		GenderId: genderId,
 		RealmId:  realmId,
@@ -58,7 +63,7 @@ func (s characterService) Edit(ctx context.Context, character *pb.Character) (*m
 	}
 
 	if character.Owner != nil {
-		currentCharacter.OwnerId = character.Owner.Value
+		currentCharacter.Owner = character.Owner.Value
 	}
 
 	if character.PlayTime != nil {
@@ -89,8 +94,8 @@ func (s characterService) FindAll(ctx context.Context) ([]*model.Character, erro
 	return s.repo.FindAll(ctx)
 }
 
-func (s characterService) FindAllByOwner(ctx context.Context, ownerId uint64) ([]*model.Character, error) {
-	return s.repo.FindAllByOwner(ctx, ownerId)
+func (s characterService) FindAllByOwner(ctx context.Context, owner string) ([]*model.Character, error) {
+	return s.repo.FindAllByOwner(ctx, owner)
 }
 
 func (s characterService) AddPlayTime(ctx context.Context, characterId uint64, amount uint64) (uint64, error) {

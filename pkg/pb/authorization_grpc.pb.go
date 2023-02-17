@@ -23,13 +23,13 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthorizationServiceClient interface {
-	GetAuthorization(ctx context.Context, in *IDMessage, opts ...grpc.CallOption) (*AuthorizationMessage, error)
+	GetAuthorization(ctx context.Context, in *Username, opts ...grpc.CallOption) (*AuthorizationMessage, error)
 	AddAuthorization(ctx context.Context, in *AuthorizationMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RemoveAuthorization(ctx context.Context, in *AuthorizationMessage, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetRoles(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UserRoles, error)
-	GetRole(ctx context.Context, in *IDMessage, opts ...grpc.CallOption) (*UserRole, error)
+	GetRole(ctx context.Context, in *RoleName, opts ...grpc.CallOption) (*UserRole, error)
 	CreateRole(ctx context.Context, in *UserRole, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	EditRole(ctx context.Context, in *UserRole, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	EditRole(ctx context.Context, in *RequestEditUserRole, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteRole(ctx context.Context, in *UserRole, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetAllPermissions(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UserPermissions, error)
 	SubscribeUserUpdates(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (AuthorizationService_SubscribeUserUpdatesClient, error)
@@ -44,7 +44,7 @@ func NewAuthorizationServiceClient(cc grpc.ClientConnInterface) AuthorizationSer
 	return &authorizationServiceClient{cc}
 }
 
-func (c *authorizationServiceClient) GetAuthorization(ctx context.Context, in *IDMessage, opts ...grpc.CallOption) (*AuthorizationMessage, error) {
+func (c *authorizationServiceClient) GetAuthorization(ctx context.Context, in *Username, opts ...grpc.CallOption) (*AuthorizationMessage, error) {
 	out := new(AuthorizationMessage)
 	err := c.cc.Invoke(ctx, "/sro.accounts.AuthorizationService/GetAuthorization", in, out, opts...)
 	if err != nil {
@@ -80,7 +80,7 @@ func (c *authorizationServiceClient) GetRoles(ctx context.Context, in *emptypb.E
 	return out, nil
 }
 
-func (c *authorizationServiceClient) GetRole(ctx context.Context, in *IDMessage, opts ...grpc.CallOption) (*UserRole, error) {
+func (c *authorizationServiceClient) GetRole(ctx context.Context, in *RoleName, opts ...grpc.CallOption) (*UserRole, error) {
 	out := new(UserRole)
 	err := c.cc.Invoke(ctx, "/sro.accounts.AuthorizationService/GetRole", in, out, opts...)
 	if err != nil {
@@ -98,7 +98,7 @@ func (c *authorizationServiceClient) CreateRole(ctx context.Context, in *UserRol
 	return out, nil
 }
 
-func (c *authorizationServiceClient) EditRole(ctx context.Context, in *UserRole, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *authorizationServiceClient) EditRole(ctx context.Context, in *RequestEditUserRole, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/sro.accounts.AuthorizationService/EditRole", in, out, opts...)
 	if err != nil {
@@ -141,7 +141,7 @@ func (c *authorizationServiceClient) SubscribeUserUpdates(ctx context.Context, i
 }
 
 type AuthorizationService_SubscribeUserUpdatesClient interface {
-	Recv() (*IDMessage, error)
+	Recv() (*Username, error)
 	grpc.ClientStream
 }
 
@@ -149,8 +149,8 @@ type authorizationServiceSubscribeUserUpdatesClient struct {
 	grpc.ClientStream
 }
 
-func (x *authorizationServiceSubscribeUserUpdatesClient) Recv() (*IDMessage, error) {
-	m := new(IDMessage)
+func (x *authorizationServiceSubscribeUserUpdatesClient) Recv() (*Username, error) {
+	m := new(Username)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (c *authorizationServiceClient) SubscribeRoleUpdates(ctx context.Context, i
 }
 
 type AuthorizationService_SubscribeRoleUpdatesClient interface {
-	Recv() (*IDMessage, error)
+	Recv() (*RoleName, error)
 	grpc.ClientStream
 }
 
@@ -181,8 +181,8 @@ type authorizationServiceSubscribeRoleUpdatesClient struct {
 	grpc.ClientStream
 }
 
-func (x *authorizationServiceSubscribeRoleUpdatesClient) Recv() (*IDMessage, error) {
-	m := new(IDMessage)
+func (x *authorizationServiceSubscribeRoleUpdatesClient) Recv() (*RoleName, error) {
+	m := new(RoleName)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -193,13 +193,13 @@ func (x *authorizationServiceSubscribeRoleUpdatesClient) Recv() (*IDMessage, err
 // All implementations must embed UnimplementedAuthorizationServiceServer
 // for forward compatibility
 type AuthorizationServiceServer interface {
-	GetAuthorization(context.Context, *IDMessage) (*AuthorizationMessage, error)
+	GetAuthorization(context.Context, *Username) (*AuthorizationMessage, error)
 	AddAuthorization(context.Context, *AuthorizationMessage) (*emptypb.Empty, error)
 	RemoveAuthorization(context.Context, *AuthorizationMessage) (*emptypb.Empty, error)
 	GetRoles(context.Context, *emptypb.Empty) (*UserRoles, error)
-	GetRole(context.Context, *IDMessage) (*UserRole, error)
+	GetRole(context.Context, *RoleName) (*UserRole, error)
 	CreateRole(context.Context, *UserRole) (*emptypb.Empty, error)
-	EditRole(context.Context, *UserRole) (*emptypb.Empty, error)
+	EditRole(context.Context, *RequestEditUserRole) (*emptypb.Empty, error)
 	DeleteRole(context.Context, *UserRole) (*emptypb.Empty, error)
 	GetAllPermissions(context.Context, *emptypb.Empty) (*UserPermissions, error)
 	SubscribeUserUpdates(*emptypb.Empty, AuthorizationService_SubscribeUserUpdatesServer) error
@@ -211,7 +211,7 @@ type AuthorizationServiceServer interface {
 type UnimplementedAuthorizationServiceServer struct {
 }
 
-func (UnimplementedAuthorizationServiceServer) GetAuthorization(context.Context, *IDMessage) (*AuthorizationMessage, error) {
+func (UnimplementedAuthorizationServiceServer) GetAuthorization(context.Context, *Username) (*AuthorizationMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAuthorization not implemented")
 }
 func (UnimplementedAuthorizationServiceServer) AddAuthorization(context.Context, *AuthorizationMessage) (*emptypb.Empty, error) {
@@ -223,13 +223,13 @@ func (UnimplementedAuthorizationServiceServer) RemoveAuthorization(context.Conte
 func (UnimplementedAuthorizationServiceServer) GetRoles(context.Context, *emptypb.Empty) (*UserRoles, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRoles not implemented")
 }
-func (UnimplementedAuthorizationServiceServer) GetRole(context.Context, *IDMessage) (*UserRole, error) {
+func (UnimplementedAuthorizationServiceServer) GetRole(context.Context, *RoleName) (*UserRole, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRole not implemented")
 }
 func (UnimplementedAuthorizationServiceServer) CreateRole(context.Context, *UserRole) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateRole not implemented")
 }
-func (UnimplementedAuthorizationServiceServer) EditRole(context.Context, *UserRole) (*emptypb.Empty, error) {
+func (UnimplementedAuthorizationServiceServer) EditRole(context.Context, *RequestEditUserRole) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EditRole not implemented")
 }
 func (UnimplementedAuthorizationServiceServer) DeleteRole(context.Context, *UserRole) (*emptypb.Empty, error) {
@@ -258,7 +258,7 @@ func RegisterAuthorizationServiceServer(s grpc.ServiceRegistrar, srv Authorizati
 }
 
 func _AuthorizationService_GetAuthorization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(IDMessage)
+	in := new(Username)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func _AuthorizationService_GetAuthorization_Handler(srv interface{}, ctx context
 		FullMethod: "/sro.accounts.AuthorizationService/GetAuthorization",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthorizationServiceServer).GetAuthorization(ctx, req.(*IDMessage))
+		return srv.(AuthorizationServiceServer).GetAuthorization(ctx, req.(*Username))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -330,7 +330,7 @@ func _AuthorizationService_GetRoles_Handler(srv interface{}, ctx context.Context
 }
 
 func _AuthorizationService_GetRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(IDMessage)
+	in := new(RoleName)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -342,7 +342,7 @@ func _AuthorizationService_GetRole_Handler(srv interface{}, ctx context.Context,
 		FullMethod: "/sro.accounts.AuthorizationService/GetRole",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthorizationServiceServer).GetRole(ctx, req.(*IDMessage))
+		return srv.(AuthorizationServiceServer).GetRole(ctx, req.(*RoleName))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -366,7 +366,7 @@ func _AuthorizationService_CreateRole_Handler(srv interface{}, ctx context.Conte
 }
 
 func _AuthorizationService_EditRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserRole)
+	in := new(RequestEditUserRole)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -378,7 +378,7 @@ func _AuthorizationService_EditRole_Handler(srv interface{}, ctx context.Context
 		FullMethod: "/sro.accounts.AuthorizationService/EditRole",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthorizationServiceServer).EditRole(ctx, req.(*UserRole))
+		return srv.(AuthorizationServiceServer).EditRole(ctx, req.(*RequestEditUserRole))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -428,7 +428,7 @@ func _AuthorizationService_SubscribeUserUpdates_Handler(srv interface{}, stream 
 }
 
 type AuthorizationService_SubscribeUserUpdatesServer interface {
-	Send(*IDMessage) error
+	Send(*Username) error
 	grpc.ServerStream
 }
 
@@ -436,7 +436,7 @@ type authorizationServiceSubscribeUserUpdatesServer struct {
 	grpc.ServerStream
 }
 
-func (x *authorizationServiceSubscribeUserUpdatesServer) Send(m *IDMessage) error {
+func (x *authorizationServiceSubscribeUserUpdatesServer) Send(m *Username) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -449,7 +449,7 @@ func _AuthorizationService_SubscribeRoleUpdates_Handler(srv interface{}, stream 
 }
 
 type AuthorizationService_SubscribeRoleUpdatesServer interface {
-	Send(*IDMessage) error
+	Send(*RoleName) error
 	grpc.ServerStream
 }
 
@@ -457,7 +457,7 @@ type authorizationServiceSubscribeRoleUpdatesServer struct {
 	grpc.ServerStream
 }
 
-func (x *authorizationServiceSubscribeRoleUpdatesServer) Send(m *IDMessage) error {
+func (x *authorizationServiceSubscribeRoleUpdatesServer) Send(m *RoleName) error {
 	return x.ServerStream.SendMsg(m)
 }
 

@@ -13,7 +13,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
-	"gorm.io/gorm"
 )
 
 type AuthorizationServiceServer struct {
@@ -23,8 +22,8 @@ type AuthorizationServiceServer struct {
 	roleService       service.RoleService
 	AllPermissions    *pb.UserPermissions
 	authInterceptor   *interceptor.AuthInterceptor
-	userUpdates       chan uint64
-	roleUpdates       chan uint64
+	userUpdates       chan string
+	roleUpdates       chan string
 }
 
 func NewAuthorizationServiceServer(
@@ -36,8 +35,8 @@ func NewAuthorizationServiceServer(
 		UserService:       u,
 		PermissionService: permissionService,
 		roleService:       roleService,
-		userUpdates:       make(chan uint64),
-		roleUpdates:       make(chan uint64),
+		userUpdates:       make(chan string),
+		roleUpdates:       make(chan string),
 	}
 }
 
@@ -47,21 +46,21 @@ func (s *AuthorizationServiceServer) AddAuthInterceptor(interceptor *interceptor
 
 func (s *AuthorizationServiceServer) GetAuthorization(
 	ctx context.Context,
-	message *pb.IDMessage,
+	message *pb.Username,
 ) (*pb.AuthorizationMessage, error) {
-	user := s.UserService.FindById(ctx, uint(message.Id))
-	if user == nil || !user.Exists() {
+	user := s.UserService.FindByUsername(ctx, message.Username)
+	if user == nil {
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
 
-	permissions := s.PermissionService.FindPermissionsForUserID(ctx, user.ID).ToPB().Permissions
+	permissions := s.PermissionService.FindPermissionsForUsername(ctx, user.Username).ToPB().Permissions
 	roles := user.Roles.ToPB().Roles
 	for i, role := range roles {
-		roles[i].Permissions = s.PermissionService.FindPermissionsForRoleID(ctx, uint(role.Id)).ToPB().Permissions
+		roles[i].Permissions = s.PermissionService.FindPermissionsForRole(ctx, role.Name).ToPB().Permissions
 	}
 
 	resp := &pb.AuthorizationMessage{
-		UserId:      message.Id,
+		Username:    message.Username,
 		Roles:       roles,
 		Permissions: permissions,
 	}
@@ -70,8 +69,8 @@ func (s *AuthorizationServiceServer) GetAuthorization(
 }
 
 func (s *AuthorizationServiceServer) AddAuthorization(ctx context.Context, message *pb.AuthorizationMessage) (*emptypb.Empty, error) {
-	user := s.UserService.FindById(ctx, uint(message.UserId))
-	if user == nil || !user.Exists() {
+	user := s.UserService.FindByUsername(ctx, message.Username)
+	if user == nil {
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
 
@@ -79,7 +78,7 @@ func (s *AuthorizationServiceServer) AddAuthorization(ctx context.Context, messa
 		err := s.PermissionService.AddPermissionForUser(
 			ctx,
 			&model.UserPermission{
-				UserID:     user.ID,
+				Username:   user.Username,
 				Permission: v.Permission.Value,
 				Other:      v.Other,
 			},
@@ -95,9 +94,7 @@ func (s *AuthorizationServiceServer) AddAuthorization(ctx context.Context, messa
 			ctx,
 			user,
 			&model.Role{
-				Model: gorm.Model{
-					ID: uint(v.Id),
-				},
+				Name: v.Name,
 			})
 
 		if err != nil {
@@ -105,14 +102,14 @@ func (s *AuthorizationServiceServer) AddAuthorization(ctx context.Context, messa
 		}
 	}
 
-	s.userUpdates <- message.UserId
-	err := s.authInterceptor.ClearUserCache(uint(message.UserId))
+	s.userUpdates <- message.Username
+	err := s.authInterceptor.ClearUserCache(message.Username)
 	return &emptypb.Empty{}, err
 }
 
 func (s *AuthorizationServiceServer) RemoveAuthorization(ctx context.Context, message *pb.AuthorizationMessage) (*emptypb.Empty, error) {
-	user := s.UserService.FindById(ctx, uint(message.UserId))
-	if user == nil || !user.Exists() {
+	user := s.UserService.FindByUsername(ctx, message.Username)
+	if user == nil {
 		return nil, status.Error(codes.NotFound, "user not found")
 	}
 
@@ -120,7 +117,7 @@ func (s *AuthorizationServiceServer) RemoveAuthorization(ctx context.Context, me
 		err := s.PermissionService.RemPermissionForUser(
 			ctx,
 			&model.UserPermission{
-				UserID:     user.ID,
+				Username:   user.Username,
 				Permission: v.Permission.Value,
 				Other:      v.Other,
 			},
@@ -136,17 +133,15 @@ func (s *AuthorizationServiceServer) RemoveAuthorization(ctx context.Context, me
 			ctx,
 			user,
 			&model.Role{
-				Model: gorm.Model{
-					ID: uint(v.Id),
-				},
+				Name: v.Name,
 			})
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
 
-	s.userUpdates <- message.UserId
-	err := s.authInterceptor.ClearUserCache(uint(message.UserId))
+	s.userUpdates <- message.Username
+	err := s.authInterceptor.ClearUserCache(message.Username)
 	return &emptypb.Empty{}, err
 }
 
@@ -155,15 +150,15 @@ func (s *AuthorizationServiceServer) GetRoles(ctx context.Context, message *empt
 		Roles: s.roleService.FindAll(ctx).ToPB().Roles,
 	}
 	for i, v := range resp.Roles {
-		resp.Roles[i].Permissions = s.PermissionService.FindPermissionsForRoleID(ctx, uint(v.Id)).ToPB().Permissions
+		resp.Roles[i].Permissions = s.PermissionService.FindPermissionsForRole(ctx, v.Name).ToPB().Permissions
 	}
 
 	return resp, nil
 }
 
-func (s *AuthorizationServiceServer) GetRole(ctx context.Context, message *pb.IDMessage) (*pb.UserRole, error) {
-	resp := s.roleService.FindById(ctx, uint(message.Id)).ToPB()
-	resp.Permissions = s.PermissionService.FindPermissionsForRoleID(ctx, uint(message.Id)).ToPB().Permissions
+func (s *AuthorizationServiceServer) GetRole(ctx context.Context, message *pb.RoleName) (*pb.UserRole, error) {
+	resp := s.roleService.FindByName(ctx, message.Name).ToPB()
+	resp.Permissions = s.PermissionService.FindPermissionsForRole(ctx, message.Name).ToPB().Permissions
 
 	return resp, nil
 }
@@ -172,7 +167,7 @@ func (s *AuthorizationServiceServer) CreateRole(ctx context.Context, message *pb
 	_, err := s.roleService.Create(
 		ctx,
 		&model.Role{
-			Name: message.Name.Value,
+			Name: message.Name,
 		})
 
 	if err != nil {
@@ -182,37 +177,52 @@ func (s *AuthorizationServiceServer) CreateRole(ctx context.Context, message *pb
 	return &emptypb.Empty{}, nil
 }
 
-func (s *AuthorizationServiceServer) EditRole(ctx context.Context, message *pb.UserRole) (*emptypb.Empty, error) {
-	if message.Name != nil {
-		err := s.roleService.Update(
-			ctx,
-			&model.Role{
-				Model: gorm.Model{
-					ID: uint(message.Id),
-				},
-				Name: message.Name.Value,
-			})
-		if err != nil {
-			return nil, err
-		}
-	}
+func (s *AuthorizationServiceServer) EditRole(ctx context.Context, message *pb.RequestEditUserRole) (*emptypb.Empty, error) {
+
 	if message.Permissions != nil {
 		newPermissions := make([]*model.RolePermission, len(message.Permissions))
 		for i, permission := range message.Permissions {
 			newPermissions[i] = &model.RolePermission{
-				RoleID:     uint(message.Id),
+				Role:       message.Name,
 				Permission: permission.Permission.Value,
 				Other:      permission.Other,
 			}
 		}
 
-		err := s.PermissionService.ResetPermissionsForRole(ctx, uint(message.Id), newPermissions)
+		err := s.PermissionService.ResetPermissionsForRole(ctx, message.Name, newPermissions)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	s.roleUpdates <- message.Id
+	if message.NewName != nil {
+		err := s.roleService.NewName(
+			ctx,
+			message.Name,
+			message.NewName.Value,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		err = s.PermissionService.UpdateRoleName(ctx, message.Name, message.NewName.Value)
+		if err != nil {
+			// Update permissions failed, rollback name change
+			// @TODO: Use trx with commits
+			innerErr := s.roleService.NewName(
+				ctx,
+				message.NewName.Value,
+				message.Name,
+			)
+			if innerErr != nil {
+				return nil, innerErr
+			}
+
+			return nil, err
+		}
+	}
+
+	s.roleUpdates <- message.Name
 	err := s.authInterceptor.ClearCache()
 	return &emptypb.Empty{}, err
 }
@@ -221,9 +231,7 @@ func (s *AuthorizationServiceServer) DeleteRole(ctx context.Context, message *pb
 	err := s.roleService.Delete(
 		ctx,
 		&model.Role{
-			Model: gorm.Model{
-				ID: uint(message.Id),
-			},
+			Name: message.Name,
 		},
 	)
 
@@ -231,7 +239,7 @@ func (s *AuthorizationServiceServer) DeleteRole(ctx context.Context, message *pb
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	s.roleUpdates <- message.Id
+	s.roleUpdates <- message.Name
 	err = s.authInterceptor.ClearCache()
 	return &emptypb.Empty{}, err
 }
@@ -258,9 +266,9 @@ func (s *AuthorizationServiceServer) SubscribeUserUpdates(message *emptypb.Empty
 		case <-stream.Context().Done():
 			log.Debug("User subscribe context closed")
 			return nil
-		case userId := <-s.userUpdates:
+		case username := <-s.userUpdates:
 			log.Debug("Sending update")
-			err := stream.Send(&pb.IDMessage{Id: userId})
+			err := stream.Send(&pb.Username{Username: username})
 			log.Debug("Broadcast role update")
 			if err != nil {
 				return err
@@ -274,9 +282,9 @@ func (s *AuthorizationServiceServer) SubscribeRoleUpdates(message *emptypb.Empty
 		case <-stream.Context().Done():
 			log.Debug("Role subscribe context closed")
 			return nil
-		case userId := <-s.roleUpdates:
+		case roleName := <-s.roleUpdates:
 			log.Debug("Sending update")
-			err := stream.Send(&pb.IDMessage{Id: userId})
+			err := stream.Send(&pb.RoleName{Name: roleName})
 			log.Debug("Broadcast role update")
 			if err != nil {
 				return err

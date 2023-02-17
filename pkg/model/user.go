@@ -7,6 +7,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	"gorm.io/gorm"
 	"net/mail"
+	"time"
 
 	"gopkg.in/nullbio/null.v4"
 )
@@ -22,17 +23,22 @@ const (
 
 // User Database model for a User
 type User struct {
-	gorm.Model
+	Username  string    `gorm:"primarykey" json:"username"`
 	FirstName string    `gorm:"not null" json:"first_name"`
 	LastName  string    `gorm:"not null" json:"last_name"`
-	Username  string    `gorm:"not null;unique" json:"username"`
 	Email     string    `gorm:"not null" json:"email"`
 	Password  string    `gorm:"not null" json:"password"`
 	Roles     Roles     `gorm:"many2many:user_roles" json:"roles"`
 	BannedAt  null.Time `json:"banned_at"`
-	// CurrentCharacterId The ID of the character that is currently being played. If 0, then the account is not playing
-	// online. Otherwise, the account is connected to a server.
-	CurrentCharacterId null.Uint64 `gorm:"unique" json:"currentCharacterId"`
+
+	// CurrentCharacterId The character that is currently being played. If nil then the account is not playing.
+	// Otherwise, the account is connected to a server.
+	// @TODO: Refactor to another model and service
+	CurrentCharacter null.String `gorm:"unique" json:"currentCharacter"`
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 // Validate Checks if all user data fields are valid.
@@ -77,10 +83,6 @@ func (u *User) Login(password string) error {
 	return nil
 }
 
-func (u *User) Exists() bool {
-	return u != nil && u.ID != 0
-}
-
 // UpdateInfo Updates the info of the user if the fields are present and valid. If any field is present but not valid
 // then an error is returned. If there are no errors, then the non-nil fields for the FirstName, LastName, Email, and
 // Username will be updated.
@@ -98,8 +100,8 @@ func (u *User) UpdateInfo(userDetails *pb.EditUserDetailsRequest) error {
 		}
 	}
 
-	if userDetails.Username != nil {
-		if err := u.updateUsername(userDetails.Username.Value); err != nil {
+	if userDetails.NewUsername != nil {
+		if err := u.updateUsername(userDetails.NewUsername.Value); err != nil {
 			return err
 		}
 	}
@@ -225,13 +227,12 @@ func (u *User) updateEmail(val string) error {
 
 func (u *User) ToPb() *pb.UserMessage {
 	return &pb.UserMessage{
-		Id:                 uint64(u.ID),
-		Email:              u.Email,
-		Username:           u.Username,
-		Roles:              u.Roles.ToPB().Roles,
-		CreatedAt:          u.CreatedAt.Format("2006-01-02T15:04:05-0700"),
-		BannedAt:           u.BannedAtWrapper(),
-		CurrentCharacterId: u.CurrentCharacterIdWrapper(),
+		Username:         u.Username,
+		Email:            u.Email,
+		Roles:            u.Roles.ToPB().Roles,
+		CreatedAt:        u.CreatedAt.Format("2006-01-02T15:04:05-0700"),
+		BannedAt:         u.BannedAtWrapper(),
+		CurrentCharacter: u.CurrentCharacterWrapper(),
 	}
 }
 
@@ -244,26 +245,25 @@ func (u *User) BannedAtWrapper() *wrapperspb.StringValue {
 	return bannedAt
 }
 
-func (u *User) CurrentCharacterIdWrapper() *wrapperspb.UInt64Value {
-	var currentCharacterId *wrapperspb.UInt64Value
-	if u.CurrentCharacterId.Valid {
-		currentCharacterId = wrapperspb.UInt64(u.CurrentCharacterId.Uint64)
+func (u *User) CurrentCharacterWrapper() *wrapperspb.StringValue {
+	var currentCharacter *wrapperspb.StringValue
+	if u.CurrentCharacter.Valid {
+		currentCharacter = wrapperspb.String(u.CurrentCharacter.String)
 	}
 
-	return currentCharacterId
+	return currentCharacter
 }
 
 func (u *User) ToVerbosePb(permissions UserPermissions) *pb.GetUserResponse {
 	return &pb.GetUserResponse{
-		Id:                 uint64(u.ID),
-		Email:              u.Email,
-		Username:           u.Username,
-		FirstName:          u.FirstName,
-		LastName:           u.LastName,
-		Roles:              u.Roles.ToPB().Roles,
-		Permissions:        permissions.ToPB().Permissions,
-		CreatedAt:          u.CreatedAt.Format("2006-01-02T15:04:05-0700"),
-		BannedAt:           u.BannedAtWrapper(),
-		CurrentCharacterId: u.CurrentCharacterIdWrapper(),
+		Username:         u.Username,
+		Email:            u.Email,
+		FirstName:        u.FirstName,
+		LastName:         u.LastName,
+		Roles:            u.Roles.ToPB().Roles,
+		Permissions:      permissions.ToPB().Permissions,
+		CreatedAt:        u.CreatedAt.Format("2006-01-02T15:04:05-0700"),
+		BannedAt:         u.BannedAtWrapper(),
+		CurrentCharacter: u.CurrentCharacterWrapper(),
 	}
 }

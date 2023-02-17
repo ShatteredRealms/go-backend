@@ -27,7 +27,7 @@ service CharactersService {
 
   rpc GetAllCharactersForUser(UserTarget) returns (Characters) {
     option (google.api.http) = {
-      get: "/v1/users/{user_id}/characters"
+      get: "/v1/users/{username}/characters"
     };
   }
 
@@ -39,7 +39,7 @@ service CharactersService {
 
   rpc CreateCharacter(CreateCharacterRequest) returns (Character) {
     option (google.api.http) = {
-      post: "/v1/users/{user_id}/characters"
+      post: "/v1/users/{username}/characters"
       body: "*"
     };
   }
@@ -76,14 +76,14 @@ message DeleteCharacterRequest {
 }
 
 message CreateCharacterRequest {
-  uint64 user_id = 1;
+  string username = 1;
   string name = 2;
   uint64 gender = 3;
   uint64 realm = 4;
 }
 
 message UserTarget {
-  uint64 user_id = 1;
+  string username = 1;
 }
 
 message CharacterTarget {
@@ -94,7 +94,7 @@ message Character {
   uint64 id = 1;
 
   // The user account that owns the character
-  google.protobuf.UInt64Value owner = 2;
+  google.protobuf.StringValue owner = 2;
   google.protobuf.StringValue name = 3;
   google.protobuf.UInt64Value gender = 4;
   google.protobuf.UInt64Value realm = 5;

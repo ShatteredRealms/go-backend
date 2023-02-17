@@ -16,77 +16,77 @@ service UserService {
 
   rpc Get(GetUserMessage) returns (GetUserResponse) {
     option (google.api.http) = {
-      get: "/v1/users/{user_id}"
+      get: "/v1/users/{username}"
     };
   }
 
   rpc Edit(EditUserDetailsRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put: "/v1/users/{user_id}"
+      put: "/v1/users/{username}"
       body: "*"
     };
   }
 
   rpc ChangePassword(ChangePasswordRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put: "/v1/users/{user_id}/password"
+      put: "/v1/users/{username}/password"
       body: "*"
     };
   }
 
   rpc Ban(GetUserMessage) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/v1/users/{user_id}/ban"
+      post: "/v1/users/{username}/ban"
       body: "*"
     };
   }
 
   rpc UnBan(GetUserMessage) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/v1/users/{user_id}/unban"
+      post: "/v1/users/{username}/unban"
       body: "*"
     };
   }
 
   rpc GetStatus(GetUserMessage) returns (StatusResponse) {
     option (google.api.http) = {
-      get: "/v1/users/{user_id}/status"
+      get: "/v1/users/{username}/status"
     };
   }
 
-  rpc SetStatus(StatusRequest) returns (google.protobuf.Empty) {
+  rpc SetStatus(RequestSetStatus) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/v1/users/{user_id}/status"
+      post: "/v1/users/{username}/status"
       body: "*"
     };
   }
 }
 
 message GetUserMessage {
-  uint64 user_id = 1;
+  string username = 1;
 }
 
 message UserMessage {
-  uint64 id = 1;
+  string username = 1;
   string email = 2;
-  string username = 3;
-  string createdAt = 4;
-  repeated UserRole roles = 5;
-  google.protobuf.StringValue bannedAt = 6;
-  google.protobuf.UInt64Value current_character_id = 7;
+  repeated UserRole roles = 6;
+  google.protobuf.StringValue current_character = 7;
+  string createdAt = 15;
+  string updatedAt = 16;
+  google.protobuf.StringValue bannedAt = 17;
 }
 
 message GetUserResponse {
-  uint64 id = 1;
+  string username = 1;
   string email = 2;
-  string username = 3;
-  string first_name = 4;
-  string last_name = 5;
-  string createdAt = 6;
-  repeated UserRole roles = 7;
-  repeated UserPermission permissions = 8;
-  google.protobuf.StringValue bannedAt = 9;
-  google.protobuf.UInt64Value current_character_id = 10;
+  string first_name = 3;
+  string last_name = 4;
+  repeated UserRole roles = 6;
+  repeated UserPermission permissions = 7;
+  google.protobuf.StringValue current_character = 8;
+  string createdAt = 15;
+  string updatedAt = 16;
+  google.protobuf.StringValue bannedAt = 17;
 }
 
 message GetAllUsersResponse {
@@ -94,27 +94,27 @@ message GetAllUsersResponse {
 }
 
 message EditUserDetailsRequest {
-  uint64 user_id = 1;
+  string username = 1;
   google.protobuf.StringValue email = 2;
-  google.protobuf.StringValue username = 4;
+  google.protobuf.StringValue new_username= 3;
   google.protobuf.StringValue first_name = 5;
   google.protobuf.StringValue last_name = 6;
 }
 
 message ChangePasswordRequest {
-  uint64 user_id = 1;
+  string username = 1;
   string current_password = 2;
   string new_password = 3;
 }
 
 message StatusResponse {
   // The character id that is currently playing. If 0, then the user is not signed in.
-  google.protobuf.UInt64Value character_id = 1;
+  google.protobuf.StringValue character_name = 1;
 }
 
-message StatusRequest {
-  uint64 user_id = 1;
+message RequestSetStatus {
+  string username = 1;
 
   // The character id that is currently playing. If 0, then the user is not signed in.
-  google.protobuf.UInt64Value character_id = 2;
+  google.protobuf.StringValue character_name = 2;
 }

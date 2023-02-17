@@ -30,15 +30,15 @@ func NewServer(
 		return nil, nil, err
 	}
 
-	chatConn, err := grpc.Dial(
-		conf.Chat.Remote.Address(),
+	charactersConn, err := grpc.Dial(
+		conf.Characters.Remote.Address(),
 		srv.InsecureOtelGrpcDialOpts()...,
 	)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	csc := pb.NewCharactersServiceClient(chatConn)
+	csc := pb.NewCharactersServiceClient(charactersConn)
 
 	chatServiceServer := srv.NewChatServiceServer(chatService, jwt, csc)
 	pb.RegisterChatServiceServer(grpcServer, chatServiceServer)

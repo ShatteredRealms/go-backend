@@ -7,22 +7,22 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 
 service AuthorizationService {
-  rpc GetAuthorization(IDMessage) returns (AuthorizationMessage) {
+  rpc GetAuthorization(Username) returns (AuthorizationMessage) {
     option (google.api.http) = {
-      get: "/v1/users/{id}/authorization"
+      get: "/v1/users/{username}/authorization"
     };
   }
 
   rpc AddAuthorization(AuthorizationMessage) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/v1/users/{user_id}/authorization/add"
+      post: "/v1/users/{username}/authorization/add"
       body: "*"
     };
   }
 
   rpc RemoveAuthorization(AuthorizationMessage) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/v1/users/{user_id}/authorization/remove"
+      post: "/v1/users/{username}/authorization/remove"
       body: "*"
     };
   }
@@ -33,9 +33,9 @@ service AuthorizationService {
     };
   }
 
-  rpc GetRole(IDMessage) returns (UserRole) {
+  rpc GetRole(RoleName) returns (UserRole) {
     option (google.api.http) = {
-      get: "/v1/authorization/roles/{id}"
+      get: "/v1/authorization/roles/{name}"
     };
   }
 
@@ -46,16 +46,16 @@ service AuthorizationService {
     };
   }
 
-  rpc EditRole(UserRole) returns (google.protobuf.Empty) {
+  rpc EditRole(RequestEditUserRole) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put: "/v1/authorization/roles/{id}"
+      put: "/v1/authorization/roles/{name}"
       body: "*"
     };
   }
 
   rpc DeleteRole(UserRole) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      delete: "/v1/authorization/roles/{id}"
+      delete: "/v1/authorization/roles/{name}"
     };
   }
 
@@ -65,21 +65,25 @@ service AuthorizationService {
     };
   }
 
-  rpc SubscribeUserUpdates(google.protobuf.Empty) returns (stream IDMessage) {
+  rpc SubscribeUserUpdates(google.protobuf.Empty) returns (stream Username) {
     option (google.api.http) = {
       get: "/v1/authorization/updates/users"
     };
   }
 
-  rpc SubscribeRoleUpdates(google.protobuf.Empty) returns (stream IDMessage) {
+  rpc SubscribeRoleUpdates(google.protobuf.Empty) returns (stream RoleName) {
     option (google.api.http) = {
       get: "/v1/authorization/updates/roles"
     };
   }
 }
 
-message IDMessage {
-  uint64 id = 1;
+message Username {
+  string username = 1;
+}
+
+message RoleName {
+  string name = 1;
 }
 
 message Permission {
@@ -101,9 +105,13 @@ message UserPermissions {
 }
 
 message UserRole {
-  uint64 id = 1;
-  google.protobuf.StringValue name = 2;
-  repeated UserPermission permissions = 3;
+  string name = 1;
+  repeated UserPermission permissions = 2;
+}
+message RequestEditUserRole {
+  string name = 1;
+  repeated UserPermission permissions = 2;
+  google.protobuf.StringValue new_name = 3;
 }
 
 message UserRoles {
@@ -111,7 +119,7 @@ message UserRoles {
 }
 
 message AuthorizationMessage {
-  uint64 user_id = 1;
+  string username = 1;
   repeated UserRole roles = 2;
   repeated UserPermission permissions = 3;
 }

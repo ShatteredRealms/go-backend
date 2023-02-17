@@ -15,10 +15,11 @@ import (
 )
 
 type appConfig struct {
-	Chat     config.Server        `yaml:"chat"`
-	Accounts config.Server        `yaml:"accounts"`
-	KeyDir   string               `yaml:"keyDir"`
-	Uptrace  config.UptraceConfig `yaml:"uptrace"`
+	Chat       config.Server        `yaml:"chat"`
+	Accounts   config.Server        `yaml:"accounts"`
+	Characters config.Server        `yaml:"characters"`
+	KeyDir     string               `yaml:"keyDir"`
+	Uptrace    config.UptraceConfig `yaml:"uptrace"`
 }
 
 var (
@@ -52,6 +53,12 @@ var (
 		Accounts: config.Server{
 			Remote: config.ServerAddress{
 				Port: 8080,
+				Host: "",
+			},
+		},
+		Characters: config.Server{
+			Remote: config.ServerAddress{
+				Port: 8081,
 				Host: "",
 			},
 		},

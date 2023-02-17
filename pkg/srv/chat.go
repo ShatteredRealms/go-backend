@@ -2,6 +2,7 @@ package srv
 
 import (
 	"context"
+	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/interceptor"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
 	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
@@ -12,11 +13,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 )
-
-type characterTarget struct {
-	Id   uint64
-	Name string
-}
 
 type chatServiceServer struct {
 	pb.UnimplementedChatServiceServer
@@ -49,7 +45,8 @@ func (s chatServiceServer) ConnectChannel(request *pb.ChannelIdMessage, server p
 }
 
 func (s chatServiceServer) SendChatMessage(ctx context.Context, request *pb.SendChatMessageRequest) (*empty.Empty, error) {
-	if err := s.verifyUserOwnsCharacter(ctx, characterTarget{Name: request.ChatMessage.CharacterName}); err != nil {
+	// Only the owning user can send messages. Do not allow even super admins to spoof.
+	if err := s.verifyUserOwnsCharacter(ctx, request.ChatMessage.CharacterName); err != nil {
 		return nil, err
 	}
 
@@ -58,21 +55,21 @@ func (s chatServiceServer) SendChatMessage(ctx context.Context, request *pb.Send
 
 func (s chatServiceServer) SendDirectMessage(ctx context.Context, request *pb.SendDirectMessageRequest) (*empty.Empty, error) {
 	// Only the owning user can send messages. Do not allow even super admins to spoof.
-	if err := s.verifyUserOwnsCharacter(ctx, characterTarget{Name: request.ChatMessage.CharacterName}); err != nil {
+	if err := s.verifyUserOwnsCharacter(ctx, request.Character); err != nil {
 		return nil, err
 	}
 
-	return &empty.Empty{}, s.chatService.SendDirectMessage(ctx, request.ChatMessage.CharacterName, request.ChatMessage.Message, request.CharacterName)
+	return &empty.Empty{}, s.chatService.SendDirectMessage(ctx, request.ChatMessage.CharacterName, request.ChatMessage.Message, request.Character)
 }
 
 func (s chatServiceServer) ConnectDirectMessage(msg *pb.CharacterName, srv pb.ChatService_ConnectDirectMessageServer) error {
 	if !interceptor.AuthorizedForOther(srv.Context()) {
-		if err := s.verifyUserOwnsCharacter(srv.Context(), characterTarget{Name: msg.CharacterName}); err != nil {
+		if err := s.verifyUserOwnsCharacter(srv.Context(), msg.Character); err != nil {
 			return err
 		}
 	}
 
-	r := s.chatService.DirectMessagesReader(srv.Context(), msg.CharacterName)
+	r := s.chatService.DirectMessagesReader(srv.Context(), msg.Character)
 	for {
 		msg, err := r.ReadMessage(srv.Context())
 		if err != nil {
@@ -145,12 +142,12 @@ func (s chatServiceServer) EditChannel(ctx context.Context, msg *pb.UpdateChatCh
 
 func (s chatServiceServer) GetAuthorizedChatChannels(ctx context.Context, msg *pb.RequestAuthorizedChatChannels) (*pb.ChatChannels, error) {
 	if !interceptor.AuthorizedForOther(ctx) {
-		if err := s.verifyUserOwnsCharacter(ctx, characterTarget{Id: msg.CharacterId}); err != nil {
+		if err := s.verifyUserOwnsCharacter(ctx, msg.Character); err != nil {
 			return nil, err
 		}
 	}
 
-	channels, err := s.chatService.AuthorizedChannelsForCharacter(ctx, msg.CharacterId)
+	channels, err := s.chatService.AuthorizedChannelsForCharacter(ctx, msg.Character)
 	if err != nil {
 		return nil, err
 	}
@@ -167,28 +164,28 @@ func (s chatServiceServer) GetAuthorizedChatChannels(ctx context.Context, msg *p
 }
 
 func (s chatServiceServer) AuthorizeUserForChatChannel(ctx context.Context, msg *pb.RequestChatChannelAuthChange) (*emptypb.Empty, error) {
-	return &emptypb.Empty{}, s.chatService.ChangeAuthorizationForCharacter(ctx, msg.CharacterId, msg.Ids, true)
+	return &emptypb.Empty{}, s.chatService.ChangeAuthorizationForCharacter(ctx, msg.Character, helpers.ArrayUint64ToUint(msg.Ids), true)
 }
 
 func (s chatServiceServer) DeauthorizeUserForChatChannel(ctx context.Context, msg *pb.RequestChatChannelAuthChange) (*emptypb.Empty, error) {
-	return &emptypb.Empty{}, s.chatService.ChangeAuthorizationForCharacter(ctx, msg.CharacterId, msg.Ids, false)
+	return &emptypb.Empty{}, s.chatService.ChangeAuthorizationForCharacter(ctx, msg.Character, helpers.ArrayUint64ToUint(msg.Ids), false)
 }
 
 // verifyUserOwnsCharacter returns an error if the user doesn't own the given characterName or characterId
-func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, target characterTarget) error {
-	userId, err := interceptor.ExtractSubject(ctx, s.jwtService)
+func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, characterName string) error {
+	username, err := interceptor.ExtractSubject(ctx, s.jwtService)
 	if err != nil {
 		return status.Error(codes.Internal, "Unable to parse auth token")
 	}
 
-	characters, err := s.charactersServiceClient.GetAllCharactersForUser(serverAuthContext(ctx, s.jwtService, "sro.com/chat"), &pb.UserTarget{UserId: uint64(userId)})
+	characters, err := s.charactersServiceClient.GetAllCharactersForUser(serverAuthContext(ctx, s.jwtService, "sro.com/chat"), &pb.UserTarget{Username: username})
 	if err != nil {
 		return status.Error(codes.Internal, "Unable to parse auth token")
 	}
 
 	found := false
 	for _, character := range characters.Characters {
-		if character.Name.Value == target.Name || character.Id == target.Id {
+		if character.Name.Value == characterName {
 			found = true
 			break
 		}
@@ -199,6 +196,10 @@ func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, target c
 	}
 
 	return nil
+}
+
+func (s chatServiceServer) verifyCharacterAuthorizedChatChannel() {
+
 }
 
 func NewChatServiceServer(chatService service.ChatService, jwtService service.JWTService, csc pb.CharactersServiceClient) pb.ChatServiceServer {
