@@ -1,4 +1,4 @@
-module github.com/WilSimpson/ShatteredRealms/go-backend
+module github.com/ShatteredRealms/go-backend
 
 go 1.19
 
