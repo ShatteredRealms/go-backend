@@ -3,8 +3,8 @@ package service_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
+	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/kend/pkg/service"
 	"io/fs"
 	"reflect"
 	"syscall"

@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/config"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/repository"
+	"github.com/ShatteredRealms/go-backend/pkg/config"
+	"github.com/kend/pkg/model"
+	"github.com/kend/pkg/pb"
+	"github.com/kend/pkg/repository"
 	"github.com/segmentio/kafka-go"
 	"go.opentelemetry.io/otel"
 )

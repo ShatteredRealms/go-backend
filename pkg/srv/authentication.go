@@ -2,11 +2,11 @@ package srv
 
 import (
 	"context"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/interceptor"
-	accountModel "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
-	accountService "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
+	"github.com/ShatteredRealms/go-backend/pkg/interceptor"
+	accountModel "github.com/kend/pkg/model"
+	"github.com/kend/pkg/pb"
+	"github.com/kend/pkg/service"
+	accountService "github.com/kend/pkg/service"
 	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
 	otelcodes "go.opentelemetry.io/otel/codes"

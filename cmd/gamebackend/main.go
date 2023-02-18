@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/config"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
+	"github.com/ShatteredRealms/go-backend/pkg/config"
+	"github.com/kend/pkg/helpers"
+	"github.com/kend/pkg/service"
 	log "github.com/sirupsen/logrus"
 	"github.com/uptrace/uptrace-go/uptrace"
 	"net"

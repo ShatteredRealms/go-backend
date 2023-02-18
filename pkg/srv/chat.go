@@ -2,11 +2,11 @@ package srv
 
 import (
 	"context"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/interceptor"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
+	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/kend/pkg/interceptor"
+	"github.com/kend/pkg/model"
+	"github.com/kend/pkg/pb"
+	"github.com/kend/pkg/service"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

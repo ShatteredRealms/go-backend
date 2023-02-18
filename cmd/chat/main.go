@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	chat "github.com/WilSimpson/ShatteredRealms/go-backend/cmd/chat/global"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/config"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/repository"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
+	chat "github.com/ShatteredRealms/go-backend/cmd/chat/global"
+	"github.com/kend/pkg/config"
+	"github.com/kend/pkg/helpers"
+	"github.com/kend/pkg/repository"
+	"github.com/kend/pkg/service"
 	log "github.com/sirupsen/logrus"
 	"github.com/uptrace/uptrace-go/uptrace"
 	"go.opentelemetry.io/otel"

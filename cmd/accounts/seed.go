@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
+	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/kend/pkg/service"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )

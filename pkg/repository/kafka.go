@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	chat "github.com/WilSimpson/ShatteredRealms/go-backend/cmd/chat/global"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/config"
+	chat "github.com/ShatteredRealms/go-backend/cmd/chat/global"
+	"github.com/kend/pkg/config"
 	"github.com/segmentio/kafka-go"
 	"net"
 	"strconv"
