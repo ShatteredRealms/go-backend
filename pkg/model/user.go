@@ -2,7 +2,7 @@ package model
 
 import (
 	"fmt"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	"gorm.io/gorm"

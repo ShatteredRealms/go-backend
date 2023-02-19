@@ -2,9 +2,10 @@ package service
 
 import (
 	"context"
+
 	"github.com/ShatteredRealms/go-backend/pkg/model"
-	"github.com/kend/pkg/pb"
-	"github.com/kend/pkg/repository"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/ShatteredRealms/go-backend/pkg/repository"
 )
 
 type CharacterService interface {

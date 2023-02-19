@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/cmd/updater/logging"
+	"github.com/ShatteredRealms/go-backend/cmd/updater/logging"
 	"github.com/spf13/cobra"
 	"io"
 	"io/ioutil"

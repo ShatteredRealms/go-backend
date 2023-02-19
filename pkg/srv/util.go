@@ -3,10 +3,13 @@ package srv
 import (
 	"context"
 	"fmt"
+	"io"
+	"time"
+
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/kend/pkg/interceptor"
-	"github.com/kend/pkg/pb"
-	"github.com/kend/pkg/service"
+	"github.com/ShatteredRealms/go-backend/pkg/interceptor"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/ShatteredRealms/go-backend/pkg/service"
 	"github.com/golang-jwt/jwt"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	log "github.com/sirupsen/logrus"
@@ -15,8 +18,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
-	"time"
 )
 
 const (

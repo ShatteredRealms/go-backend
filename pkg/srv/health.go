@@ -2,7 +2,7 @@ package srv
 
 import (
 	"context"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 

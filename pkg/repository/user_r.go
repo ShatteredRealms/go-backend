@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"gopkg.in/nullbio/null.v4"
 	"time"
 

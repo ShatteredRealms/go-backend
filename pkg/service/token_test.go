@@ -3,12 +3,13 @@ package service_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/kend/pkg/service"
 	"io/fs"
 	"reflect"
 	"syscall"
 	"time"
+
+	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/service"
 
 	"github.com/golang-jwt/jwt"
 )

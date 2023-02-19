@@ -1,7 +1,7 @@
 package repository_test
 
 import (
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"

@@ -2,11 +2,13 @@ package srv
 
 import (
 	"context"
+	"time"
+
 	"github.com/ShatteredRealms/go-backend/pkg/interceptor"
-	accountModel "github.com/kend/pkg/model"
-	"github.com/kend/pkg/pb"
-	"github.com/kend/pkg/service"
-	accountService "github.com/kend/pkg/service"
+	accountModel "github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/ShatteredRealms/go-backend/pkg/service"
+	accountService "github.com/ShatteredRealms/go-backend/pkg/service"
 	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
 	otelcodes "go.opentelemetry.io/otel/codes"
@@ -14,7 +16,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"time"
 )
 
 var (

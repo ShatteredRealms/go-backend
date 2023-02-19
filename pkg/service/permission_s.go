@@ -2,8 +2,9 @@ package service
 
 import (
 	"context"
+
 	"github.com/ShatteredRealms/go-backend/pkg/model"
-	"github.com/kend/pkg/repository"
+	"github.com/ShatteredRealms/go-backend/pkg/repository"
 	"gorm.io/gorm"
 )
 

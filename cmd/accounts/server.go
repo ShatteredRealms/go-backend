@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/interceptor"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
-	accountService "github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/srv"
+	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/interceptor"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/ShatteredRealms/go-backend/pkg/service"
+	accountService "github.com/ShatteredRealms/go-backend/pkg/service"
+	"github.com/ShatteredRealms/go-backend/pkg/srv"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"

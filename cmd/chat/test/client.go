@@ -4,17 +4,18 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/kend/pkg/pb"
-	"github.com/kend/pkg/service"
-	"github.com/golang-jwt/jwt"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 	"io"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/ShatteredRealms/go-backend/pkg/service"
+	"github.com/golang-jwt/jwt"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 const (

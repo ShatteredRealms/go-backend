@@ -1,19 +1,20 @@
 package main
 
 import (
-	aapb "agones.dev/agones/pkg/allocation/go"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"io/ioutil"
+
+	aapb "agones.dev/agones/pkg/allocation/go"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
-	"github.com/kend/pkg/pb"
-	"github.com/kend/pkg/service"
-	"github.com/kend/pkg/srv"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/ShatteredRealms/go-backend/pkg/service"
+	"github.com/ShatteredRealms/go-backend/pkg/srv"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"io/ioutil"
 )
 
 func NewServer(

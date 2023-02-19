@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/service"
+	"github.com/ShatteredRealms/go-backend/pkg/service"
 	"github.com/allegro/bigcache/v3"
 	"github.com/golang-jwt/jwt"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"

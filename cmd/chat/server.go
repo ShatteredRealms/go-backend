@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
+
 	chat "github.com/ShatteredRealms/go-backend/cmd/chat/global"
-	"github.com/kend/pkg/pb"
-	"github.com/kend/pkg/service"
-	"github.com/kend/pkg/srv"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/ShatteredRealms/go-backend/pkg/service"
+	"github.com/ShatteredRealms/go-backend/pkg/srv"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"

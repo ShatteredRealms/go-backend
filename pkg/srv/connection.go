@@ -1,10 +1,11 @@
 package srv
 
 import (
-	aapb "agones.dev/agones/pkg/allocation/go"
 	"context"
+
+	aapb "agones.dev/agones/pkg/allocation/go"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
-	utilService "github.com/kend/pkg/service"
+	utilService "github.com/ShatteredRealms/go-backend/pkg/service"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

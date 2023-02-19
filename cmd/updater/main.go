@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/cmd/updater/updater"
+	"github.com/ShatteredRealms/go-backend/cmd/updater/updater"
 )
 
 func main() {

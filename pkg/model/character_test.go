@@ -2,8 +2,9 @@ package model_test
 
 import (
 	"fmt"
+
 	"github.com/ShatteredRealms/go-backend/pkg/model"
-	"github.com/kend/test/factory"
+	"github.com/ShatteredRealms/go-backend/test/factory"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

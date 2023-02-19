@@ -2,15 +2,16 @@ package main
 
 import (
 	"context"
+	"net"
+	"net/http"
+
 	"github.com/ShatteredRealms/go-backend/pkg/config"
-	"github.com/kend/pkg/helpers"
-	"github.com/kend/pkg/repository"
-	"github.com/kend/pkg/service"
+	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/repository"
+	"github.com/ShatteredRealms/go-backend/pkg/service"
 	log "github.com/sirupsen/logrus"
 	"github.com/uptrace/uptrace-go/uptrace"
 	"go.opentelemetry.io/otel"
-	"net"
-	"net/http"
 )
 
 type appConfig struct {

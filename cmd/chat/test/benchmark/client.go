@@ -4,13 +4,14 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/kend/pkg/pb"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
-	"sync"
-	"time"
 )
 
 const (

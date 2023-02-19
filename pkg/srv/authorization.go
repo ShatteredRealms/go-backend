@@ -3,10 +3,11 @@ package srv
 import (
 	"context"
 	"fmt"
+
 	"github.com/ShatteredRealms/go-backend/pkg/interceptor"
-	"github.com/kend/pkg/model"
-	"github.com/kend/pkg/pb"
-	"github.com/kend/pkg/service"
+	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/ShatteredRealms/go-backend/pkg/service"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

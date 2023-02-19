@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	goaway "github.com/TwiN/go-away"
-	"github.com/WilSimpson/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"gorm.io/gorm"
 	"regexp"
 )
