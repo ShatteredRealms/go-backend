@@ -5,7 +5,47 @@
 # Learn more from ready-to-use templates: https://www.gitpod.io/docs/introduction/getting-started/quickstart
 
 tasks:
-  - init: apt install -y protobuf-compiler && go get && go build ./... && go test ./... && make
-    command: go run .
+  - name: backend
+    before: |
+      apt install -y protobuf-compiler
+      npm i -g nodemon
+      docker-compose pull
+      docker-compose up -d
+    init: make build -j
+    command:  nodemon --watch './**/*.go' --signal SIGTERM --exec 'make' run -j
 
+  - name: frontend
+    before: cd ../frontend
+    init: npm install
+    command: ng serve
 
+additionalRepositories:
+  - url: https://github.com/ShatteredRealms/Frontend
+    # checkoutLocation is relative to /workspaces
+    checkoutLocation: frontend
+
+ports:
+  - port: 4200
+    name: Website
+    description: Frontend website
+    visibility: public
+  - port: 8080
+    name: Accounts
+    description: Backend authentication and authorization service API
+    visibility: public
+  - port: 8081
+    name: Characters
+    description: Backend character management service APi
+    visibility: public
+  - port: 8082
+    name: Gamebackend
+    description: Backend game and gameserver management API
+    visibility: public
+  - port: 8180
+    name: Chat
+    description: Backend chat service API
+    visibility: public
+  - port: 14318
+    name: Uptrace
+    description: Uptrace for opentelemtry and metrics
+    visibility: public
