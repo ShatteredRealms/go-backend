@@ -1,0 +1,4 @@
+CREATE DATABASE accounts;
+CREATE DATABASE characters;
+CREATE DATABASE gamebackend;
+CREATE DATABASE chat;
