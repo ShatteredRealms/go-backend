@@ -3,79 +3,35 @@ package model
 import (
 	"errors"
 	"fmt"
-	goaway "github.com/TwiN/go-away"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
+	goaway "github.com/TwiN/go-away"
 	"gorm.io/gorm"
 	"regexp"
 )
 
 const (
-	MinNameLength = 3
-	MaxNameLength = 20
-
-	MaxRealmId  = 2
-	MaxGenderId = 3
+	MinCharacterNameLength = 3
+	MaxCharacterNameLength = 20
 )
 
 var (
-	Genders = &pb.Genders{
-		Genders: []*pb.Gender{
-			{
-				Name: "Male",
-				Id:   1,
-			},
-			{
-				Name: "Female",
-				Id:   2,
-			},
-			{
-				Name: "None",
-				Id:   3,
-			},
-		},
-	}
+	CharacterNameRegex, _ = regexp.Compile("^[a-zA-Z0-9]+$")
 
-	Realms = &pb.Realms{
-		Realms: []*pb.Realm{
-			{
-				Name: "Human",
-				Id:   1,
-			},
-			{
-				Name: "Cyborg",
-				Id:   2,
-			},
-		},
-	}
+	// ErrCharacterNameToShort thrown when a character name is too short
+	ErrCharacterNameToShort = errors.New(fmt.Sprintf("name must be at least %d characters", MinCharacterNameLength))
 
-	NameRegex, _ = regexp.Compile("^[a-zA-Z0-9]+$")
-
-	ErrInvalidNameCharacter = errors.New("name contains invalid character(s)")
-
-	// ErrNameProfane thrown when a name is profane
-	ErrNameProfane = errors.New("name unavailable")
-
-	// ErrInvalidRealm thrown when a character belongs to an unknown realm
-	ErrInvalidRealm = errors.New("invalid realm")
-
-	// ErrInvalidGender thrown when a character belongs to an unknown gender
-	ErrInvalidGender = errors.New("invalid gender")
-
-	// ErrNameToShort thrown when a character name is too short
-	ErrNameToShort = errors.New(fmt.Sprintf("name must be at least %d characters", MinNameLength))
-
-	// ErrNameToLong thrown when a character name is too long
-	ErrNameToLong = errors.New(fmt.Sprintf("name can be at most %d characters", MaxNameLength))
+	// ErrCharacterNameToLong thrown when a character name is too long
+	ErrCharacterNameToLong = errors.New(fmt.Sprintf("name can be at most %d characters", MaxCharacterNameLength))
 )
 
 type Character struct {
 	gorm.Model
 
 	// Owner The username/account that owns the character
-	Owner    string `gorm:"not null" json:"owner"`
-	Name     string `gorm:"not null;unique" json:"name"`
-	GenderId uint64 `gorm:"not null" json:"gender_id"`
-	RealmId  uint64 `gorm:"not null" json:"realm_id"`
+	OwnerId string `gorm:"not null" json:"owner"`
+	Name    string `gorm:"not null;unique" json:"name"`
+	Gender  string `gorm:"not null" json:"gender_id"`
+	Realm   string `gorm:"not null" json:"realm_id"`
 
 	// PlayTime Time in minutes the character has played
 	PlayTime uint64 `gorm:"not null" json:"play_time"`
@@ -83,6 +39,7 @@ type Character struct {
 	// Location last location recorded for the character
 	Location Location `gorm:"type:bytes;serializer:gob" json:"location"`
 }
+type Characters []*Character
 
 func (c *Character) Validate() error {
 	if err := c.ValidateGender(); err != nil {
@@ -97,16 +54,16 @@ func (c *Character) Validate() error {
 }
 
 func (c *Character) ValidateName() error {
-	if len(c.Name) < MinNameLength {
-		return ErrNameToShort
+	if len(c.Name) < MinCharacterNameLength {
+		return ErrCharacterNameToShort
 	}
 
-	if len(c.Name) > MaxNameLength {
-		return ErrNameToLong
+	if len(c.Name) > MaxCharacterNameLength {
+		return ErrCharacterNameToLong
 	}
 
-	if !NameRegex.MatchString(c.Name) {
-		return ErrInvalidNameCharacter
+	if !CharacterNameRegex.MatchString(c.Name) {
+		return ErrInvalidName
 	}
 
 	if goaway.IsProfane(c.Name) {
@@ -117,21 +74,38 @@ func (c *Character) ValidateName() error {
 }
 
 func (c *Character) ValidateGender() error {
-	for _, v := range Genders.Genders {
-		if c.GenderId == v.Id {
-			return nil
-		}
+	if _, ok := Genders[c.Gender]; ok {
+		return nil
 	}
 
 	return ErrInvalidGender
 }
 
 func (c *Character) ValidateRealm() error {
-	for _, v := range Realms.Realms {
-		if c.RealmId == v.Id {
-			return nil
-		}
+	if _, ok := Realms[c.Realm]; ok {
+		return nil
 	}
 
 	return ErrInvalidRealm
+}
+
+func (c *Character) ToPb() *pb.CharacterResponse {
+	return &pb.CharacterResponse{
+		Id:       uint64(c.ID),
+		Owner:    c.OwnerId,
+		Name:     c.Name,
+		Gender:   c.Gender,
+		Realm:    c.Realm,
+		PlayTime: c.PlayTime,
+		Location: c.Location.ToPb(),
+	}
+}
+
+func (c Characters) ToPb() *pb.CharactersResponse {
+	resp := &pb.CharactersResponse{Characters: make([]*pb.CharacterResponse, len(c))}
+	for idx, character := range c {
+		resp.Characters[idx] = character.ToPb()
+	}
+
+	return resp
 }

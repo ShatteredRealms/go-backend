@@ -33,7 +33,7 @@ var _ = utilities.NewDoubleArray
 var _ = metadata.Join
 
 func request_ChatService_ConnectChannel_0(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (ChatService_ConnectChannelClient, runtime.ServerMetadata, error) {
-	var protoReq ChannelIdMessage
+	var protoReq ChannelTarget
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -237,7 +237,7 @@ func local_request_ChatService_SendDirectMessage_0(ctx context.Context, marshale
 }
 
 func request_ChatService_GetChannel_0(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ChannelIdMessage
+	var protoReq ChannelTarget
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -263,7 +263,7 @@ func request_ChatService_GetChannel_0(ctx context.Context, marshaler runtime.Mar
 }
 
 func local_request_ChatService_GetChannel_0(ctx context.Context, marshaler runtime.Marshaler, server ChatServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ChannelIdMessage
+	var protoReq ChannelTarget
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -323,7 +323,7 @@ func local_request_ChatService_CreateChannel_0(ctx context.Context, marshaler ru
 }
 
 func request_ChatService_DeleteChannel_0(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ChannelIdMessage
+	var protoReq ChannelTarget
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -349,7 +349,7 @@ func request_ChatService_DeleteChannel_0(ctx context.Context, marshaler runtime.
 }
 
 func local_request_ChatService_DeleteChannel_0(ctx context.Context, marshaler runtime.Marshaler, server ChatServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ChannelIdMessage
+	var protoReq ChannelTarget
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -672,7 +672,7 @@ func RegisterChatServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		return
 	})
 
-	mux.Handle("POST", pattern_ChatService_SendChatMessage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_ChatService_SendChatMessage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -697,7 +697,7 @@ func RegisterChatServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("POST", pattern_ChatService_SendDirectMessage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_ChatService_SendDirectMessage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -1007,7 +1007,7 @@ func RegisterChatServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("POST", pattern_ChatService_SendChatMessage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_ChatService_SendChatMessage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1029,7 +1029,7 @@ func RegisterChatServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("POST", pattern_ChatService_SendDirectMessage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_ChatService_SendDirectMessage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)

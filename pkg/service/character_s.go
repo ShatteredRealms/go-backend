@@ -9,13 +9,17 @@ import (
 )
 
 type CharacterService interface {
-	Create(ctx context.Context, owner string, name string, genderId uint64, realmId uint64) (*model.Character, error)
+	Create(ctx context.Context, ownerId string, name string, gender string, realm string) (*model.Character, error)
+	Edit(ctx context.Context, character *pb.EditCharacterRequest) (*model.Character, error)
+	Delete(ctx context.Context, id uint64) error
+
 	FindById(ctx context.Context, id uint64) (*model.Character, error)
 	FindByName(ctx context.Context, name string) (*model.Character, error)
-	Edit(ctx context.Context, character *pb.Character) (*model.Character, error)
-	Delete(ctx context.Context, id uint64) error
+
+	FindAllByOwner(ctx context.Context, ownerId string) (model.Characters, error)
+
 	FindAll(context.Context) ([]*model.Character, error)
-	FindAllByOwner(ctx context.Context, owner string) ([]*model.Character, error)
+
 	AddPlayTime(ctx context.Context, characterId uint64, amount uint64) (uint64, error)
 }
 
@@ -33,12 +37,12 @@ func NewCharacterService(r repository.CharacterRepository) CharacterService {
 	}
 }
 
-func (s characterService) Create(ctx context.Context, owner string, name string, genderId uint64, realmId uint64) (*model.Character, error) {
+func (s characterService) Create(ctx context.Context, ownerId string, name string, gender string, realm string) (*model.Character, error) {
 	character := model.Character{
-		Owner:    owner,
+		OwnerId:  ownerId,
 		Name:     name,
-		GenderId: genderId,
-		RealmId:  realmId,
+		Gender:   gender,
+		Realm:    realm,
 		PlayTime: 0,
 	}
 
@@ -53,7 +57,7 @@ func (s characterService) FindById(ctx context.Context, id uint64) (*model.Chara
 	return s.repo.FindById(ctx, id)
 }
 
-func (s characterService) Edit(ctx context.Context, character *pb.Character) (*model.Character, error) {
+func (s characterService) Edit(ctx context.Context, character *pb.EditCharacterRequest) (*model.Character, error) {
 	currentCharacter, err := s.FindById(ctx, character.Id)
 	if err != nil {
 		return nil, err
@@ -63,8 +67,8 @@ func (s characterService) Edit(ctx context.Context, character *pb.Character) (*m
 		currentCharacter.Name = character.Name.Value
 	}
 
-	if character.Owner != nil {
-		currentCharacter.Owner = character.Owner.Value
+	if character.OwnerId != nil {
+		currentCharacter.OwnerId = character.OwnerId.Value
 	}
 
 	if character.PlayTime != nil {
@@ -72,11 +76,16 @@ func (s characterService) Edit(ctx context.Context, character *pb.Character) (*m
 	}
 
 	if character.Gender != nil {
-		currentCharacter.GenderId = character.Gender.Value
+		currentCharacter.Gender = character.Gender.Value
 	}
 
 	if character.Realm != nil {
-		currentCharacter.RealmId = character.Realm.Value
+		currentCharacter.Realm = character.Realm.Value
+	}
+
+	err = currentCharacter.Validate()
+	if err != nil {
+		return nil, err
 	}
 
 	return s.repo.Save(ctx, currentCharacter)
@@ -95,7 +104,7 @@ func (s characterService) FindAll(ctx context.Context) ([]*model.Character, erro
 	return s.repo.FindAll(ctx)
 }
 
-func (s characterService) FindAllByOwner(ctx context.Context, owner string) ([]*model.Character, error) {
+func (s characterService) FindAllByOwner(ctx context.Context, owner string) (model.Characters, error) {
 	return s.repo.FindAllByOwner(ctx, owner)
 }
 

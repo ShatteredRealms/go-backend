@@ -1,11 +1,10 @@
 package repository
 
 import (
-	"context"
+	"fmt"
 	"net"
 	"strconv"
 
-	chat "github.com/ShatteredRealms/go-backend/cmd/chat/global"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/segmentio/kafka-go"
 )
@@ -15,7 +14,7 @@ var (
 	controllerConn *kafka.Conn
 )
 
-func ConnectKafka(ctx context.Context, address config.ServerAddress) (*kafka.Conn, error) {
+func ConnectKafka(address config.ServerAddress) (*kafka.Conn, error) {
 	if currentConn != nil {
 		_ = currentConn.Close()
 	}
@@ -24,23 +23,20 @@ func ConnectKafka(ctx context.Context, address config.ServerAddress) (*kafka.Con
 	}
 	var err error
 
-	ctx, span := chat.Tracer.Start(ctx, "connect-kafka")
 	currentConn, err = kafka.Dial("tcp", address.Address())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("kafka connect: %v", err)
 	}
 
 	controller, err := currentConn.Controller()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("controller: %v", err)
 	}
 
 	controllerConn, err = kafka.Dial("tcp", net.JoinHostPort(controller.Host, strconv.Itoa(controller.Port)))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("kafka controller connection: %v", err)
 	}
-
-	span.End()
 
 	return controllerConn, nil
 }

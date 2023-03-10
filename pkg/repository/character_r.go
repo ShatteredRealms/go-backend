@@ -10,14 +10,16 @@ type CharacterRepository interface {
 	Create(ctx context.Context, character *model.Character) (*model.Character, error)
 	Save(ctx context.Context, character *model.Character) (*model.Character, error)
 	Delete(ctx context.Context, character *model.Character) error
-	FindById(ctx context.Context, id uint64) (*model.Character, error)
-	FindAll(context.Context) ([]*model.Character, error)
 
-	FindAllByOwner(ctx context.Context, owner string) ([]*model.Character, error)
+	FindById(ctx context.Context, id uint64) (*model.Character, error)
+	FindByName(ctx context.Context, name string) (*model.Character, error)
+
+	FindAllByOwner(ctx context.Context, owner string) (model.Characters, error)
+
+	FindAll(context.Context) ([]*model.Character, error)
 
 	WithTrx(trx *gorm.DB) CharacterRepository
 	Migrate() error
-	FindByName(ctx context.Context, name string) (*model.Character, error)
 }
 
 type characterRepository struct {
@@ -26,9 +28,13 @@ type characterRepository struct {
 
 func (r characterRepository) FindByName(ctx context.Context, name string) (*model.Character, error) {
 	var character *model.Character = nil
-	err := r.DB.WithContext(ctx).Where("name = ?", name).Find(&character).Error
-	if err != nil {
-		return nil, err
+	result := r.DB.WithContext(ctx).Where("name = ?", name).Find(&character)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return nil, nil
 	}
 
 	return character, nil
@@ -84,8 +90,8 @@ func (r characterRepository) FindAll(ctx context.Context) ([]*model.Character, e
 	return characters, r.DB.WithContext(ctx).Find(&characters).Error
 }
 
-func (r characterRepository) FindAllByOwner(ctx context.Context, owner string) ([]*model.Character, error) {
-	var characters []*model.Character
+func (r characterRepository) FindAllByOwner(ctx context.Context, owner string) (model.Characters, error) {
+	var characters model.Characters
 	return characters, r.DB.WithContext(ctx).Where("owner = ?", owner).Find(&characters).Error
 }
 

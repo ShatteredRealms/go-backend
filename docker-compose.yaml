@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -17,7 +17,7 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://kafka:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -50,8 +50,7 @@ services:
       - '14317:14317'
       - '14318:14318'
     depends_on:
-      clickhouse:
-        condition: service_healthy
+      - clickhouse
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.70.0
@@ -69,7 +68,7 @@ services:
     image: prom/alertmanager:v0.24.0
     restart: on-failure
     volumes:
-      - ../../config/alertmanager.yml:/etc/alertmanager/config.yml
+      - ./test/alertmanager.yml:/etc/alertmanager/config.yml
       - alertmanager_data:/alertmanager
     ports:
       - 9093:9093
@@ -89,7 +88,7 @@ services:
       - ./test/vector.toml:/etc/vector/vector.toml:ro
 
   postgres:
-    image: postgres:10.5
+    image: postgres
     restart: always
     environment:
       - POSTGRES_USER=postgres
@@ -101,8 +100,57 @@ services:
     ports:
       - '5432:5432'
     volumes: 
-      - ./postgres-data:/var/lib/postgresql/data
+      - postgres:/var/lib/postgresql/data
       - ./test/db-init.sql:/docker-entrypoint-initdb.d/create_tables.sql
+
+  keycloak:
+    image: quay.io/keycloak/keycloak
+    environment:
+      DB_VENDOR: postgres
+      DB_ADDR: postgres
+      DB_USER: postgres
+      DB_PASSWORD: password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    command:
+      - "start-dev"
+      - "--log-level=debug"
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+
+  sro-characters:
+    image: sro-characters:latest
+    ports:
+      - 8081:8081
+    depends_on:
+      - uptrace
+      - postgres
+    volumes:
+      - ./test/docker_config.yaml:/etc/sro/config.yaml
+
+  sro-chat:
+    image: sro-chat:latest
+    ports:
+      - 8180:8180
+    depends_on:
+      - sro-characters
+      - kafka
+      - uptrace
+      - postgres
+    volumes:
+      - ./test/docker_config.yaml:/etc/sro/config.yaml
+
+  sro-gamebackend:
+    image: sro-gamebackend:latest
+    ports:
+      - 8082:8082
+    depends_on:
+      - sro-characters
+      - uptrace
+    volumes:
+      - ./test/docker_config.yaml:/etc/sro/config.yaml
 
 volumes:
   uptrace_data:
@@ -111,4 +159,5 @@ volumes:
     driver: local
   alertmanager_data:
     driver: local
-  
+  postgres:
+    driver: local

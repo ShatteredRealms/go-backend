@@ -8,7 +8,7 @@ import "google/protobuf/wrappers.proto";
 
 service ChatService {
 
-  rpc ConnectChannel(ChannelIdMessage) returns (stream ChatMessage) {
+  rpc ConnectChannel(ChannelTarget) returns (stream ChatMessage) {
     option (google.api.http) = {
       get: "/v1/message/channel/{channel_id}"
     };
@@ -22,19 +22,19 @@ service ChatService {
 
   rpc SendChatMessage(SendChatMessageRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/v1/message/channel/{channel_id}"
+      put: "/v1/message/channel/{channel_id}"
       body: "*"
     };
   }
 
   rpc SendDirectMessage(SendDirectMessageRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/v1/message/characters/{character}"
+      put: "/v1/message/characters/{character}"
       body: "*"
     };
   }
 
-  rpc GetChannel(ChannelIdMessage) returns (ChatChannel) {
+  rpc GetChannel(ChannelTarget) returns (ChatChannel) {
     option (google.api.http) = {
       get: "/v1/channels/{channel_id}"
     };
@@ -47,7 +47,7 @@ service ChatService {
     };
   }
 
-  rpc DeleteChannel(ChannelIdMessage) returns (google.protobuf.Empty) {
+  rpc DeleteChannel(ChannelTarget) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       delete: "/v1/channels/{channel_id}"
     };
@@ -109,7 +109,7 @@ message CreateChannelMessage {
   bool public = 2;
 }
 
-message ChannelIdMessage {
+message ChannelTarget {
   uint64 channel_id = 1;
 }
 

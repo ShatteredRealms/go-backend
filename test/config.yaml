@@ -8,5 +8,6 @@ uptrace:
   port: 14317
   id: "2"
   token: "project2_secret_token"
-authFile: "./test/auth"
-keyDir: "./test/auth"
+keycloak:
+  baseUrl: "http://localhost:8080"
+  realm: "default"

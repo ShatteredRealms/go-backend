@@ -4,11 +4,14 @@ WORKDIR /src
 ENV CGO_ENABLED=0
 COPY ./ ./
 RUN go mod download
-RUN go build -o /out/gamebackend ./cmd/gamebackend
+ARG APP_VERSION=v0.0.1
+RUN go build \
+	-ldflags="-X 'github.com/ShatteredRealms/go-backend/pkg/config/default.Version=${APP_VERSION}'" \
+	-o /out/gamebackend ./cmd/gamebackend
 
 # Run server
 FROM alpine:3.15.0
 WORKDIR /app
 COPY --from=build /out/gamebackend ./
 EXPOSE 8082
-CMD [ "./gamebackend" ]
+ENTRYPOINT [ "./gamebackend" ]

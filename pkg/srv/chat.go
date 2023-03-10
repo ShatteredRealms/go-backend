@@ -2,29 +2,22 @@ package srv
 
 import (
 	"context"
-
+	chat "github.com/ShatteredRealms/go-backend/cmd/chat/app"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/ShatteredRealms/go-backend/pkg/interceptor"
-	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
-	"github.com/ShatteredRealms/go-backend/pkg/service"
-	"github.com/golang/protobuf/ptypes/empty"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"gorm.io/gorm"
 )
 
 type chatServiceServer struct {
 	pb.UnimplementedChatServiceServer
-	chatService service.ChatService
-	jwtService  service.JWTService
-
-	charactersServiceClient pb.CharactersServiceClient
+	server *chat.ChatServer
 }
 
-func (s chatServiceServer) ConnectChannel(request *pb.ChannelIdMessage, server pb.ChatService_ConnectChannelServer) error {
-	r := s.chatService.ChannelMessagesReader(server.Context(), uint(request.ChannelId))
+func (s chatServiceServer) ConnectChannel(target *pb.ChannelTarget, server pb.ChatService_ConnectChannelServer) error {
+	r := s.server.ChatService.ChannelMessagesReader(server.Context(), uint(target.ChannelId))
 
 	for {
 		msg, err := r.ReadMessage(server.Context())
@@ -45,40 +38,16 @@ func (s chatServiceServer) ConnectChannel(request *pb.ChannelIdMessage, server p
 	}
 }
 
-func (s chatServiceServer) SendChatMessage(ctx context.Context, request *pb.SendChatMessageRequest) (*empty.Empty, error) {
-	// Only the owning user can send messages. Do not allow even super admins to spoof.
-	if err := s.verifyUserOwnsCharacter(ctx, request.ChatMessage.CharacterName); err != nil {
-		return nil, err
-	}
-
-	return &empty.Empty{}, s.chatService.SendChannelMessage(ctx, request.ChatMessage.CharacterName, request.ChatMessage.Message, uint(request.ChannelId))
-}
-
-func (s chatServiceServer) SendDirectMessage(ctx context.Context, request *pb.SendDirectMessageRequest) (*empty.Empty, error) {
-	// Only the owning user can send messages. Do not allow even super admins to spoof.
-	if err := s.verifyUserOwnsCharacter(ctx, request.Character); err != nil {
-		return nil, err
-	}
-
-	return &empty.Empty{}, s.chatService.SendDirectMessage(ctx, request.ChatMessage.CharacterName, request.ChatMessage.Message, request.Character)
-}
-
-func (s chatServiceServer) ConnectDirectMessage(msg *pb.CharacterName, srv pb.ChatService_ConnectDirectMessageServer) error {
-	if !interceptor.AuthorizedForOther(srv.Context()) {
-		if err := s.verifyUserOwnsCharacter(srv.Context(), msg.Character); err != nil {
-			return err
-		}
-	}
-
-	r := s.chatService.DirectMessagesReader(srv.Context(), msg.Character)
+func (s chatServiceServer) ConnectDirectMessage(name *pb.CharacterName, server pb.ChatService_ConnectDirectMessageServer) error {
+	r := s.server.ChatService.DirectMessagesReader(server.Context(), name.Character)
 	for {
-		msg, err := r.ReadMessage(srv.Context())
+		msg, err := r.ReadMessage(server.Context())
 		if err != nil {
 			_ = r.Close()
 			return err
 		}
 
-		err = srv.Send(&pb.ChatMessage{
+		err = server.Send(&pb.ChatMessage{
 			CharacterName: string(msg.Key),
 			Message:       string(msg.Value),
 		})
@@ -90,123 +59,101 @@ func (s chatServiceServer) ConnectDirectMessage(msg *pb.CharacterName, srv pb.Ch
 	}
 }
 
-func (s chatServiceServer) CreateChannel(ctx context.Context, msg *pb.CreateChannelMessage) (*empty.Empty, error) {
-	_, err := s.chatService.CreateChannel(ctx, &model.ChatChannel{
-		Name:   msg.Name,
-		Public: msg.Public,
-	})
-
-	if err != nil {
+func (s chatServiceServer) SendChatMessage(ctx context.Context, request *pb.SendChatMessageRequest) (*emptypb.Empty, error) {
+	if err := s.verifyUserOwnsCharacter(ctx, request.ChatMessage.CharacterName); err != nil {
 		return nil, err
+	}
+
+	if err := s.server.ChatService.SendChannelMessage(ctx, request.ChatMessage.CharacterName, request.ChatMessage.Message, uint(request.ChannelId)); err != nil {
+		log.WithContext(ctx).Errorf("send channel chat message: %v", err)
+		return nil, status.Errorf(codes.Internal, "unable to send message")
 	}
 
 	return &emptypb.Empty{}, nil
 }
 
-func (s chatServiceServer) DeleteChannel(ctx context.Context, msg *pb.ChannelIdMessage) (*empty.Empty, error) {
-	err := s.chatService.DeleteChannel(ctx, &model.ChatChannel{
-		Model: gorm.Model{ID: uint(msg.ChannelId)},
-	})
-
-	return &emptypb.Empty{}, err
-}
-
-func (s chatServiceServer) AllChatChannels(ctx context.Context, _ *empty.Empty) (*pb.ChatChannels, error) {
-	channels, err := s.chatService.AllChannels(ctx)
-	if err != nil {
+func (s chatServiceServer) SendDirectMessage(ctx context.Context, request *pb.SendDirectMessageRequest) (*emptypb.Empty, error) {
+	if err := s.verifyUserOwnsCharacter(ctx, request.ChatMessage.CharacterName); err != nil {
 		return nil, err
 	}
 
-	resp := &pb.ChatChannels{
-		Channels: make([]*pb.ChatChannel, len(channels)),
+	if err := s.server.ChatService.SendDirectMessage(ctx, request.ChatMessage.CharacterName, request.ChatMessage.Message, request.Character); err != nil {
+		log.WithContext(ctx).Errorf("send direct chat message: %v", err)
+		return nil, status.Errorf(codes.Internal, "unable to send message")
 	}
 
-	for i, c := range channels {
-		resp.Channels[i] = c.ToPb()
-	}
-
-	return resp, nil
+	return &emptypb.Empty{}, nil
 }
 
-func (s chatServiceServer) GetChannel(ctx context.Context, msg *pb.ChannelIdMessage) (*pb.ChatChannel, error) {
-	channel, err := s.chatService.GetChannel(ctx, uint(msg.ChannelId))
-	if err != nil {
-		return nil, err
-	}
-
-	return channel.ToPb(), nil
+func (s chatServiceServer) GetChannel(ctx context.Context, target *pb.ChannelTarget) (*pb.ChatChannel, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (s chatServiceServer) EditChannel(ctx context.Context, msg *pb.UpdateChatChannelRequest) (*empty.Empty, error) {
-	return &emptypb.Empty{}, s.chatService.UpdateChannel(ctx, msg)
+func (s chatServiceServer) CreateChannel(ctx context.Context, message *pb.CreateChannelMessage) (*emptypb.Empty, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (s chatServiceServer) GetAuthorizedChatChannels(ctx context.Context, msg *pb.RequestAuthorizedChatChannels) (*pb.ChatChannels, error) {
-	if !interceptor.AuthorizedForOther(ctx) {
-		if err := s.verifyUserOwnsCharacter(ctx, msg.Character); err != nil {
-			return nil, err
-		}
-	}
-
-	channels, err := s.chatService.AuthorizedChannelsForCharacter(ctx, msg.Character)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := &pb.ChatChannels{
-		Channels: make([]*pb.ChatChannel, len(channels)),
-	}
-
-	for i, c := range channels {
-		resp.Channels[i] = c.ToPb()
-	}
-
-	return resp, nil
+func (s chatServiceServer) DeleteChannel(ctx context.Context, target *pb.ChannelTarget) (*emptypb.Empty, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (s chatServiceServer) AuthorizeUserForChatChannel(ctx context.Context, msg *pb.RequestChatChannelAuthChange) (*emptypb.Empty, error) {
-	return &emptypb.Empty{}, s.chatService.ChangeAuthorizationForCharacter(ctx, msg.Character, helpers.ArrayUint64ToUint(msg.Ids), true)
+func (s chatServiceServer) EditChannel(ctx context.Context, request *pb.UpdateChatChannelRequest) (*emptypb.Empty, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (s chatServiceServer) DeauthorizeUserForChatChannel(ctx context.Context, msg *pb.RequestChatChannelAuthChange) (*emptypb.Empty, error) {
-	return &emptypb.Empty{}, s.chatService.ChangeAuthorizationForCharacter(ctx, msg.Character, helpers.ArrayUint64ToUint(msg.Ids), false)
+func (s chatServiceServer) AllChatChannels(ctx context.Context, empty *emptypb.Empty) (*pb.ChatChannels, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
-// verifyUserOwnsCharacter returns an error if the user doesn't own the given characterName or characterId
+func (s chatServiceServer) GetAuthorizedChatChannels(ctx context.Context, channels *pb.RequestAuthorizedChatChannels) (*pb.ChatChannels, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s chatServiceServer) AuthorizeUserForChatChannel(ctx context.Context, change *pb.RequestChatChannelAuthChange) (*emptypb.Empty, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s chatServiceServer) DeauthorizeUserForChatChannel(ctx context.Context, change *pb.RequestChatChannelAuthChange) (*emptypb.Empty, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s chatServiceServer) mustEmbedUnimplementedChatServiceServer() {
+	//TODO implement me
+	panic("implement me")
+}
+
+func NewChatServiceServer(server *chat.ChatServer) pb.ChatServiceServer {
+	return &chatServiceServer{
+		server: server,
+	}
+}
+
 func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, characterName string) error {
-	username, err := interceptor.ExtractSubject(ctx, s.jwtService)
+	requesterId, err := helpers.ExtractTokenSub(ctx)
 	if err != nil {
-		return status.Error(codes.Internal, "Unable to parse auth token")
+		return status.Errorf(codes.Unauthenticated, "authentication required")
 	}
 
-	characters, err := s.charactersServiceClient.GetAllCharactersForUser(serverAuthContext(ctx, s.jwtService, "sro.com/chat"), &pb.UserTarget{Username: username})
+	serverCtx := helpers.ContextAddClientAuth(ctx, "sro-chat", s.server.GlobalConfig.Chat.Keycloak.ClientSecret)
+	chars, err := s.server.CharacterService.GetAllCharactersForUser(serverCtx, &pb.UserTarget{UserId: requesterId})
 	if err != nil {
-		return status.Error(codes.Internal, "Unable to parse auth token")
+		log.WithContext(ctx).Errorf("chat character service get for user: %v", err)
+		return status.Errorf(codes.Internal, "unable to verify character")
 	}
 
-	found := false
-	for _, character := range characters.Characters {
-		if character.Name.Value == characterName {
-			found = true
-			break
+	for _, c := range chars.Characters {
+		if c.Name == characterName {
+			return nil
 		}
 	}
 
-	if !found {
-		return status.Error(codes.Unauthenticated, "Unauthorized for this character")
-	}
-
-	return nil
-}
-
-func (s chatServiceServer) verifyCharacterAuthorizedChatChannel() {
-
-}
-
-func NewChatServiceServer(chatService service.ChatService, jwtService service.JWTService, csc pb.CharactersServiceClient) pb.ChatServiceServer {
-	return chatServiceServer{
-		chatService:             chatService,
-		jwtService:              jwtService,
-		charactersServiceClient: csc,
-	}
+	return status.Errorf(codes.Unauthenticated, "character not found")
 }

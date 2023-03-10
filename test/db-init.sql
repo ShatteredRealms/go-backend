@@ -1,4 +1,4 @@
-CREATE DATABASE accounts;
+CREATE DATABASE keycloak;
 CREATE DATABASE characters;
 CREATE DATABASE gamebackend;
 CREATE DATABASE chat;

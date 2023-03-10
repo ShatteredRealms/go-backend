@@ -2,115 +2,54 @@ package main
 
 import (
 	"context"
-	"net"
-	"net/http"
+	gamebackend "github.com/ShatteredRealms/go-backend/cmd/gamebackend/app"
+	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/ShatteredRealms/go-backend/pkg/srv"
+	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/ShatteredRealms/go-backend/pkg/config"
-	"github.com/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/ShatteredRealms/go-backend/pkg/service"
-	log "github.com/sirupsen/logrus"
 	"github.com/uptrace/uptrace-go/uptrace"
 )
 
-type appConfig struct {
-	GameBackend config.Server        `yaml:"gameBackend"`
-	Accounts    config.Server        `yaml:"accounts"`
-	Characters  config.Server        `yaml:"characters"`
-	KeyDir      string               `yaml:"keyDir"`
-	Agones      agonesConfig         `yaml:"agones"`
-	Uptrace     config.UptraceConfig `yaml:"uptrace"`
-}
-
-type agonesConfig struct {
-	KeyFile    string        `yaml:"keyFile"`
-	CertFile   string        `yaml:"certFile"`
-	CaCertFile string        `yaml:"caCertFile"`
-	Namespace  string        `yaml:"namespace"`
-	Allocator  config.Server `yaml:"allocator"`
-}
-
 var (
-	conf = &appConfig{
-		GameBackend: config.Server{
-			Local: config.ServerAddress{
-				Port: 8082,
-				Host: "",
-			},
-			Remote: config.ServerAddress{
-				Port: 8082,
-				Host: "",
-			},
-			Mode:     config.ModeDevelopment,
-			LogLevel: log.InfoLevel,
-			DB: config.DBPoolConfig{
-				Master: config.DBConfig{
-					Host:     "localhost",
-					Port:     "5432",
-					Name:     "gamebackend",
-					Username: "postgres",
-					Password: "password",
-				},
-				Slaves: []config.DBConfig{},
-			},
-		},
-		Characters: config.Server{
-			Remote: config.ServerAddress{
-				Port: 8081,
-				Host: "",
-			},
-		},
-		Accounts: config.Server{
-			Remote: config.ServerAddress{
-				Port: 8080,
-				Host: "",
-			},
-		},
-		KeyDir: "/etc/sro/auth",
-		Agones: agonesConfig{
-			KeyFile:    "/etc/sro/auth/agones/client/key",
-			CertFile:   "/etc/sro/auth/agones/client/cert",
-			CaCertFile: "/etc/sro/auth/agones/ca/ca",
-			Namespace:  "default",
-			Allocator: config.Server{
-				Remote: config.ServerAddress{
-					Port: 443,
-					Host: "",
-				},
-			},
-		},
-	}
+	conf        *config.GlobalSROConfig
+	serviceName = "gamebackend_service"
 )
 
 func init() {
-	helpers.SetupLogs()
-	config.SetupConfig(conf)
+	config.SetupLogger()
+	conf = config.NewGlobalConfig()
 }
 
 func main() {
 	ctx := context.Background()
 	uptrace.ConfigureOpentelemetry(
 		uptrace.WithDSN(conf.Uptrace.DSN()),
-		uptrace.WithServiceName("gamebackend_service"),
-		uptrace.WithServiceVersion("v1.0.0"),
+		uptrace.WithServiceName(serviceName),
+		uptrace.WithServiceVersion(conf.Version),
 	)
-	defer uptrace.Shutdown(ctx)
+	defer func(ctx context.Context) {
+		err := uptrace.Shutdown(ctx)
+		if err != nil {
+			log.WithContext(ctx).Errorf("shutdown uptrace: %v", err)
+		}
+	}(ctx)
 
-	jwtService, err := service.NewJWTService(conf.KeyDir)
-	helpers.Check(ctx, err, "jwt service")
+	server := gamebackend.NewServer(ctx, conf)
+	grpcServer, gwmux := helpers.InitServerDefaults()
+	address := server.GlobalConfig.Chat.Local.Address()
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
-	grpcServer, gwmux, err := NewServer(jwtService)
-	helpers.Check(ctx, err, "create grpc server")
+	pb.RegisterHealthServiceServer(grpcServer, srv.NewHealthServiceServer())
+	err := pb.RegisterHealthServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
+	helpers.Check(ctx, err, "register health service handler endpoint")
 
-	lis, err := net.Listen("tcp", conf.GameBackend.Local.Address())
-	helpers.Check(ctx, err, "listen")
+	pb.RegisterConnectionServiceServer(grpcServer, srv.NewConnectionServiceServer(server))
+	err = pb.RegisterConnectionServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
+	helpers.Check(ctx, err, "register chat service handler endpoint")
 
-	server := &http.Server{
-		Addr:    conf.GameBackend.Local.Address(),
-		Handler: helpers.GRPCHandlerFunc(grpcServer, gwmux),
-	}
-
-	log.Info("Server starting")
-
-	err = server.Serve(lis)
-	helpers.Check(ctx, err, "serve")
+	helpers.StartServer(ctx, grpcServer, gwmux, server.GlobalConfig.Characters.Local.Address())
 }

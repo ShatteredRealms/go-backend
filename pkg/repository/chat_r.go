@@ -7,7 +7,7 @@ import (
 )
 
 type ChatRepository interface {
-	AllChannels(ctx context.Context) ([]*model.ChatChannel, error)
+	AllChannels(ctx context.Context) (model.ChatChannels, error)
 	GetChannel(ctx context.Context, id uint) (*model.ChatChannel, error)
 	CreateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error)
 	DeleteChannel(ctx context.Context, channel *model.ChatChannel) error
@@ -15,7 +15,7 @@ type ChatRepository interface {
 
 	FindDeletedWithName(ctx context.Context, name string) (*model.ChatChannel, error)
 
-	AuthorizedChannelsForCharacter(ctx context.Context, character string) ([]*model.ChatChannel, error)
+	AuthorizedChannelsForCharacter(ctx context.Context, character string) (model.ChatChannels, error)
 	ChangeAuthorizationForCharacter(ctx context.Context, character string, channelIds []uint, addAuth bool) error
 
 	Migrate(ctx context.Context) error
@@ -27,23 +27,26 @@ type chatRepository struct {
 
 func (r chatRepository) ChangeAuthorizationForCharacter(ctx context.Context, character string, channelIds []uint, addAuth bool) error {
 	if addAuth {
+		tx := r.DB.Begin()
 		for _, id := range channelIds {
-			if err := r.DB.Create(&model.ChatChannelPermission{
+			if err := tx.Create(&model.ChatChannelPermission{
 				ChannelId:     id,
 				CharacterName: character,
 			}).Error; err != nil {
+				tx.Rollback()
 				return err
 			}
 		}
 
+		tx.Commit()
 		return nil
 	}
 
 	return r.DB.Delete(&model.ChatChannelPermission{}, "characterName = ? AND channelId IN ?", character, channelIds).Error
 }
 
-func (r chatRepository) AuthorizedChannelsForCharacter(ctx context.Context, character string) ([]*model.ChatChannel, error) {
-	var channels []*model.ChatChannel
+func (r chatRepository) AuthorizedChannelsForCharacter(ctx context.Context, character string) (model.ChatChannels, error) {
+	var channels model.ChatChannels
 	r.DB.
 		Model(&model.ChatChannelPermission{}).
 		Select("chat_channels.id chat_channels.name").
@@ -57,8 +60,8 @@ func (r chatRepository) UpdateChannel(ctx context.Context, channel *model.ChatCh
 	return r.DB.WithContext(ctx).Save(&channel).Error
 }
 
-func (r chatRepository) AllChannels(ctx context.Context) ([]*model.ChatChannel, error) {
-	var channels []*model.ChatChannel
+func (r chatRepository) AllChannels(ctx context.Context) (model.ChatChannels, error) {
+	var channels model.ChatChannels
 	r.DB.WithContext(ctx).Find(&channels)
 	return channels, r.DB.Error
 }
@@ -82,14 +85,30 @@ func (r chatRepository) Migrate(ctx context.Context) error {
 
 func (r chatRepository) GetChannel(ctx context.Context, id uint) (*model.ChatChannel, error) {
 	var channel *model.ChatChannel
-	r.DB.WithContext(ctx).Where("id = ?", id).Find(&channel)
-	return channel, r.DB.Error
+	result := r.DB.WithContext(ctx).Where("id = ?", id).Find(&channel)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return nil, nil
+	}
+
+	return channel, nil
 }
 
 func (r chatRepository) FindDeletedWithName(ctx context.Context, name string) (*model.ChatChannel, error) {
 	var channel *model.ChatChannel
-	r.DB.WithContext(ctx).Unscoped().Where("name = ?", name).Find(&channel)
-	return channel, r.DB.Error
+	result := r.DB.WithContext(ctx).Unscoped().Where("name = ?", name).Find(&channel)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return nil, nil
+	}
+
+	return channel, nil
 }
 
 func NewChatRepository(db *gorm.DB) ChatRepository {

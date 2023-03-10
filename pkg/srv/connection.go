@@ -1,11 +1,12 @@
 package srv
 
 import (
-	"context"
-
 	aapb "agones.dev/agones/pkg/allocation/go"
+	"context"
+	gamebackend "github.com/ShatteredRealms/go-backend/cmd/gamebackend/app"
+	"github.com/ShatteredRealms/go-backend/pkg/config"
+	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
-	utilService "github.com/ShatteredRealms/go-backend/pkg/service"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,36 +14,14 @@ import (
 
 type connectionServiceServer struct {
 	pb.UnimplementedConnectionServiceServer
-	jwtService utilService.JWTService
-	allocator  aapb.AllocationServiceClient
-	characters pb.CharactersServiceClient
-
-	// localhostMode used to tell whether to search for a server on kubernetes or return a constant localhost connection
-	localhostMode bool
-
-	// namespace kubernetes namespace to search for gameservers in
-	namespace string
+	server *gamebackend.GameBackendServer
 }
 
-func NewConnectionServiceServer(
-	jwtService utilService.JWTService,
-	allocator aapb.AllocationServiceClient,
-	characters pb.CharactersServiceClient,
-	namespace string,
-	localHostMode bool,
-) pb.ConnectionServiceServer {
-
-	return &connectionServiceServer{
-		jwtService:    jwtService,
-		allocator:     allocator,
-		characters:    characters,
-		localhostMode: localHostMode,
-		namespace:     namespace,
-	}
-}
-
-func (s *connectionServiceServer) ConnectGameServer(ctx context.Context, request *pb.ConnectGameServerRequest) (*pb.ConnectGameServerResponse, error) {
-	if s.localhostMode {
+func (s connectionServiceServer) ConnectGameServer(
+	ctx context.Context,
+	request *pb.ConnectGameServerRequest,
+) (*pb.ConnectGameServerResponse, error) {
+	if s.server.GlobalConfig.GameBackend.Mode == config.LocalMode {
 		return &pb.ConnectGameServerResponse{
 			Address: "127.0.0.1",
 			Port:    7777,
@@ -50,27 +29,28 @@ func (s *connectionServiceServer) ConnectGameServer(ctx context.Context, request
 	}
 
 	// If the current user can't get the character, then deny the request
-	//character, err := s.characters.GetCharacter(
-	//    ctx,
-	//    &pb.CharacterTarget{CharacterId: request.CharacterId},
-	//)
-	//if err != nil {
-	//
-	//    fmt.Println("err 1")
-	//    return nil, err
-	//}
+	character, err := s.server.CharactersClient.GetCharacter(
+		ctx,
+		&pb.CharacterTarget{CharacterId: request.CharacterId},
+	)
+	if err != nil || character == nil {
+		log.WithContext(ctx).Errorf("unable to get character %d: %s", request.CharacterId, err)
+		return nil, err
+	}
 
-	//world := "Scene_Demo"
-	//if character.Location != nil && character.Location.World != "" {
-	//    world = character.Location.World
-	//}
+	world := "Scene_Demo"
+	if character.Location != nil && character.Location.World != "" {
+		world = character.Location.World
+	}
+
+	log.WithContext(ctx).Debugf("character world: %s", world)
 
 	allocatorReq := &aapb.AllocationRequest{
-		Namespace: s.namespace,
+		Namespace: s.server.GlobalConfig.Agones.Namespace,
 		GameServerSelectors: []*aapb.GameServerSelector{
 			{
 				//MatchLabels: map[string]string{
-				//    "world": world,
+				//	"world": world,
 				//},
 				GameServerState: aapb.GameServerSelector_ALLOCATED,
 				Players: &aapb.PlayerSelector{
@@ -80,7 +60,7 @@ func (s *connectionServiceServer) ConnectGameServer(ctx context.Context, request
 			},
 			{
 				//MatchLabels: map[string]string{
-				//    "world": world,
+				//	"world": world,
 				//},
 				GameServerState: aapb.GameServerSelector_READY,
 				Players: &aapb.PlayerSelector{
@@ -91,7 +71,9 @@ func (s *connectionServiceServer) ConnectGameServer(ctx context.Context, request
 		},
 	}
 
-	allocatorResp, err := s.allocator.Allocate(serverAuthContext(ctx, s.jwtService, "sro.com/gamebackend/v1/"), allocatorReq)
+	// TODO change clientId to config
+	serverCtx := helpers.ContextAddClientAuth(ctx, "sro-gamebackend", s.server.GlobalConfig.Chat.Keycloak.ClientSecret)
+	allocatorResp, err := s.server.AgonesClient.Allocate(serverCtx, allocatorReq)
 	if err != nil {
 		log.WithContext(ctx).Errorf("allocating: %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -101,4 +83,10 @@ func (s *connectionServiceServer) ConnectGameServer(ctx context.Context, request
 		Address: allocatorResp.Address,
 		Port:    uint32(allocatorResp.Ports[0].Port),
 	}, nil
+}
+
+func NewConnectionServiceServer(server *gamebackend.GameBackendServer) pb.ConnectionServiceServer {
+	return &connectionServiceServer{
+		server: server,
+	}
 }

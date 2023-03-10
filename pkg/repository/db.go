@@ -3,8 +3,8 @@ package repository
 import (
 	"fmt"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/lib/pq"
 	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
 	"gopkg.in/yaml.v3"

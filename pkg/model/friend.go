@@ -3,13 +3,15 @@ package model
 import "time"
 
 type UserFriend struct {
-	Username       string    `gorm:"primarykey" json:"userId"`
-	FriendUsername string    `gorm:"primarykey" json:"friendUserId"`
-	CreatedAt      time.Time `json:"createdAt"`
+	OwningId  string    `gorm:"primarykey" json:"user"`
+	FriendId  string    `gorm:"primarykey" json:"friendUser"`
+	CreatedAt time.Time `json:"createdAt"`
 }
+type UserFriends []*UserFriend
 
 type UserBlock struct {
-	Username        string    `gorm:"primarykey" json:"userId"`
-	BlockedUsername string    `gorm:"primarykey" json:"blockedUserId"`
-	CreatedAt       time.Time `json:"createdAt"`
+	OwningId  string    `gorm:"primarykey" json:"user"`
+	BlockedId string    `gorm:"primarykey" json:"blockedUser"`
+	CreatedAt time.Time `json:"createdAt"`
 }
+type UserBlocks []*UserBlock

@@ -2,114 +2,54 @@ package main
 
 import (
 	"context"
-	"net"
-	"net/http"
-
-	chat "github.com/ShatteredRealms/go-backend/cmd/chat/global"
-	"github.com/ShatteredRealms/go-backend/pkg/config"
+	chat "github.com/ShatteredRealms/go-backend/cmd/chat/app"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/ShatteredRealms/go-backend/pkg/repository"
-	"github.com/ShatteredRealms/go-backend/pkg/service"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/ShatteredRealms/go-backend/pkg/srv"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/uptrace/uptrace-go/uptrace"
-	"go.opentelemetry.io/otel"
 )
 
-type appConfig struct {
-	Chat       config.Server        `yaml:"chat"`
-	Accounts   config.Server        `yaml:"accounts"`
-	Characters config.Server        `yaml:"characters"`
-	KeyDir     string               `yaml:"keyDir"`
-	Uptrace    config.UptraceConfig `yaml:"uptrace"`
-}
-
 var (
-	conf = &appConfig{
-		Chat: config.Server{
-			Local: config.ServerAddress{
-				Port: 8180,
-				Host: "",
-			},
-			Remote: config.ServerAddress{
-				Port: 8180,
-				Host: "",
-			},
-			Kafka: config.ServerAddress{
-				Port: 29092,
-				Host: "localhost",
-			},
-			Mode:     "development",
-			LogLevel: log.InfoLevel,
-			DB: config.DBPoolConfig{
-				Master: config.DBConfig{
-					Host:     "localhost",
-					Port:     "5432",
-					Name:     "chat",
-					Username: "postgres",
-					Password: "password",
-				},
-				Slaves: []config.DBConfig{},
-			},
-		},
-		Accounts: config.Server{
-			Remote: config.ServerAddress{
-				Port: 8080,
-				Host: "",
-			},
-		},
-		Characters: config.Server{
-			Remote: config.ServerAddress{
-				Port: 8081,
-				Host: "",
-			},
-		},
-		KeyDir: "/etc/sro/auth",
-	}
+	conf        *config.GlobalSROConfig
+	serviceName = "chat_service"
 )
 
 func init() {
-	helpers.SetupLogs()
-	config.SetupConfig(conf)
+	config.SetupLogger()
+	conf = config.NewGlobalConfig()
 }
 
 func main() {
 	ctx := context.Background()
 	uptrace.ConfigureOpentelemetry(
 		uptrace.WithDSN(conf.Uptrace.DSN()),
-		uptrace.WithServiceName("chat_service"),
-		uptrace.WithServiceVersion("v1.0.0"),
+		uptrace.WithServiceName(serviceName),
+		uptrace.WithServiceVersion(conf.Version),
 	)
-	defer uptrace.Shutdown(ctx)
+	defer func(ctx context.Context) {
+		err := uptrace.Shutdown(ctx)
+		if err != nil {
+			log.WithContext(ctx).Errorf("shutdown uptrace: %v", err)
+		}
+	}(ctx)
 
-	chat.Tracer = otel.Tracer("chat")
-	ctx, span := chat.Tracer.Start(ctx, "main")
-	db, err := repository.ConnectDB(conf.Chat.DB)
-	helpers.Check(ctx, err, "db connect from file")
+	server := chat.NewServer(ctx, conf)
+	grpcServer, gwmux := helpers.InitServerDefaults()
+	address := server.GlobalConfig.Chat.Local.Address()
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
-	chatRepository := repository.NewChatRepository(db)
-	helpers.Check(ctx, chatRepository.Migrate(ctx), "role repo")
+	pb.RegisterHealthServiceServer(grpcServer, srv.NewHealthServiceServer())
+	err := pb.RegisterHealthServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
+	helpers.Check(ctx, err, "register health service handler endpoint")
 
-	chatService, err := service.NewChatService(ctx, chatRepository, conf.Chat.Kafka)
-	helpers.Check(ctx, err, "chat service")
+	pb.RegisterChatServiceServer(grpcServer, srv.NewChatServiceServer(server))
+	err = pb.RegisterChatServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
+	helpers.Check(ctx, err, "register chat service handler endpoint")
 
-	jwtService, err := service.NewJWTService(conf.KeyDir)
-	helpers.Check(ctx, err, "jwt service")
-
-	grpcServer, gwmux, err := NewServer(ctx, jwtService, chatService)
-	helpers.Check(ctx, err, "create grpc server")
-
-	lis, err := net.Listen("tcp", conf.Chat.Local.Address())
-	helpers.Check(ctx, err, "listen")
-
-	server := &http.Server{
-		Addr:    conf.Chat.Local.Address(),
-		Handler: helpers.GRPCHandlerFunc(grpcServer, gwmux),
-	}
-
-	log.Info("Server starting")
-
-	span.End()
-
-	err = server.Serve(lis)
-	helpers.Check(ctx, err, "serve")
+	helpers.StartServer(ctx, grpcServer, gwmux, server.GlobalConfig.Characters.Local.Address())
 }

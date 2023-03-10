@@ -1,0 +1,32 @@
+characters:
+  remote:
+    host: sro-characters
+  db:
+    master:
+      host: postgres
+  kafka:
+    host: kafka
+  keycloak:
+    baseUrl: http://keycloak:8080
+chat:
+  kafka:
+    host: kafka
+  remote:
+    host: sro-chat
+  db:
+    master:
+      host: postgres
+  keycloak:
+    baseUrl: http://keycloak:8080
+gamebackend:
+  remote:
+    host: sro-gamebackend
+  db:
+    master:
+      host: postgres
+  kafka:
+    host: kafka
+  keycloak:
+    baseUrl: http://keycloak:8080
+uptrace:
+  host: uptrace

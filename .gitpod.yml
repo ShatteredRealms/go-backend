@@ -29,10 +29,6 @@ ports:
     name: Website
     description: Frontend website
     visibility: public
-  - port: 8080
-    name: Accounts
-    description: Backend authentication and authorization service API
-    visibility: public
   - port: 8081
     name: Characters
     description: Backend character management service APi

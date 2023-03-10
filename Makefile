@@ -25,6 +25,7 @@ endif
 
 # Application versions
 BASE_VERSION = $(shell git describe --tags --always --abbrev=0 --match='v[0-9]*.[0-9]*.[0-9]*' 2> /dev/null | sed 's/^.//')
+BASE_VERSION = v1.0.0
 COMMIT_HASH = $(shell git rev-parse --short HEAD)
 
 
@@ -60,24 +61,24 @@ report: test
 	go tool cover -func=$(ROOT_DIR)/coverage.out
 	go tool cover -html=$(ROOT_DIR)/coverage.out
 
-build: build-accounts build-characters build-chat build-gamebackend
+build: build-characters build-chat build-gamebackend
 build-%:
-	go build -o $(ROOT_DIR)/bin/$* $(ROOT_DIR)/cmd/$*
+	go build -ldflags="-X 'github.com/ShatteredRealms/go-backend/pkg/config/default.Version=$(BASE_VERSION)'" -o $(ROOT_DIR)/bin/$* $(ROOT_DIR)/cmd/$*  
 
-run: run-accounts run-characters run-chat run-gamebackend
+run: run-characters run-chat run-gamebackend
 run-%:
 	go run $(ROOT_DIR)/cmd/$*
 
 deploy: aws-docker-login push
 
-build-image: build-image-accounts build-image-characters build-image-chat build-image-gamebackend
-build-image-%:
-	docker build -t sro-$* -f build/$*.Dockerfile .
+buildi: buildi-characters buildi-chat buildi-gamebackend
+buildi-%:
+	docker build --build-arg APP_VERSION=$(BASE_VERSION) -t sro-$* -f build/$*.Dockerfile .
 
 aws-docker-login:
 	aws ecr get-login-password | docker login --username AWS --password-stdin $(SRO_BASE_REGISTRY)
 
-pushf: pushf-accounts pushf-characters pushf-chat pushf-gamebackend
+pushf: pushf-characters pushf-chat pushf-gamebackend
 pushf-%:
 	docker tag sro-$* $(SRO_REGISTRY)/$*:latest
 	docker tag sro-$* $(SRO_REGISTRY)/$*:$(BASE_VERSION)
@@ -86,8 +87,8 @@ pushf-%:
 	docker push $(SRO_REGISTRY)/$*:$(BASE_VERSION)
 	docker push $(SRO_REGISTRY)/$*:$(BASE_VERSION)-$(COMMIT_HASH)
 
-push: push-accounts push-characters push-chat push-gamebackend
-push-%: build-image-%
+push: push-characters push-chat push-gamebackend
+push-%: buildi-%
 	docker tag sro-$* $(SRO_REGISTRY)/$*:latest
 	docker tag sro-$* $(SRO_REGISTRY)/$*:$(BASE_VERSION)
 	docker tag sro-$* $(SRO_REGISTRY)/$*:$(BASE_VERSION)-$(COMMIT_HASH)

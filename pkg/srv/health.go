@@ -10,7 +10,7 @@ type healthService struct {
 	pb.UnimplementedHealthServiceServer
 }
 
-func NewHealthServiceServer() *healthService {
+func NewHealthServiceServer() pb.HealthServiceServer {
 	return &healthService{}
 }
 

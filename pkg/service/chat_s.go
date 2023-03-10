@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/ShatteredRealms/go-backend/pkg/config"
@@ -14,10 +15,13 @@ import (
 
 var (
 	tracer = otel.Tracer("Inner-ChatService")
+
+	// ErrEmptyMessage thrown when a request to send a message is made with an empty message
+	ErrEmptyMessage = errors.New("message cannot be empty")
 )
 
 type ChatService interface {
-	AllChannels(ctx context.Context) ([]*model.ChatChannel, error)
+	AllChannels(ctx context.Context) (model.ChatChannels, error)
 	GetChannel(ctx context.Context, id uint) (*model.ChatChannel, error)
 	UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) error
 	CreateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error)
@@ -29,7 +33,7 @@ type ChatService interface {
 	ChannelMessagesReader(ctx context.Context, channelId uint) *kafka.Reader
 	DirectMessagesReader(ctx context.Context, username string) *kafka.Reader
 
-	AuthorizedChannelsForCharacter(ctx context.Context, character string) ([]*model.ChatChannel, error)
+	AuthorizedChannelsForCharacter(ctx context.Context, character string) (model.ChatChannels, error)
 	ChangeAuthorizationForCharacter(ctx context.Context, character string, channelIds []uint, addAuth bool) error
 }
 
@@ -45,7 +49,7 @@ func (s chatService) ChangeAuthorizationForCharacter(ctx context.Context, charac
 	return s.chatRepo.ChangeAuthorizationForCharacter(ctx, character, channelIds, addAuth)
 }
 
-func (s chatService) AuthorizedChannelsForCharacter(ctx context.Context, character string) ([]*model.ChatChannel, error) {
+func (s chatService) AuthorizedChannelsForCharacter(ctx context.Context, character string) (model.ChatChannels, error) {
 	return s.chatRepo.AuthorizedChannelsForCharacter(ctx, character)
 }
 
@@ -102,11 +106,14 @@ func (s chatService) DirectMessagesReader(ctx context.Context, characterName str
 
 	return r
 }
-
-// TODO: verify message not empty
 func (s chatService) SendChannelMessage(ctx context.Context, characterName string, message string, channelId uint) error {
 	ctx, span := tracer.Start(ctx, "SendChannelMessage")
 	defer span.End()
+
+	if len(message) == 0 {
+		return ErrEmptyMessage
+	}
+
 	w := s.getChannelMessageWriter(ctx, channelId)
 
 	return w.WriteMessages(ctx,
@@ -117,8 +124,13 @@ func (s chatService) SendChannelMessage(ctx context.Context, characterName strin
 	)
 }
 
-// TODO: verify message not empty
 func (s chatService) SendDirectMessage(ctx context.Context, characterName string, message string, targetCharacterName string) error {
+	ctx, span := tracer.Start(ctx, "SendDirectMessage")
+	defer span.End()
+
+	if len(message) == 0 {
+		return ErrEmptyMessage
+	}
 	w := s.getUserMessageWriter(ctx, targetCharacterName)
 
 	return w.WriteMessages(ctx,
@@ -129,7 +141,7 @@ func (s chatService) SendDirectMessage(ctx context.Context, characterName string
 	)
 }
 
-func (s chatService) AllChannels(ctx context.Context) ([]*model.ChatChannel, error) {
+func (s chatService) AllChannels(ctx context.Context) (model.ChatChannels, error) {
 	return s.chatRepo.AllChannels(ctx)
 }
 
@@ -158,9 +170,9 @@ func NewChatService(ctx context.Context, chatRepo repository.ChatRepository, kaf
 	ctx, span := tracer.Start(ctx, "NewChatService")
 	defer span.End()
 
-	conn, err := repository.ConnectKafka(ctx, kafkaAddress)
+	conn, err := repository.ConnectKafka(kafkaAddress)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("connecting kafka: %v", err)
 	}
 
 	service := chatService{

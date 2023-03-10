@@ -7,50 +7,50 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 
 service CharactersService {
-  rpc GetAllGenders(google.protobuf.Empty) returns (Genders) {
+  rpc GetGenders(google.protobuf.Empty) returns (Genders) {
     option (google.api.http) = {
       get: "/v1/genders"
     };
   }
 
-  rpc GetAllRealms(google.protobuf.Empty) returns (Realms) {
+  rpc GetRealms(google.protobuf.Empty) returns (Realms) {
     option (google.api.http) = {
       get: "/v1/realms"
     };
   }
 
-  rpc GetAllCharacters(google.protobuf.Empty) returns (Characters) {
+  rpc GetCharacters(google.protobuf.Empty) returns (CharactersResponse) {
     option (google.api.http) = {
       get: "/v1/characters"
     };
   }
 
-  rpc GetAllCharactersForUser(UserTarget) returns (Characters) {
-    option (google.api.http) = {
-      get: "/v1/users/{username}/characters"
-    };
-  }
-
-  rpc GetCharacter(CharacterTarget) returns (Character) {
+  rpc GetCharacter(CharacterTarget) returns (CharacterResponse) {
     option (google.api.http) = {
       get: "/v1/characters/{character_id}"
     };
   }
 
-  rpc CreateCharacter(CreateCharacterRequest) returns (Character) {
+  rpc CreateCharacter(CreateCharacterRequest) returns (CharacterResponse) {
     option (google.api.http) = {
-      post: "/v1/users/{username}/characters"
+      post: "/v1/users/{user_id}/characters"
       body: "*"
     };
   }
 
-  rpc DeleteCharacter(Character) returns (google.protobuf.Empty) {
+  rpc DeleteCharacter(CharacterTarget) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      delete: "/v1/characters/{id}"
+      delete: "/v1/characters/{character_id}"
     };
   }
 
-  rpc EditCharacter(Character) returns (Character) {
+  rpc GetAllCharactersForUser(UserTarget) returns (CharactersResponse) {
+    option (google.api.http) = {
+      get: "/v1/users/{user_id}/characters"
+    };
+  }
+
+  rpc EditCharacter(EditCharacterRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       put: "/v1/characters/{id}"
       body: "*"
@@ -58,7 +58,7 @@ service CharactersService {
   }
 
   // Adds the given amount of playtime to the character and returns the total playtime
-  rpc AddCharacterPlayTime(PlayTimeMessage) returns (PlayTimeMessage) {
+  rpc AddCharacterPlayTime(CharacterTarget) returns (PlayTimeResponse) {
     option (google.api.http) = {
       put: "/v1/characters/{character_id}/playtime"
       body: "*"
@@ -66,42 +66,48 @@ service CharactersService {
   }
 }
 
-message PlayTimeMessage {
-  uint64 character_id = 1;
-  uint64 time = 2;
-}
-
-message DeleteCharacterRequest {
-  uint64 character_id = 1;
+message PlayTimeResponse {
+  uint64 time = 1;
 }
 
 message CreateCharacterRequest {
-  string username = 1;
+  string user_id = 1;
   string name = 2;
-  uint64 gender = 3;
-  uint64 realm = 4;
+  string gender = 3;
+  string realm = 4;
 }
 
 message UserTarget {
-  string username = 1;
+  string user_id = 1;
 }
 
 message CharacterTarget {
   uint64 character_id = 1;
 }
 
-message Character {
+message EditCharacterRequest {
   uint64 id = 1;
 
   // The user account that owns the character
-  google.protobuf.StringValue owner = 2;
+  google.protobuf.StringValue owner_id = 2;
   google.protobuf.StringValue name = 3;
-  google.protobuf.UInt64Value gender = 4;
-  google.protobuf.UInt64Value realm = 5;
+  google.protobuf.StringValue gender = 4;
+  google.protobuf.StringValue realm = 5;
 
   // Total play time in minutes
   google.protobuf.UInt64Value play_time = 7;
 
+  Location location = 8;
+}
+
+
+message CharacterResponse {
+  uint64 id = 1;
+  string owner = 2;
+  string name = 3;
+  string gender = 4;
+  string realm = 5;
+  uint64 play_time = 6;
   Location location = 8;
 }
 
@@ -112,18 +118,16 @@ message Location {
   float z = 4;
 }
 
-message Characters {
-  repeated Character characters = 1;
+message CharactersResponse {
+  repeated CharacterResponse characters = 1;
 }
 
 message Gender {
-  uint64 id = 1;
-  string name = 2;
+  string name = 1;
 }
 
 message Realm {
-  uint64 id = 1;
-  string name = 2;
+  string name = 1;
 }
 
 message Genders {
