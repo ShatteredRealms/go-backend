@@ -3,8 +3,8 @@ package srv
 import (
 	context "context"
 	"fmt"
+	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/ShatteredRealms/go-backend/pkg/service"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -21,32 +21,41 @@ type charactersServiceServer struct {
 }
 
 var (
-	CharacterRoles []*model.RoleRepresentation
+	CharacterRoles = make([]*gocloak.Role, 0)
 
-	RoleAddCharacterPlayTime = registerRole(CharacterRoles, &model.RoleRepresentation{
-		Name:        "playtime",
-		Description: "Allows adding playtime to any character",
+	RoleAddCharacterPlayTime = registerCharacterRole(&gocloak.Role{
+		Name:        gocloak.StringP("playtime"),
+		Description: gocloak.StringP("Allows adding playtime to any character"),
 	})
 
-	RoleCharacterManagement = registerRole(CharacterRoles, &model.RoleRepresentation{
-		Name:        "manage",
-		Description: "Allows creating, reading and deleting of own characters",
+	RoleCharacterManagement = registerCharacterRole(&gocloak.Role{
+		Name:        gocloak.StringP("manage"),
+		Description: gocloak.StringP("Allows creating, reading and deleting of own characters"),
 	})
 
-	RoleCharacterManagementOther = registerRole(CharacterRoles, &model.RoleRepresentation{
-		Name:        "manage_other",
-		Description: "Allows creating, reading and deleting of any characters",
+	RoleCharacterManagementOther = registerCharacterRole(&gocloak.Role{
+		Name:        gocloak.StringP("manage_other"),
+		Description: gocloak.StringP("Allows creating, reading and deleting of any characters"),
 	})
 )
+
+func registerCharacterRole(role *gocloak.Role) *gocloak.Role {
+	CharacterRoles = append(CharacterRoles, role)
+	return role
+}
 
 // AddCharacterPlayTime implements pb.CharactersServiceServer
 func (s *charactersServiceServer) AddCharacterPlayTime(
 	ctx context.Context,
 	msg *pb.CharacterTarget,
 ) (*pb.PlayTimeResponse, error) {
-	// Validate requestor has correct permission
-	err := CtxHasRole(ctx, RoleAddCharacterPlayTime.Name)
+	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		return nil, ErrNotAuthorized
+	}
+
+	// Validate requester has correct permission
+	if !claims.HasRole(RoleAddCharacterPlayTime, model.CharactersClientId) {
 		return nil, ErrNotAuthorized
 	}
 
@@ -69,14 +78,13 @@ func (s *charactersServiceServer) CreateCharacter(
 		return nil, ErrNotAuthorized
 	}
 
-	// Verify requester has permission
-	err = CtxHasRole(ctx, RoleCharacterManagement.Name)
-	if err != nil {
+	// Validate requester has correct permission
+	if !claims.HasRole(RoleCharacterManagement, model.CharactersClientId) {
 		return nil, ErrNotAuthorized
 	}
 
 	// If not requesting to create character for self, verify requester has permission for other
-	if claims.Subject != msg.UserId && CtxHasRole(ctx, RoleCharacterManagementOther.Name) != nil {
+	if claims.Subject != msg.UserId && !claims.HasRole(RoleCharacterManagementOther, model.CharactersClientId) {
 		return nil, ErrNotAuthorized
 	}
 
@@ -108,9 +116,8 @@ func (s *charactersServiceServer) DeleteCharacter(
 		return nil, ErrNotAuthorized
 	}
 
-	// Verify requester has permission
-	err = CtxHasRole(ctx, RoleCharacterManagement.Name)
-	if err != nil {
+	// Validate requester has correct permission
+	if !claims.HasRole(RoleCharacterManagement, model.CharactersClientId) {
 		return nil, ErrNotAuthorized
 	}
 
@@ -120,7 +127,7 @@ func (s *charactersServiceServer) DeleteCharacter(
 	}
 
 	// If not requesting to delete requester own character, verify it has permission to delete others
-	if claims.Subject != character.OwnerId && CtxHasRole(ctx, RoleCharacterManagementOther.Name) != nil {
+	if claims.Subject != character.OwnerId && !claims.HasRole(RoleCharacterManagementOther, model.CharactersClientId) {
 		return nil, ErrNotAuthorized
 	}
 
@@ -143,8 +150,8 @@ func (s *charactersServiceServer) EditCharacter(
 		return nil, ErrNotAuthorized
 	}
 
-	err = CtxHasRole(ctx, RoleCharacterManagement.Name)
-	if err != nil {
+	// Validate requester has correct permission
+	if !claims.HasRole(RoleCharacterManagement, model.CharactersClientId) {
 		return nil, ErrNotAuthorized
 	}
 
@@ -158,7 +165,7 @@ func (s *charactersServiceServer) EditCharacter(
 		return nil, status.Error(codes.InvalidArgument, "character does not exist")
 	}
 
-	if char.OwnerId != claims.Subject && CtxHasRole(ctx, RoleCharacterManagementOther.Name) != nil {
+	if char.OwnerId != claims.Subject && claims.HasRole(RoleCharacterManagementOther, model.CharactersClientId) {
 		return nil, ErrNotAuthorized
 	}
 
@@ -180,6 +187,11 @@ func (s *charactersServiceServer) GetCharacter(
 		return nil, ErrNotAuthorized
 	}
 
+	// Validate requester has correct permission
+	if !claims.HasRole(RoleCharacterManagement, model.CharactersClientId) {
+		return nil, ErrNotAuthorized
+	}
+
 	char, err := s.server.Service.FindById(ctx, msg.CharacterId)
 	if err != nil {
 		log.WithContext(ctx).Errorf("find character %d: %v", msg.CharacterId, err)
@@ -190,7 +202,7 @@ func (s *charactersServiceServer) GetCharacter(
 		return nil, status.Error(codes.InvalidArgument, "character does not exist")
 	}
 
-	if char.OwnerId != claims.Subject && CtxHasRole(ctx, RoleCharacterManagementOther.Name) != nil {
+	if char.OwnerId != claims.Subject && claims.HasRole(RoleCharacterManagementOther, model.CharactersClientId) {
 		return nil, ErrNotAuthorized
 	}
 
@@ -233,17 +245,31 @@ func (s *charactersServiceServer) GetRealms(
 }
 
 func NewCharactersServiceServer(
+	ctx context.Context,
 	server *characters.CharactersServerContext,
 ) (pb.CharactersServiceServer, error) {
-	kc := service.NewKeycloakClient(server.GlobalConfig.Characters.Keycloak)
-	err := kc.CreateRolesNotExist(CharacterRoles...)
+	token, err := server.KeycloakClient.LoginClient(
+		ctx,
+		server.GlobalConfig.Characters.Keycloak.ClientId,
+		server.GlobalConfig.Characters.Keycloak.ClientSecret,
+		server.GlobalConfig.Characters.Keycloak.Realm,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("generating roles: %v", err)
+		return nil, fmt.Errorf("login keycloak: %v", err)
 	}
 
-	id := server.GlobalConfig.Characters.Keycloak.ClientId
 	for _, role := range CharacterRoles {
-		role.ClientId = id
+		_, err = server.KeycloakClient.CreateClientRole(ctx,
+			token.AccessToken,
+			server.GlobalConfig.Characters.Keycloak.Realm,
+			server.GlobalConfig.Characters.Keycloak.Id,
+			*role,
+		)
+
+		// Code 409 is conflict
+		if err != nil && err.(*gocloak.APIError).Code != 409 {
+			return nil, fmt.Errorf("creating role %s: %v", role.Name, err)
+		}
 	}
 
 	return &charactersServiceServer{

@@ -39,7 +39,7 @@ func main() {
 	err := pb.RegisterHealthServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
 	helpers.Check(ctx, err, "register health service handler endpoint")
 
-	css, err := srv.NewCharactersServiceServer(server)
+	css, err := srv.NewCharactersServiceServer(ctx, server)
 	helpers.Check(ctx, err, "create characters service server")
 	pb.RegisterCharactersServiceServer(grpcServer, css)
 	err = pb.RegisterCharactersServiceHandlerFromEndpoint(ctx, gwmux, address, opts)

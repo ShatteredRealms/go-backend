@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
@@ -24,13 +25,15 @@ type GameBackendServerContext struct {
 	GlobalConfig     *config.GlobalConfig
 	CharactersClient pb.CharactersServiceClient
 	AgonesClient     aapb.AllocationServiceClient
+	KeycloakClient   *gocloak.GoCloak
 	Tracer           trace.Tracer
 }
 
 func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *GameBackendServerContext {
 	server := &GameBackendServerContext{
-		GlobalConfig: conf,
-		Tracer:       otel.Tracer("GameBackendService"),
+		GlobalConfig:   conf,
+		Tracer:         otel.Tracer("GameBackendService"),
+		KeycloakClient: gocloak.NewClient(conf.GameBackend.Keycloak.BaseURL),
 	}
 
 	cc, err := helpers.GrpcClientWithOtel(conf.Characters.Remote.Address())

@@ -142,7 +142,7 @@ func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, characte
 		return status.Errorf(codes.Unauthenticated, "authentication required")
 	}
 
-	serverCtx := helpers.ContextAddClientAuth(ctx, "sro-chat", s.server.GlobalConfig.Chat.Keycloak.ClientSecret)
+	serverCtx := helpers.ContextAddClientAuth(ctx, s.server.GlobalConfig.Chat.Keycloak.ClientId, s.server.GlobalConfig.Chat.Keycloak.ClientSecret)
 	chars, err := s.server.CharacterService.GetAllCharactersForUser(serverCtx, &pb.UserTarget{UserId: claims.Subject})
 	if err != nil {
 		log.WithContext(ctx).Errorf("chat character service get for user: %v", err)

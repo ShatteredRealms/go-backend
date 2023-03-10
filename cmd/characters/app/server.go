@@ -2,6 +2,7 @@ package characters
 
 import (
 	"context"
+	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
@@ -15,15 +16,17 @@ var (
 )
 
 type CharactersServerContext struct {
-	GlobalConfig *config.GlobalConfig
-	Service      service.CharacterService
-	Tracer       trace.Tracer
+	GlobalConfig   *config.GlobalConfig
+	Service        service.CharacterService
+	KeycloakClient *gocloak.GoCloak
+	Tracer         trace.Tracer
 }
 
 func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *CharactersServerContext {
 	server := &CharactersServerContext{
-		GlobalConfig: conf,
-		Tracer:       otel.Tracer("CharactersService"),
+		GlobalConfig:   conf,
+		Tracer:         otel.Tracer("CharactersService"),
+		KeycloakClient: gocloak.NewClient(conf.GameBackend.Keycloak.BaseURL),
 	}
 
 	db, err := repository.ConnectDB(server.GlobalConfig.Characters.DB)

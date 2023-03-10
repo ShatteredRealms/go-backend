@@ -71,8 +71,7 @@ func (s connectionServiceServer) ConnectGameServer(
 		},
 	}
 
-	// TODO change clientId to config
-	serverCtx := helpers.ContextAddClientAuth(ctx, "sro-gamebackend", s.server.GlobalConfig.Chat.Keycloak.ClientSecret)
+	serverCtx := helpers.ContextAddClientAuth(ctx, s.server.GlobalConfig.GameBackend.Keycloak.ClientId, s.server.GlobalConfig.GameBackend.Keycloak.ClientSecret)
 	allocatorResp, err := s.server.AgonesClient.Allocate(serverCtx, allocatorReq)
 	if err != nil {
 		log.WithContext(ctx).Errorf("allocating: %v", err)

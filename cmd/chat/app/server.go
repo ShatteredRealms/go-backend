@@ -2,6 +2,7 @@ package chat
 
 import (
 	"context"
+	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
@@ -19,13 +20,15 @@ type ChatServerContext struct {
 	GlobalConfig     *config.GlobalConfig
 	ChatService      service.ChatService
 	CharacterService pb.CharactersServiceClient
+	KeycloakClient   *gocloak.GoCloak
 	Tracer           trace.Tracer
 }
 
 func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *ChatServerContext {
 	server := &ChatServerContext{
-		GlobalConfig: conf,
-		Tracer:       otel.Tracer("ChatService"),
+		GlobalConfig:   conf,
+		Tracer:         otel.Tracer("ChatService"),
+		KeycloakClient: gocloak.NewClient(conf.GameBackend.Keycloak.BaseURL),
 	}
 
 	db, err := repository.ConnectDB(conf.Chat.DB)

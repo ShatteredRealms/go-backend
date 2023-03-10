@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/Nerzal/gocloak/v13"
 	"github.com/golang-jwt/jwt/v4"
 )
 
@@ -22,20 +23,20 @@ type SROClaims struct {
 	ChatRoles        []string `json:"resource_access.sro-chat.roles,omitempty"`
 }
 
-func (s SROClaims) HasRole(role RoleRepresentation) bool {
-	if role.ClientId == GamebackendClientId {
-		return containsKey(s.GameBackendRoles, role.Name)
+func (s SROClaims) HasRole(role *gocloak.Role, clientId string) bool {
+	if clientId == GamebackendClientId {
+		return containsKey(s.GameBackendRoles, *role.Name)
 	}
 
-	if role.ClientId == CharactersClientId {
-		return containsKey(s.CharacterRoles, role.Name)
+	if clientId == CharactersClientId {
+		return containsKey(s.CharacterRoles, *role.Name)
 	}
 
-	if role.ClientId == ChatClientId {
-		return containsKey(s.ChatRoles, role.Name)
+	if clientId == ChatClientId {
+		return containsKey(s.ChatRoles, *role.Name)
 	}
 
-	return containsKey(s.RealmRoles, role.Name)
+	return containsKey(s.RealmRoles, *role.Name)
 }
 
 func containsKey(arr []string, key string) bool {

@@ -51,7 +51,7 @@ func NewGlobalConfig() *GlobalConfig {
 				Realm:        "default",
 				BaseURL:      "http://localhost:8080",
 				ClientId:     model.CharactersClientId,
-				ClientSecret: "STqt38YPrFepVJwkZiSrYeURYKF4rAmr",
+				ClientSecret: "bt4FZsxtdT5Cheb63AkrSe39LNN6EEI3",
 				Id:           "738a426a-da91-4b16-b5fc-92d63a22eb76",
 			},
 		},
