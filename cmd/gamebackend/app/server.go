@@ -16,15 +16,19 @@ import (
 	"os"
 )
 
-type GameBackendServer struct {
-	GlobalConfig     *config.GlobalSROConfig
+var (
+	ServiceName = "gamebackend"
+)
+
+type GameBackendServerContext struct {
+	GlobalConfig     *config.GlobalConfig
 	CharactersClient pb.CharactersServiceClient
 	AgonesClient     aapb.AllocationServiceClient
 	Tracer           trace.Tracer
 }
 
-func NewServer(ctx context.Context, conf *config.GlobalSROConfig) *GameBackendServer {
-	server := &GameBackendServer{
+func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *GameBackendServerContext {
+	server := &GameBackendServerContext{
 		GlobalConfig: conf,
 		Tracer:       otel.Tracer("GameBackendService"),
 	}
@@ -42,7 +46,7 @@ func NewServer(ctx context.Context, conf *config.GlobalSROConfig) *GameBackendSe
 	return server
 }
 
-func (s *GameBackendServer) dialAgonesAllocatorServer() (*grpc.ClientConn, error) {
+func (s *GameBackendServerContext) dialAgonesAllocatorServer() (*grpc.ClientConn, error) {
 	clientKey, err := os.ReadFile(s.GlobalConfig.Agones.KeyFile)
 	if err != nil {
 		return nil, err

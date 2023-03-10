@@ -25,7 +25,7 @@ func NewKeycloakClient(conf config.KeycloakClientConfig) *keycloakClient {
 	}
 }
 
-func (c *keycloakClient) CreateRole(role model.RoleRepresentation) error {
+func (c *keycloakClient) CreateRole(role *model.RoleRepresentation) error {
 	body, err := structToJson(role)
 	if err != nil {
 		return fmt.Errorf("encoding role data: %v", err)
@@ -86,7 +86,7 @@ func (c *keycloakClient) GetRoles() ([]model.RoleRepresentation, error) {
 }
 
 // CreateRolesNotExist creates all the given roles if none exist with the given name
-func (c *keycloakClient) CreateRolesNotExist(roles ...model.RoleRepresentation) error {
+func (c *keycloakClient) CreateRolesNotExist(roles ...*model.RoleRepresentation) error {
 	currentRoles, err := c.GetRoles()
 	if err != nil {
 		return fmt.Errorf("get roles: %v", err)

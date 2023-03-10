@@ -1,13 +1,17 @@
 package config
 
 import (
+	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/model"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
-var Version = "v1.0.0"
+var (
+	Version = "v1.0.0"
+)
 
-type GlobalSROConfig struct {
+type GlobalConfig struct {
 	Characters  SROServer     `yaml:"characters"`
 	GameBackend SROServer     `yaml:"gamebackend"`
 	Chat        SROServer     `yaml:"chat"`
@@ -16,8 +20,8 @@ type GlobalSROConfig struct {
 	Version     string
 }
 
-func NewGlobalConfig() *GlobalSROConfig {
-	config := &GlobalSROConfig{
+func NewGlobalConfig() *GlobalConfig {
+	config := &GlobalConfig{
 		Characters: SROServer{
 			Local: ServerAddress{
 				Port: 8081,
@@ -46,7 +50,7 @@ func NewGlobalConfig() *GlobalSROConfig {
 			Keycloak: KeycloakClientConfig{
 				Realm:        "default",
 				BaseURL:      "http://localhost:8080",
-				ClientId:     "sro-characters",
+				ClientId:     model.CharactersClientId,
 				ClientSecret: "STqt38YPrFepVJwkZiSrYeURYKF4rAmr",
 				Id:           "738a426a-da91-4b16-b5fc-92d63a22eb76",
 			},
@@ -79,7 +83,7 @@ func NewGlobalConfig() *GlobalSROConfig {
 			Keycloak: KeycloakClientConfig{
 				Realm:        "default",
 				BaseURL:      "http://localhost:8080",
-				ClientId:     "sro-chat",
+				ClientId:     model.GamebackendClientId,
 				ClientSecret: "ZlUoVWQQG59H0AuJTYkP8sM9ARjMuSCG",
 				Id:           "c3cacba8-cd16-4a4f-bc86-367274cb7cb5",
 			},
@@ -112,7 +116,7 @@ func NewGlobalConfig() *GlobalSROConfig {
 			Keycloak: KeycloakClientConfig{
 				Realm:        "default",
 				BaseURL:      "http://localhost:8080",
-				ClientId:     "sro-chat",
+				ClientId:     model.ChatClientId,
 				ClientSecret: "g0fKcjZo69ThJReo1BSlIY2HQuWHGUpA",
 				Id:           "4c79d4a0-a3fd-495f-b56e-eea508bb0862",
 			},
@@ -149,7 +153,7 @@ func NewGlobalConfig() *GlobalSROConfig {
 
 	// Read from environment variables
 	viper.SetEnvPrefix("SRO")
-	BindEnvsToStruct(config)
+	helpers.BindEnvsToStruct(config)
 
 	// Save to struct
 	if err := viper.Unmarshal(&config); err != nil {

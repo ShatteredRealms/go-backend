@@ -16,4 +16,7 @@ type RoleRepresentation struct {
 
 	// ContainerId internal client keycloak id
 	ContainerId string `json:"containerId,omitempty"`
+
+	// ClientId client id for the role. Not used in keycloak
+	ClientId string `json:"clientId,omitempty"`
 }

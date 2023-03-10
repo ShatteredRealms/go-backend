@@ -4,14 +4,13 @@ go 1.19
 
 require (
 	github.com/TwiN/go-away v1.6.10
-	github.com/allegro/bigcache/v3 v3.1.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
 	github.com/jackc/pgx/v5 v5.3.0
-	github.com/lib/pq v1.10.2
+	github.com/lib/pq v1.10.7
 	github.com/ory/dockertest/v3 v3.9.1
-	github.com/segmentio/kafka-go v0.4.38
+	github.com/segmentio/kafka-go v0.4.39
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/viper v1.15.0
 	github.com/t-tomalak/logrus-easy-formatter v0.0.0-20190827215021-c074f06c5816
@@ -27,8 +26,8 @@ require (
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
 	google.golang.org/protobuf v1.29.0
 	gopkg.in/yaml.v3 v3.0.1
-	gorm.io/driver/postgres v1.4.8
-	gorm.io/gorm v1.24.5
+	gorm.io/driver/postgres v1.5.0
+	gorm.io/gorm v1.24.7-0.20230306060331-85eaf9eeda11
 	gorm.io/plugin/dbresolver v1.4.1
 )
 

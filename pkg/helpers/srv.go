@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -90,20 +91,13 @@ func ExtractToken(ctx context.Context) (string, error) {
 	return strings.TrimPrefix(val, AuthorizationScheme), nil
 }
 
-func ExtractSub(token string) (string, error) {
-	jwtToken, _, err := jwtParser.ParseUnverified(token, jwt.MapClaims{})
-	if err != nil {
-		return "", err
-	}
-
-	return jwtToken.Claims.(jwt.MapClaims)["sub"].(string), nil
-}
-
-func ExtractTokenSub(ctx context.Context) (string, error) {
+func ExtractClaims(ctx context.Context) (*model.SROClaims, error) {
 	token, err := ExtractToken(ctx)
+	jwtToken, _, err := jwtParser.ParseUnverified(token, model.SROClaims{})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return ExtractSub(token)
+	claims := jwtToken.Claims.(model.SROClaims)
+	return &claims, nil
 }

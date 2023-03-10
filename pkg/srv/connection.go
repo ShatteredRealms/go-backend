@@ -14,7 +14,7 @@ import (
 
 type connectionServiceServer struct {
 	pb.UnimplementedConnectionServiceServer
-	server *gamebackend.GameBackendServer
+	server *gamebackend.GameBackendServerContext
 }
 
 func (s connectionServiceServer) ConnectGameServer(
@@ -85,7 +85,7 @@ func (s connectionServiceServer) ConnectGameServer(
 	}, nil
 }
 
-func NewConnectionServiceServer(server *gamebackend.GameBackendServer) pb.ConnectionServiceServer {
+func NewConnectionServiceServer(server *gamebackend.GameBackendServerContext) pb.ConnectionServiceServer {
 	return &connectionServiceServer{
 		server: server,
 	}

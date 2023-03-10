@@ -13,7 +13,7 @@ import (
 
 type chatServiceServer struct {
 	pb.UnimplementedChatServiceServer
-	server *chat.ChatServer
+	server *chat.ChatServerContext
 }
 
 func (s chatServiceServer) ConnectChannel(target *pb.ChannelTarget, server pb.ChatService_ConnectChannelServer) error {
@@ -130,20 +130,20 @@ func (s chatServiceServer) mustEmbedUnimplementedChatServiceServer() {
 	panic("implement me")
 }
 
-func NewChatServiceServer(server *chat.ChatServer) pb.ChatServiceServer {
+func NewChatServiceServer(server *chat.ChatServerContext) pb.ChatServiceServer {
 	return &chatServiceServer{
 		server: server,
 	}
 }
 
 func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, characterName string) error {
-	requesterId, err := helpers.ExtractTokenSub(ctx)
+	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
 		return status.Errorf(codes.Unauthenticated, "authentication required")
 	}
 
 	serverCtx := helpers.ContextAddClientAuth(ctx, "sro-chat", s.server.GlobalConfig.Chat.Keycloak.ClientSecret)
-	chars, err := s.server.CharacterService.GetAllCharactersForUser(serverCtx, &pb.UserTarget{UserId: requesterId})
+	chars, err := s.server.CharacterService.GetAllCharactersForUser(serverCtx, &pb.UserTarget{UserId: claims.Subject})
 	if err != nil {
 		log.WithContext(ctx).Errorf("chat character service get for user: %v", err)
 		return status.Errorf(codes.Internal, "unable to verify character")

@@ -11,15 +11,19 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type ChatServer struct {
-	GlobalConfig     *config.GlobalSROConfig
+var (
+	ServiceName = "chat"
+)
+
+type ChatServerContext struct {
+	GlobalConfig     *config.GlobalConfig
 	ChatService      service.ChatService
 	CharacterService pb.CharactersServiceClient
 	Tracer           trace.Tracer
 }
 
-func NewServer(ctx context.Context, conf *config.GlobalSROConfig) *ChatServer {
-	server := &ChatServer{
+func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *ChatServerContext {
+	server := &ChatServerContext{
 		GlobalConfig: conf,
 		Tracer:       otel.Tracer("ChatService"),
 	}

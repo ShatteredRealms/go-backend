@@ -6,7 +6,6 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/srv"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -15,12 +14,11 @@ import (
 )
 
 var (
-	conf        *config.GlobalSROConfig
-	serviceName = "chat_service"
+	conf *config.GlobalConfig
 )
 
 func init() {
-	config.SetupLogger()
+	helpers.SetupLogger()
 	conf = config.NewGlobalConfig()
 }
 
@@ -28,17 +26,11 @@ func main() {
 	ctx := context.Background()
 	uptrace.ConfigureOpentelemetry(
 		uptrace.WithDSN(conf.Uptrace.DSN()),
-		uptrace.WithServiceName(serviceName),
+		uptrace.WithServiceName(chat.ServiceName),
 		uptrace.WithServiceVersion(conf.Version),
 	)
-	defer func(ctx context.Context) {
-		err := uptrace.Shutdown(ctx)
-		if err != nil {
-			log.WithContext(ctx).Errorf("shutdown uptrace: %v", err)
-		}
-	}(ctx)
 
-	server := chat.NewServer(ctx, conf)
+	server := chat.NewServerContext(ctx, conf)
 	grpcServer, gwmux := helpers.InitServerDefaults()
 	address := server.GlobalConfig.Chat.Local.Address()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}

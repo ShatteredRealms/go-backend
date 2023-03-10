@@ -10,16 +10,20 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type CharactersServer struct {
-	GlobalConfig *config.GlobalSROConfig
+var (
+	ServiceName = "characters"
+)
+
+type CharactersServerContext struct {
+	GlobalConfig *config.GlobalConfig
 	Service      service.CharacterService
 	Tracer       trace.Tracer
 }
 
-func NewServer(ctx context.Context, conf *config.GlobalSROConfig) *CharactersServer {
-	server := &CharactersServer{
+func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *CharactersServerContext {
+	server := &CharactersServerContext{
 		GlobalConfig: conf,
-		Tracer:       otel.Tracer("CharactersServer"),
+		Tracer:       otel.Tracer("CharactersService"),
 	}
 
 	db, err := repository.ConnectDB(server.GlobalConfig.Characters.DB)

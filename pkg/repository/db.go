@@ -17,11 +17,11 @@ import (
 
 // ConnectDB Initializes the connection to a Postgres database
 func ConnectDB(pool config.DBPoolConfig) (*gorm.DB, error) {
-	config, err := pgx.ParseConfig(pool.Master.PostgresDSN())
+	conf, err := pgx.ParseConfig(pool.Master.PostgresDSN())
 	if err != nil {
 		return nil, fmt.Errorf("parse config: %w", err)
 	}
-	sqlDB := stdlib.OpenDB(*config)
+	sqlDB := stdlib.OpenDB(*conf)
 
 	sqlDB.SetConnMaxLifetime(time.Second)
 	sqlDB.SetMaxOpenConns(0)

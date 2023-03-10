@@ -11,10 +11,6 @@ const (
 	LocalMode       ServerMode = "local"
 )
 
-var (
-	AllModes = []ServerMode{ModeProduction, ModeDebug, ModeDevelopment}
-)
-
 type ServerMode string
 
 type SROServer struct {

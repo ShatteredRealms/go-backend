@@ -17,24 +17,26 @@ import (
 
 type charactersServiceServer struct {
 	pb.UnimplementedCharactersServiceServer
-	server *characters.CharactersServer
+	server *characters.CharactersServerContext
 }
 
 var (
-	RoleAddCharacterPlayTime = model.RoleRepresentation{
+	CharacterRoles []*model.RoleRepresentation
+
+	RoleAddCharacterPlayTime = registerRole(CharacterRoles, &model.RoleRepresentation{
 		Name:        "playtime",
 		Description: "Allows adding playtime to any character",
-	}
+	})
 
-	RoleCharacterManagement = model.RoleRepresentation{
+	RoleCharacterManagement = registerRole(CharacterRoles, &model.RoleRepresentation{
 		Name:        "manage",
 		Description: "Allows creating, reading and deleting of own characters",
-	}
+	})
 
-	RoleCharacterManagementOther = model.RoleRepresentation{
+	RoleCharacterManagementOther = registerRole(CharacterRoles, &model.RoleRepresentation{
 		Name:        "manage_other",
 		Description: "Allows creating, reading and deleting of any characters",
-	}
+	})
 )
 
 // AddCharacterPlayTime implements pb.CharactersServiceServer
@@ -62,7 +64,7 @@ func (s *charactersServiceServer) CreateCharacter(
 	ctx context.Context,
 	msg *pb.CreateCharacterRequest,
 ) (*pb.CharacterResponse, error) {
-	requesterId, err := helpers.ExtractTokenSub(ctx)
+	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
 		return nil, ErrNotAuthorized
 	}
@@ -74,7 +76,7 @@ func (s *charactersServiceServer) CreateCharacter(
 	}
 
 	// If not requesting to create character for self, verify requester has permission for other
-	if requesterId != msg.UserId && CtxHasRole(ctx, RoleCharacterManagementOther.Name) != nil {
+	if claims.Subject != msg.UserId && CtxHasRole(ctx, RoleCharacterManagementOther.Name) != nil {
 		return nil, ErrNotAuthorized
 	}
 
@@ -101,7 +103,7 @@ func (s *charactersServiceServer) DeleteCharacter(
 	ctx context.Context,
 	msg *pb.CharacterTarget,
 ) (*emptypb.Empty, error) {
-	requesterId, err := helpers.ExtractTokenSub(ctx)
+	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
 		return nil, ErrNotAuthorized
 	}
@@ -118,7 +120,7 @@ func (s *charactersServiceServer) DeleteCharacter(
 	}
 
 	// If not requesting to delete requester own character, verify it has permission to delete others
-	if requesterId != character.OwnerId && CtxHasRole(ctx, RoleCharacterManagementOther.Name) != nil {
+	if claims.Subject != character.OwnerId && CtxHasRole(ctx, RoleCharacterManagementOther.Name) != nil {
 		return nil, ErrNotAuthorized
 	}
 
@@ -136,7 +138,7 @@ func (s *charactersServiceServer) EditCharacter(
 	ctx context.Context,
 	msg *pb.EditCharacterRequest,
 ) (*emptypb.Empty, error) {
-	requesterId, err := helpers.ExtractTokenSub(ctx)
+	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
 		return nil, ErrNotAuthorized
 	}
@@ -156,7 +158,7 @@ func (s *charactersServiceServer) EditCharacter(
 		return nil, status.Error(codes.InvalidArgument, "character does not exist")
 	}
 
-	if char.OwnerId != requesterId && CtxHasRole(ctx, RoleCharacterManagementOther.Name) != nil {
+	if char.OwnerId != claims.Subject && CtxHasRole(ctx, RoleCharacterManagementOther.Name) != nil {
 		return nil, ErrNotAuthorized
 	}
 
@@ -173,7 +175,7 @@ func (s *charactersServiceServer) GetCharacter(
 	ctx context.Context,
 	msg *pb.CharacterTarget,
 ) (*pb.CharacterResponse, error) {
-	requesterId, err := helpers.ExtractTokenSub(ctx)
+	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
 		return nil, ErrNotAuthorized
 	}
@@ -188,7 +190,7 @@ func (s *charactersServiceServer) GetCharacter(
 		return nil, status.Error(codes.InvalidArgument, "character does not exist")
 	}
 
-	if char.OwnerId != requesterId && CtxHasRole(ctx, RoleCharacterManagementOther.Name) != nil {
+	if char.OwnerId != claims.Subject && CtxHasRole(ctx, RoleCharacterManagementOther.Name) != nil {
 		return nil, ErrNotAuthorized
 	}
 
@@ -200,14 +202,14 @@ func (s *charactersServiceServer) GetCharacters(
 	ctx context.Context,
 	msg *emptypb.Empty,
 ) (*pb.CharactersResponse, error) {
-	requesterId, err := helpers.ExtractTokenSub(ctx)
+	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
 		return nil, ErrNotAuthorized
 	}
 
-	chars, err := s.server.Service.FindAllByOwner(ctx, requesterId)
+	chars, err := s.server.Service.FindAllByOwner(ctx, claims.Subject)
 	if err != nil {
-		log.WithContext(ctx).Errorf("find by owner %s: %v", requesterId, chars)
+		log.WithContext(ctx).Errorf("find by owner %s: %v", claims.Subject, chars)
 		return nil, status.Error(codes.Internal, "unable to find chars")
 	}
 
@@ -231,16 +233,17 @@ func (s *charactersServiceServer) GetRealms(
 }
 
 func NewCharactersServiceServer(
-	server *characters.CharactersServer,
+	server *characters.CharactersServerContext,
 ) (pb.CharactersServiceServer, error) {
 	kc := service.NewKeycloakClient(server.GlobalConfig.Characters.Keycloak)
-	err := kc.CreateRolesNotExist(
-		RoleCharacterManagementOther,
-		RoleCharacterManagement,
-		RoleAddCharacterPlayTime,
-	)
+	err := kc.CreateRolesNotExist(CharacterRoles...)
 	if err != nil {
 		return nil, fmt.Errorf("generating roles: %v", err)
+	}
+
+	id := server.GlobalConfig.Characters.Keycloak.ClientId
+	for _, role := range CharacterRoles {
+		role.ClientId = id
 	}
 
 	return &charactersServiceServer{
