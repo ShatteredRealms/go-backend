@@ -258,18 +258,14 @@ func NewCharactersServiceServer(
 		return nil, fmt.Errorf("login keycloak: %v", err)
 	}
 
-	for _, role := range CharacterRoles {
-		_, err = server.KeycloakClient.CreateClientRole(ctx,
-			token.AccessToken,
-			server.GlobalConfig.Characters.Keycloak.Realm,
-			server.GlobalConfig.Characters.Keycloak.Id,
-			*role,
-		)
-
-		// Code 409 is conflict
-		if err != nil && err.(*gocloak.APIError).Code != 409 {
-			return nil, fmt.Errorf("creating role %s: %v", role.Name, err)
-		}
+	err = createRoles(ctx,
+		token.AccessToken,
+		server.GlobalConfig.Characters.Keycloak.Realm,
+		server.GlobalConfig.Characters.Keycloak.Id,
+		&CharacterRoles,
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	return &charactersServiceServer{

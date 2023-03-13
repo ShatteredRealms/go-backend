@@ -9,97 +9,119 @@ import "google/protobuf/wrappers.proto";
 service CharactersService {
   rpc GetGenders(google.protobuf.Empty) returns (Genders) {
     option (google.api.http) = {
-      get: "/v1/genders"
+      get : "/v1/genders"
     };
   }
 
   rpc GetRealms(google.protobuf.Empty) returns (Realms) {
     option (google.api.http) = {
-      get: "/v1/realms"
+      get : "/v1/realms"
     };
   }
 
   rpc GetCharacters(google.protobuf.Empty) returns (CharactersResponse) {
     option (google.api.http) = {
-      get: "/v1/characters"
+      get : "/v1/characters"
     };
   }
 
   rpc GetCharacter(CharacterTarget) returns (CharacterResponse) {
     option (google.api.http) = {
-      get: "/v1/characters/{character_id}"
+      get : "/v1/characters/id/{id}"
+      additional_bindings : {get : "/v1/characters/name/{name}"}
     };
   }
 
   rpc CreateCharacter(CreateCharacterRequest) returns (CharacterResponse) {
     option (google.api.http) = {
-      post: "/v1/users/{user_id}/characters"
-      body: "*"
+      post : "/v1/users/id/{user_id}/characters"
+      body : "*"
+      additional_bindings : {
+        post : "/v1/users/name/{username}/characters"
+        body : "*"
+      }
     };
   }
 
   rpc DeleteCharacter(CharacterTarget) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      delete: "/v1/characters/{character_id}"
+      delete : "/v1/characters/id/{id}"
+      additional_bindings : {delete : "/v1/characters/name/{name}"}
     };
   }
 
   rpc GetAllCharactersForUser(UserTarget) returns (CharactersResponse) {
     option (google.api.http) = {
-      get: "/v1/users/{user_id}/characters"
+      get : "/v1/users/id/{id}/characters"
+      additional_bindings : {get : "/v1/users/username/{username}/characters"}
     };
   }
 
   rpc EditCharacter(EditCharacterRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put: "/v1/characters/{id}"
-      body: "*"
+      put : "/v1/characters/id/{id}"
+      body : "*"
+      additional_bindings : {put : "/v1/characters/name/{name}" body : "*"}
     };
   }
 
-  // Adds the given amount of playtime to the character and returns the total playtime
+  // Adds the given amount of playtime to the character and returns the total
+  // playtime
   rpc AddCharacterPlayTime(CharacterTarget) returns (PlayTimeResponse) {
     option (google.api.http) = {
-      put: "/v1/characters/{character_id}/playtime"
-      body: "*"
+      put : "/v1/characters/id/{id}/playtime"
+      body : "*"
+      additional_bindings : {
+        put : "/v1/characters/name/{name}/playtime"
+        body : "*"
+      }
     };
   }
 }
 
-message PlayTimeResponse {
-  uint64 time = 1;
-}
+message PlayTimeResponse { uint64 time = 1; }
 
 message CreateCharacterRequest {
-  string user_id = 1;
-  string name = 2;
-  string gender = 3;
-  string realm = 4;
+  oneof owner {
+    google.protobuf.StringValue user_id = 1;
+    google.protobuf.StringValue username = 2;
+  }
+  string name = 3;
+  string gender = 4;
+  string realm = 5;
 }
 
 message UserTarget {
-  string user_id = 1;
+  oneof target {
+    google.protobuf.StringValue id = 1;
+    google.protobuf.StringValue username = 2;
+  }
 }
 
 message CharacterTarget {
-  uint64 character_id = 1;
+  oneof target {
+    google.protobuf.UInt64Value id = 1;
+    google.protobuf.StringValue name = 2;
+  }
 }
 
 message EditCharacterRequest {
-  uint64 id = 1;
+  oneof target {
+    google.protobuf.UInt64Value id = 1;
+    google.protobuf.StringValue name = 2;
+  }
 
   // The user account that owns the character
-  google.protobuf.StringValue owner_id = 2;
-  google.protobuf.StringValue name = 3;
-  google.protobuf.StringValue gender = 4;
-  google.protobuf.StringValue realm = 5;
+  google.protobuf.StringValue owner_id = 3;
+  google.protobuf.StringValue new_name = 4;
+  google.protobuf.StringValue gender = 5;
+  google.protobuf.StringValue realm = 6;
 
   // Total play time in minutes
   google.protobuf.UInt64Value play_time = 7;
 
   Location location = 8;
 }
-
 
 message CharacterResponse {
   uint64 id = 1;
@@ -118,22 +140,12 @@ message Location {
   float z = 4;
 }
 
-message CharactersResponse {
-  repeated CharacterResponse characters = 1;
-}
+message CharactersResponse { repeated CharacterResponse characters = 1; }
 
-message Gender {
-  string name = 1;
-}
+message Gender { string name = 1; }
 
-message Realm {
-  string name = 1;
-}
+message Realm { string name = 1; }
 
-message Genders {
-  repeated Gender genders = 1;
-}
+message Genders { repeated Gender genders = 1; }
 
-message Realms {
-  repeated Realm realms = 1;
-}
+message Realms { repeated Realm realms = 1; }

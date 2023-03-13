@@ -15,8 +15,8 @@ type ChatRepository interface {
 
 	FindDeletedWithName(ctx context.Context, name string) (*model.ChatChannel, error)
 
-	AuthorizedChannelsForCharacter(ctx context.Context, character string) (model.ChatChannels, error)
-	ChangeAuthorizationForCharacter(ctx context.Context, character string, channelIds []uint, addAuth bool) error
+	AuthorizedChannelsForCharacter(ctx context.Context, nharacterId uint) (model.ChatChannels, error)
+	ChangeAuthorizationForCharacter(ctx context.Context, characterId uint, channelIds []uint, addAuth bool) error
 
 	Migrate(ctx context.Context) error
 }
@@ -25,13 +25,13 @@ type chatRepository struct {
 	DB *gorm.DB
 }
 
-func (r chatRepository) ChangeAuthorizationForCharacter(ctx context.Context, character string, channelIds []uint, addAuth bool) error {
+func (r chatRepository) ChangeAuthorizationForCharacter(ctx context.Context, characterId uint, channelIds []uint, addAuth bool) error {
 	if addAuth {
 		tx := r.DB.Begin()
 		for _, id := range channelIds {
 			if err := tx.Create(&model.ChatChannelPermission{
-				ChannelId:     id,
-				CharacterName: character,
+				ChannelId:   id,
+				CharacterId: characterId,
 			}).Error; err != nil {
 				tx.Rollback()
 				return err
@@ -42,16 +42,16 @@ func (r chatRepository) ChangeAuthorizationForCharacter(ctx context.Context, cha
 		return nil
 	}
 
-	return r.DB.Delete(&model.ChatChannelPermission{}, "characterName = ? AND channelId IN ?", character, channelIds).Error
+	return r.DB.Delete(&model.ChatChannelPermission{}, "characterName = ? AND channelId IN ?", characterId, channelIds).Error
 }
 
-func (r chatRepository) AuthorizedChannelsForCharacter(ctx context.Context, character string) (model.ChatChannels, error) {
+func (r chatRepository) AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (model.ChatChannels, error) {
 	var channels model.ChatChannels
 	r.DB.
 		Model(&model.ChatChannelPermission{}).
 		Select("chat_channels.id chat_channels.name").
-		Joins("JOIN chat_channels ON chat_channels.id == chat_channel_permissions.id").
-		Where("chat_channel_permissions.character_name == ?", character).
+		Joins("JOIN chat_channels ON chat_channels.id == chat_channel_permissions.channel_id").
+		Where("chat_channel_permissions.character_id == ?", characterId).
 		Find(&channels)
 	return channels, r.DB.Error
 }
