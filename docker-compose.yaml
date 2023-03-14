@@ -114,7 +114,7 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
     command:
       - "start-dev"
-      - "--log-level=debug"
+      - "--features=declarative-user-profile"
     ports:
       - 8080:8080
     depends_on:

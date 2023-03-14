@@ -2,6 +2,8 @@ package helpers
 
 import (
 	"context"
+	"strings"
+
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
@@ -12,7 +14,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
-	"strings"
 )
 
 const (
@@ -67,12 +68,10 @@ func InitServerDefaults() (*grpc.Server, *runtime.ServeMux) {
 	return grpc.NewServer(
 			grpc.ChainUnaryInterceptor(
 				UnaryLogRequest(),
-				UnaryAddRolesToCtx(),
 				otelgrpc.UnaryServerInterceptor(),
 			),
 			grpc.ChainStreamInterceptor(
 				StreamLogRequest(),
-				StreamAddRolesToCtx(),
 				otelgrpc.StreamServerInterceptor(),
 			)),
 		runtime.NewServeMux()
@@ -93,11 +92,11 @@ func ExtractToken(ctx context.Context) (string, error) {
 
 func ExtractClaims(ctx context.Context) (*model.SROClaims, error) {
 	token, err := ExtractToken(ctx)
-	jwtToken, _, err := jwtParser.ParseUnverified(token, model.SROClaims{})
+	jwtToken, _, err := jwtParser.ParseUnverified(token, &model.SROClaims{})
 	if err != nil {
 		return nil, err
 	}
 
-	claims := jwtToken.Claims.(model.SROClaims)
-	return &claims, nil
+	claims := jwtToken.Claims.(*model.SROClaims)
+	return claims, nil
 }

@@ -1,0 +1,10 @@
+syntax = "proto3";
+package sro;
+option go_package = "pkg/pb";
+
+message UserTarget {
+  oneof target {
+    string id = 1;
+    string username = 2;
+  }
+}

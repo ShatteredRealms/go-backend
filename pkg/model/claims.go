@@ -17,31 +17,31 @@ type ResourceRoles struct {
 
 type SROClaims struct {
 	jwt.RegisteredClaims
-	RealmRoles       []string `json:"realm_roles.roles,omitempty"`
-	CharacterRoles   []string `json:"resource_access.sro-characters.roles,omitempty"`
-	GameBackendRoles []string `json:"resource_access.sro-gamebackend.roles,omitempty"`
-	ChatRoles        []string `json:"resource_access.sro-chat.roles,omitempty"`
+	RealmRoles     ClaimRoles          `json:"realm_roles,omitempty"`
+	ResourceAccess ClaimResourceAccess `json:"resource_access"`
+	Username       string              `json:"preferred_username,omitempty"`
 }
 
-func (s SROClaims) HasRole(role *gocloak.Role, clientId string) bool {
-	if clientId == GamebackendClientId {
-		return containsKey(s.GameBackendRoles, *role.Name)
+type ClaimRoles struct {
+	Roles []string `json:"roles,omitempty"`
+}
+type ClaimResourceAccess map[string]ClaimRoles
+
+func (s SROClaims) HasResourceRole(role *gocloak.Role, clientId string) bool {
+	if resource, ok := s.ResourceAccess[clientId]; ok {
+		for _, claimRole := range resource.Roles {
+			if *role.Name == claimRole {
+				return true
+			}
+		}
 	}
 
-	if clientId == CharactersClientId {
-		return containsKey(s.CharacterRoles, *role.Name)
-	}
-
-	if clientId == ChatClientId {
-		return containsKey(s.ChatRoles, *role.Name)
-	}
-
-	return containsKey(s.RealmRoles, *role.Name)
+	return false
 }
 
-func containsKey(arr []string, key string) bool {
-	for _, currentKey := range arr {
-		if key == currentKey {
+func (s SROClaims) HasRole(role *gocloak.Role) bool {
+	for _, claimRole := range s.RealmRoles.Roles {
+		if *role.Name == claimRole {
 			return true
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/Nerzal/gocloak/v13"
 	chat "github.com/ShatteredRealms/go-backend/cmd/chat/app"
@@ -41,18 +42,21 @@ func registerChatRole(role *gocloak.Role) *gocloak.Role {
 	return role
 }
 
-func (s chatServiceServer) ConnectChannel(target *pb.ChannelTarget, server pb.ChatService_ConnectChannelServer) error {
+func (s chatServiceServer) ConnectChannel(
+	request *pb.ChatChannelTarget,
+	server pb.ChatService_ConnectChannelServer,
+) error {
 	claims, err := helpers.ExtractClaims(server.Context())
 	if err != nil {
-		return ErrNotAuthorized
+		return model.ErrUnauthorized
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasRole(RoleChat, model.ChatClientId) {
-		return ErrNotAuthorized
+	if !claims.HasResourceRole(RoleChat, model.ChatClientId) {
+		return model.ErrUnauthorized
 	}
 
-	r := s.server.ChatService.ChannelMessagesReader(server.Context(), uint(target.ChannelId))
+	r := s.server.ChatService.ChannelMessagesReader(server.Context(), uint(request.Id))
 
 	for {
 		msg, err := r.ReadMessage(server.Context())
@@ -73,18 +77,26 @@ func (s chatServiceServer) ConnectChannel(target *pb.ChannelTarget, server pb.Ch
 	}
 }
 
-func (s chatServiceServer) ConnectDirectMessage(name *pb.CharacterName, server pb.ChatService_ConnectDirectMessageServer) error {
+func (s chatServiceServer) ConnectDirectMessage(
+	request *pb.CharacterTarget,
+	server pb.ChatService_ConnectDirectMessageServer,
+) error {
 	claims, err := helpers.ExtractClaims(server.Context())
 	if err != nil {
-		return ErrNotAuthorized
+		return model.ErrUnauthorized
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasRole(RoleChat, model.ChatClientId) {
-		return ErrNotAuthorized
+	if !claims.HasResourceRole(RoleChat, model.ChatClientId) {
+		return model.ErrUnauthorized
 	}
 
-	r := s.server.ChatService.DirectMessagesReader(server.Context(), name.Character)
+	char, err := s.verifyUserOwnsCharacter(server.Context(), request)
+	if err != nil {
+		return model.ErrUnauthorized
+	}
+
+	r := s.server.ChatService.DirectMessagesReader(server.Context(), char.Name)
 	for {
 		msg, err := r.ReadMessage(server.Context())
 		if err != nil {
@@ -104,22 +116,33 @@ func (s chatServiceServer) ConnectDirectMessage(name *pb.CharacterName, server p
 	}
 }
 
-func (s chatServiceServer) SendChatMessage(ctx context.Context, request *pb.SendChatMessageRequest) (*emptypb.Empty, error) {
-	claims, err := helpers.ExtractClaims(server.Context())
+func (s chatServiceServer) SendChatMessage(
+	ctx context.Context,
+	request *pb.SendChatMessageRequest,
+) (*emptypb.Empty, error) {
+	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
-		return nil, ErrNotAuthorized
+		return nil, model.ErrUnauthorized
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasRole(RoleChat, model.ChatClientId) {
-		return nil, ErrNotAuthorized
+	if !claims.HasResourceRole(RoleChat, model.ChatClientId) {
+		return nil, model.ErrUnauthorized
 	}
 
-	if err := s.verifyUserOwnsCharacter(ctx, request.ChatMessage.CharacterName); err != nil {
+	if _, err = s.verifyUserOwnsCharacter(
+		ctx,
+		&pb.CharacterTarget{Target: &pb.CharacterTarget_Name{Name: request.ChatMessage.CharacterName}},
+	); err != nil {
 		return nil, err
 	}
 
-	if err := s.server.ChatService.SendChannelMessage(ctx, request.ChatMessage.CharacterName, request.ChatMessage.Message, uint(request.ChannelId)); err != nil {
+	if err := s.server.ChatService.SendChannelMessage(
+		ctx,
+		request.ChatMessage.CharacterName,
+		request.ChatMessage.Message,
+		uint(request.ChannelId),
+	); err != nil {
 		log.WithContext(ctx).Errorf("send channel chat message: %v", err)
 		return nil, status.Errorf(codes.Internal, "unable to send message")
 	}
@@ -127,22 +150,38 @@ func (s chatServiceServer) SendChatMessage(ctx context.Context, request *pb.Send
 	return &emptypb.Empty{}, nil
 }
 
-func (s chatServiceServer) SendDirectMessage(ctx context.Context, request *pb.SendDirectMessageRequest) (*emptypb.Empty, error) {
+func (s chatServiceServer) SendDirectMessage(
+	ctx context.Context,
+	request *pb.SendDirectMessageRequest,
+) (*emptypb.Empty, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
-		return nil, ErrNotAuthorized
+		return nil, model.ErrUnauthorized
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasRole(RoleChat, model.ChatClientId) {
-		return nil, ErrNotAuthorized
+	if !claims.HasResourceRole(RoleChat, model.ChatClientId) {
+		return nil, model.ErrUnauthorized
 	}
 
-	if err := s.verifyUserOwnsCharacter(ctx, request.ChatMessage.CharacterName); err != nil {
+	if _, err = s.verifyUserOwnsCharacter(
+		ctx,
+		&pb.CharacterTarget{Target: &pb.CharacterTarget_Name{Name: request.ChatMessage.CharacterName}},
+	); err != nil {
 		return nil, err
 	}
 
-	if err := s.server.ChatService.SendDirectMessage(ctx, request.ChatMessage.CharacterName, request.ChatMessage.Message, request.Character); err != nil {
+	targetCharacterName, err := helpers.GetCharacterNameFromTarget(s.serverContext(ctx), s.server.CharacterService, request.Target)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.server.ChatService.SendDirectMessage(
+		ctx,
+		request.ChatMessage.CharacterName,
+		request.ChatMessage.Message,
+		targetCharacterName,
+	); err != nil {
 		log.WithContext(ctx).Errorf("send direct chat message: %v", err)
 		return nil, status.Errorf(codes.Internal, "unable to send message")
 	}
@@ -150,18 +189,21 @@ func (s chatServiceServer) SendDirectMessage(ctx context.Context, request *pb.Se
 	return &emptypb.Empty{}, nil
 }
 
-func (s chatServiceServer) GetChannel(ctx context.Context, target *pb.ChannelTarget) (*pb.ChatChannel, error) {
+func (s chatServiceServer) GetChannel(
+	ctx context.Context,
+	request *pb.ChatChannelTarget,
+) (*pb.ChatChannel, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
-		return nil, ErrNotAuthorized
+		return nil, model.ErrUnauthorized
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasRole(RoleChatChannelManage, model.ChatClientId) {
-		return nil, ErrNotAuthorized
+	if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
+		return nil, model.ErrUnauthorized
 	}
 
-	c, err := s.server.ChatService.GetChannel(ctx, uint(target.ChannelId))
+	c, err := s.server.ChatService.GetChannel(ctx, uint(request.Id))
 	if err != nil {
 		log.WithContext(ctx).Errorf("get chat channel: %v", err)
 		return nil, status.Error(codes.Internal, "unable to get chat channel")
@@ -170,22 +212,25 @@ func (s chatServiceServer) GetChannel(ctx context.Context, target *pb.ChannelTar
 	return c.ToPb(), nil
 }
 
-func (s chatServiceServer) CreateChannel(ctx context.Context, message *pb.CreateChannelMessage) (*emptypb.Empty, error) {
+func (s chatServiceServer) CreateChannel(
+	ctx context.Context,
+	request *pb.CreateChannelMessage,
+) (*emptypb.Empty, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
-		return nil, ErrNotAuthorized
+		return nil, model.ErrUnauthorized
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasRole(RoleChatChannelManage, model.ChatClientId) {
-		return nil, ErrNotAuthorized
+	if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
+		return nil, model.ErrUnauthorized
 	}
 
 	_, err = s.server.ChatService.CreateChannel(
 		ctx,
 		&model.ChatChannel{
-			Name:      message.Name,
-			Dimension: message.Dimension,
+			Name:      request.Name,
+			Dimension: request.Dimension,
 		},
 	)
 
@@ -201,23 +246,26 @@ func (s chatServiceServer) CreateChannel(ctx context.Context, message *pb.Create
 	return &emptypb.Empty{}, nil
 }
 
-func (s chatServiceServer) DeleteChannel(ctx context.Context, target *pb.ChannelTarget) (*emptypb.Empty, error) {
+func (s chatServiceServer) DeleteChannel(
+	ctx context.Context,
+	request *pb.ChatChannelTarget,
+) (*emptypb.Empty, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
-		return nil, ErrNotAuthorized
+		return nil, model.ErrUnauthorized
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasRole(RoleChatChannelManage, model.ChatClientId) {
-		return nil, ErrNotAuthorized
+	if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
+		return nil, model.ErrUnauthorized
 	}
 
 	err = s.server.ChatService.DeleteChannel(ctx, &model.ChatChannel{
-		Model: gorm.Model{ID: uint(target.ChannelId)},
+		Model: gorm.Model{ID: uint(request.Id)},
 	})
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrDoesNotExist
+			return nil, model.ErrDoesNotExist
 		}
 
 		log.WithContext(ctx).Errorf("delete channel: %v", err)
@@ -227,21 +275,24 @@ func (s chatServiceServer) DeleteChannel(ctx context.Context, target *pb.Channel
 	return &emptypb.Empty{}, nil
 }
 
-func (s chatServiceServer) EditChannel(ctx context.Context, request *pb.UpdateChatChannelRequest) (*emptypb.Empty, error) {
+func (s chatServiceServer) EditChannel(
+	ctx context.Context,
+	request *pb.UpdateChatChannelRequest,
+) (*emptypb.Empty, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
-		return nil, ErrNotAuthorized
+		return nil, model.ErrUnauthorized
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasRole(RoleChatChannelManage, model.ChatClientId) {
-		return nil, ErrNotAuthorized
+	if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
+		return nil, model.ErrUnauthorized
 	}
 
 	err = s.server.ChatService.UpdateChannel(ctx, request)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrDoesNotExist
+			return nil, model.ErrDoesNotExist
 		}
 
 		log.WithContext(ctx).Errorf("edit channel: %v", err)
@@ -251,18 +302,21 @@ func (s chatServiceServer) EditChannel(ctx context.Context, request *pb.UpdateCh
 	return &emptypb.Empty{}, nil
 }
 
-func (s chatServiceServer) AllChatChannels(ctx context.Context, empty *emptypb.Empty) (*pb.ChatChannels, error) {
+func (s chatServiceServer) AllChatChannels(
+	ctx context.Context,
+	_ *emptypb.Empty,
+) (*pb.ChatChannels, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
-		return nil, ErrNotAuthorized
+		return nil, model.ErrUnauthorized
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasRole(RoleChatChannelManage, model.ChatClientId) {
-		return nil, ErrNotAuthorized
+	if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
+		return nil, model.ErrUnauthorized
 	}
 
-	channels, err := s.server.ChatService.AllChannels()
+	channels, err := s.server.ChatService.AllChannels(ctx)
 	if err != nil {
 		log.WithContext(ctx).Errorf("edit channel: %v", err)
 		return nil, status.Error(codes.Internal, "unable to get channels")
@@ -271,18 +325,26 @@ func (s chatServiceServer) AllChatChannels(ctx context.Context, empty *emptypb.E
 	return channels.ToPb(), nil
 }
 
-func (s chatServiceServer) GetAuthorizedChatChannels(ctx context.Context, request *pb.RequestAuthorizedChatChannels) (*pb.ChatChannels, error) {
+func (s chatServiceServer) GetAuthorizedChatChannels(
+	ctx context.Context,
+	request *pb.CharacterTarget,
+) (*pb.ChatChannels, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
-		return nil, ErrNotAuthorized
+		return nil, model.ErrUnauthorized
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasRole(RoleChat, model.ChatClientId) {
-		return nil, ErrNotAuthorized
+	if !claims.HasResourceRole(RoleChat, model.ChatClientId) {
+		return nil, model.ErrUnauthorized
 	}
 
-	channels, err := s.server.ChatService.AuthorizedChannelsForCharacter(ctx, request.Character)
+	targetCharacterId, err := helpers.GetCharacterIdFromTarget(s.serverContext(ctx), s.server.CharacterService, request)
+	if err != nil {
+		return nil, err
+	}
+
+	channels, err := s.server.ChatService.AuthorizedChannelsForCharacter(ctx, targetCharacterId)
 	if err != nil {
 		log.WithContext(ctx).Errorf("get authorized channels: %v", err)
 		return nil, status.Error(codes.Internal, "unable to get channels")
@@ -291,55 +353,46 @@ func (s chatServiceServer) GetAuthorizedChatChannels(ctx context.Context, reques
 	return channels.ToPb(), nil
 }
 
-func (s chatServiceServer) AuthorizeUserForChatChannel(ctx context.Context, request *pb.RequestChatChannelAuthChange) (*emptypb.Empty, error) {
+func (s chatServiceServer) UpdateUserChatChannelAuthorizations(
+	ctx context.Context,
+	request *pb.RequestChatChannelAuthChange,
+) (*emptypb.Empty, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
-		return nil, ErrNotAuthorized
+		return nil, model.ErrUnauthorized
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasRole(RoleChatChannelManage, model.ChatClientId) {
-		return nil, ErrNotAuthorized
+	if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
+		return nil, model.ErrUnauthorized
+	}
+
+	targetCharacterId := uint(0)
+	switch target := request.Character.Target.(type) {
+	case *pb.CharacterTarget_Name:
+		targetChar, err := s.server.CharacterService.GetCharacter(s.serverContext(ctx), request.Character)
+		if err != nil {
+			return nil, err
+		}
+		targetCharacterId = uint(targetChar.Id)
+
+	case *pb.CharacterTarget_Id:
+		targetCharacterId = uint(target.Id)
+
+	default:
+		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(request.Character).Name())
+		return nil, model.ErrHandleRequest
 	}
 
 	err = s.server.ChatService.ChangeAuthorizationForCharacter(
 		ctx,
-		request.Character,
+		targetCharacterId,
 		*helpers.ArrayOfUint64ToUint(&request.Ids),
 		true,
 	)
 	if err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			return nil, status.Error(codes.InvalidArgument, "existing chat authorization conflict")
-		}
-
-		log.WithContext(ctx).Errorf("get authorized channels: %v", err)
-		return nil, status.Error(codes.Internal, "unable to change authorization")
-	}
-
-	return &emptypb.Empty{}, nil
-}
-
-func (s chatServiceServer) DeauthorizeUserForChatChannel(ctx context.Context, request *pb.RequestChatChannelAuthChange) (*emptypb.Empty, error) {
-	claims, err := helpers.ExtractClaims(ctx)
-	if err != nil {
-		return nil, ErrNotAuthorized
-	}
-
-	// Validate requester has correct permission
-	if !claims.HasRole(RoleChatChannelManage, model.ChatClientId) {
-		return nil, ErrNotAuthorized
-	}
-
-	err = s.server.ChatService.ChangeAuthorizationForCharacter(
-		ctx,
-		request.Character,
-		*helpers.ArrayOfUint64ToUint(&request.Ids),
-		true,
-	)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrDoesNotExist
 		}
 
 		log.WithContext(ctx).Errorf("get authorized channels: %v", err)
@@ -364,6 +417,7 @@ func NewChatServiceServer(
 	}
 
 	err = createRoles(ctx,
+		server.KeycloakClient,
 		token.AccessToken,
 		server.GlobalConfig.Chat.Keycloak.Realm,
 		server.GlobalConfig.Chat.Keycloak.Id,
@@ -378,24 +432,47 @@ func NewChatServiceServer(
 	}, nil
 }
 
-func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, characterName string) error {
+func (s chatServiceServer) serverContext(ctx context.Context) context.Context {
+	return helpers.ContextAddClientAuth(
+		ctx,
+		s.server.GlobalConfig.Chat.Keycloak.ClientId,
+		s.server.GlobalConfig.Chat.Keycloak.ClientSecret,
+	)
+}
+
+func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, request *pb.CharacterTarget) (*pb.CharacterResponse, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
-		return status.Errorf(codes.Unauthenticated, "authentication required")
+		return nil, status.Errorf(codes.Unauthenticated, "authentication required")
 	}
 
-	serverCtx := helpers.ContextAddClientAuth(ctx, s.server.GlobalConfig.Chat.Keycloak.ClientId, s.server.GlobalConfig.Chat.Keycloak.ClientSecret)
-	chars, err := s.server.CharacterService.GetAllCharactersForUser(serverCtx, &pb.UserTarget{UserId: claims.Subject})
+	chars, err := s.server.CharacterService.GetAllCharactersForUser(s.serverContext(ctx), &pb.UserTarget{
+		Target: &pb.UserTarget_Id{claims.ID},
+	})
 	if err != nil {
 		log.WithContext(ctx).Errorf("chat character service get for user: %v", err)
-		return status.Errorf(codes.Internal, "unable to verify character")
+		return nil, status.Errorf(codes.Internal, "unable to verify character")
 	}
 
-	for _, c := range chars.Characters {
-		if c.Name == characterName {
-			return nil
+	switch target := request.Target.(type) {
+	case *pb.CharacterTarget_Id:
+		for _, c := range chars.Characters {
+			if c.Id == target.Id {
+				return c, nil
+			}
 		}
+
+	case *pb.CharacterTarget_Name:
+		for _, c := range chars.Characters {
+			if c.Name == target.Name {
+				return c, nil
+			}
+		}
+
+	default:
+		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(request.Target).Name())
+		return nil, model.ErrHandleRequest
 	}
 
-	return status.Errorf(codes.Unauthenticated, "character not found")
+	return nil, status.Errorf(codes.Unauthenticated, "character not found")
 }

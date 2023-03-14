@@ -39,9 +39,11 @@ func main() {
 	err := pb.RegisterHealthServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
 	helpers.Check(ctx, err, "register health service handler endpoint")
 
-	pb.RegisterChatServiceServer(grpcServer, srv.NewChatServiceServer(server))
+	srvService, err := srv.NewChatServiceServer(ctx, server)
+	helpers.Check(ctx, err, "create chat service")
+	pb.RegisterChatServiceServer(grpcServer, srvService)
 	err = pb.RegisterChatServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
 	helpers.Check(ctx, err, "register chat service handler endpoint")
 
-	helpers.StartServer(ctx, grpcServer, gwmux, server.GlobalConfig.Characters.Local.Address())
+	helpers.StartServer(ctx, grpcServer, gwmux, server.GlobalConfig.Chat.Local.Address())
 }

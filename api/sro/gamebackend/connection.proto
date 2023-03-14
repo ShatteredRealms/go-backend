@@ -3,17 +3,16 @@ package sro.gamebackend;
 option go_package = "pkg/pb";
 
 import "google/api/annotations.proto";
+import "sro/characters/characters.proto";
 
 service ConnectionService {
-  rpc ConnectGameServer(ConnectGameServerRequest) returns (ConnectGameServerResponse) {
+  rpc ConnectGameServer(sro.characters.CharacterTarget)
+      returns (ConnectGameServerResponse) {
     option (google.api.http) = {
-      get: "/v1/connect/{character_id}"
+      get : "/v1/connect/character/id/{id}"
+      additional_bindings : {get : "/v1/connect/character/name/{name}"}
     };
   }
-}
-
-message ConnectGameServerRequest {
-  uint64 character_id = 1;
 }
 
 message ConnectGameServerResponse {

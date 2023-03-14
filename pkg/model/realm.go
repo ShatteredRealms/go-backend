@@ -1,6 +1,10 @@
 package model
 
-import "github.com/ShatteredRealms/go-backend/pkg/pb"
+import (
+	"fmt"
+
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
+)
 
 var (
 	Realms = map[string]struct{}{
@@ -8,16 +12,19 @@ var (
 		"Cyborg": {},
 	}
 
-	realmsPb = make([]*pb.Realm, len(Realms))
+	realmsPb          = make([]*pb.Realm, len(Realms))
+	realmsInitialized = false
 )
 
 func GetRealms() []*pb.Realm {
-	if len(realmsPb) == 0 {
+	if !realmsInitialized {
 		idx := 0
 		for realmName := range Realms {
+			fmt.Printf("realm: %v", realmName)
 			realmsPb[idx] = &pb.Realm{Name: realmName}
 			idx++
 		}
+		realmsInitialized = true
 	}
 
 	return realmsPb

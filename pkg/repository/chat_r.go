@@ -15,7 +15,7 @@ type ChatRepository interface {
 
 	FindDeletedWithName(ctx context.Context, name string) (*model.ChatChannel, error)
 
-	AuthorizedChannelsForCharacter(ctx context.Context, nharacterId uint) (model.ChatChannels, error)
+	AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (model.ChatChannels, error)
 	ChangeAuthorizationForCharacter(ctx context.Context, characterId uint, channelIds []uint, addAuth bool) error
 
 	Migrate(ctx context.Context) error

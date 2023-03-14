@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -26,4 +28,8 @@ type SROServer struct {
 type ServerAddress struct {
 	Port uint   `yaml:"port"`
 	Host string `yaml:"host"`
+}
+
+func (s *ServerAddress) Address() string {
+	return fmt.Sprintf("%s:%d", s.Host, s.Port)
 }

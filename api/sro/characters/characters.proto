@@ -2,9 +2,9 @@ syntax = "proto3";
 package sro.characters;
 option go_package = "pkg/pb";
 
+import "sro/globals.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
-import "google/protobuf/wrappers.proto";
 
 service CharactersService {
   rpc GetGenders(google.protobuf.Empty) returns (Genders) {
@@ -34,10 +34,10 @@ service CharactersService {
 
   rpc CreateCharacter(CreateCharacterRequest) returns (CharacterResponse) {
     option (google.api.http) = {
-      post : "/v1/users/id/{user_id}/characters"
+      post : "/v1/users/id/{owner.id}/characters"
       body : "*"
       additional_bindings : {
-        post : "/v1/users/name/{username}/characters"
+        post : "/v1/users/name/{owner.username}/characters"
         body : "*"
       }
     };
@@ -50,7 +50,7 @@ service CharactersService {
     };
   }
 
-  rpc GetAllCharactersForUser(UserTarget) returns (CharactersResponse) {
+  rpc GetAllCharactersForUser(sro.UserTarget) returns (CharactersResponse) {
     option (google.api.http) = {
       get : "/v1/users/id/{id}/characters"
       additional_bindings : {get : "/v1/users/username/{username}/characters"}
@@ -59,20 +59,23 @@ service CharactersService {
 
   rpc EditCharacter(EditCharacterRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put : "/v1/characters/id/{id}"
+      put : "/v1/characters/id/{target.id}"
       body : "*"
-      additional_bindings : {put : "/v1/characters/name/{name}" body : "*"}
+      additional_bindings : {
+        put : "/v1/characters/name/{target.name}"
+        body : "*"
+      }
     };
   }
 
   // Adds the given amount of playtime to the character and returns the total
   // playtime
-  rpc AddCharacterPlayTime(CharacterTarget) returns (PlayTimeResponse) {
+  rpc AddCharacterPlayTime(AddPlayTimeRequest) returns (PlayTimeResponse) {
     option (google.api.http) = {
-      put : "/v1/characters/id/{id}/playtime"
+      put : "/v1/characters/id/{character.id}/playtime"
       body : "*"
       additional_bindings : {
-        put : "/v1/characters/name/{name}/playtime"
+        put : "/v1/characters/name/{character.name}/playtime"
         body : "*"
       }
     };
@@ -81,46 +84,37 @@ service CharactersService {
 
 message PlayTimeResponse { uint64 time = 1; }
 
-message CreateCharacterRequest {
-  oneof owner {
-    google.protobuf.StringValue user_id = 1;
-    google.protobuf.StringValue username = 2;
-  }
-  string name = 3;
-  string gender = 4;
-  string realm = 5;
+message AddPlayTimeRequest {
+  CharacterTarget character = 1;
+  uint64 time = 2;
 }
 
-message UserTarget {
-  oneof target {
-    google.protobuf.StringValue id = 1;
-    google.protobuf.StringValue username = 2;
-  }
+message CreateCharacterRequest {
+  sro.UserTarget owner = 1;
+  string name = 2;
+  string gender = 3;
+  string realm = 4;
 }
 
 message CharacterTarget {
   oneof target {
-    google.protobuf.UInt64Value id = 1;
-    google.protobuf.StringValue name = 2;
+    uint64 id = 1;
+    string name = 2;
   }
 }
 
 message EditCharacterRequest {
-  oneof target {
-    google.protobuf.UInt64Value id = 1;
-    google.protobuf.StringValue name = 2;
-  }
+  CharacterTarget target = 1;
 
-  // The user account that owns the character
-  google.protobuf.StringValue owner_id = 3;
-  google.protobuf.StringValue new_name = 4;
-  google.protobuf.StringValue gender = 5;
-  google.protobuf.StringValue realm = 6;
+  // The user id that owns the character
+  optional string owner_id = 3;
+  optional string new_name = 4;
+  optional string gender = 5;
+  optional string realm = 6;
 
-  // Total play time in minutes
-  google.protobuf.UInt64Value play_time = 7;
+  optional uint64 play_time = 7;
 
-  Location location = 8;
+  optional Location location = 8;
 }
 
 message CharacterResponse {

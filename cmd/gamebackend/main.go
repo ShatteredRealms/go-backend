@@ -32,7 +32,7 @@ func main() {
 
 	server := gamebackend.NewServerContext(ctx, conf)
 	grpcServer, gwmux := helpers.InitServerDefaults()
-	address := server.GlobalConfig.Chat.Local.Address()
+	address := server.GlobalConfig.GameBackend.Local.Address()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
 	pb.RegisterHealthServiceServer(grpcServer, srv.NewHealthServiceServer())
@@ -41,7 +41,7 @@ func main() {
 
 	pb.RegisterConnectionServiceServer(grpcServer, srv.NewConnectionServiceServer(server))
 	err = pb.RegisterConnectionServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
-	helpers.Check(ctx, err, "register chat service handler endpoint")
+	helpers.Check(ctx, err, "register connection service handler endpoint")
 
-	helpers.StartServer(ctx, grpcServer, gwmux, server.GlobalConfig.Characters.Local.Address())
+	helpers.StartServer(ctx, grpcServer, gwmux, server.GlobalConfig.GameBackend.Local.Address())
 }

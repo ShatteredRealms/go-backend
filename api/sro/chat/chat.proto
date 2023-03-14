@@ -4,19 +4,21 @@ option go_package = "pkg/pb";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
-import "google/protobuf/wrappers.proto";
+import "sro/characters/characters.proto";
 
 service ChatService {
 
-  rpc ConnectChannel(ChannelTarget) returns (stream ChatMessage) {
+  rpc ConnectChannel(ChatChannelTarget) returns (stream ChatMessage) {
     option (google.api.http) = {
-      get : "/v1/message/channel/{channel_id}"
+      get : "/v1/message/channel/id/{id}"
     };
   }
 
-  rpc ConnectDirectMessage(CharacterName) returns (stream ChatMessage) {
+  rpc ConnectDirectMessage(sro.characters.CharacterTarget)
+      returns (stream ChatMessage) {
     option (google.api.http) = {
-      get : "/v1/message/characters/{character}"
+      get : "/v1/message/character/name/{name}"
+      additional_bindings : {get : "/v1/message/character/id/{id}"}
     };
   }
 
@@ -30,14 +32,21 @@ service ChatService {
   rpc SendDirectMessage(SendDirectMessageRequest)
       returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put : "/v1/message/characters/{character}"
+      put : "/v1/message/character/name/{target.name}"
       body : "*"
+      additional_bindings : {get : "/v1/message/character/name/{target.id}"}
     };
   }
 
-  rpc GetChannel(ChannelTarget) returns (ChatChannel) {
+  rpc GetChannel(ChatChannelTarget) returns (ChatChannel) {
     option (google.api.http) = {
-      get : "/v1/channels/{channel_id}"
+      get : "/v1/channels/id/{id}"
+    };
+  }
+
+  rpc AllChatChannels(google.protobuf.Empty) returns (ChatChannels) {
+    option (google.api.http) = {
+      get : "/v1/channels"
     };
   }
 
@@ -48,48 +57,40 @@ service ChatService {
     };
   }
 
-  rpc DeleteChannel(ChannelTarget) returns (google.protobuf.Empty) {
+  rpc DeleteChannel(ChatChannelTarget) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      delete : "/v1/channels/{channel_id}"
+      delete : "/v1/channels/id/{id}"
     };
   }
 
   rpc EditChannel(UpdateChatChannelRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put : "/v1/channels/{channel_id}"
+      put : "/v1/channels/id/{channel_id}"
       body : "*"
     };
   }
 
-  rpc AllChatChannels(google.protobuf.Empty) returns (ChatChannels) {
-    option (google.api.http) = {
-      get : "/v1/channels"
-    };
-  }
-
-  rpc GetAuthorizedChatChannels(RequestAuthorizedChatChannels)
+  rpc GetAuthorizedChatChannels(sro.characters.CharacterTarget)
       returns (ChatChannels) {
     option (google.api.http) = {
-      get : "/v1/characters/{character}/channels"
+      get : "/v1/channels/character/name/{name}"
+      additional_bindings : {get : "/v1/channels/character/id/{id}"}
     };
   }
 
   rpc UpdateUserChatChannelAuthorizations(RequestChatChannelAuthChange)
       returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put : "/v1/authorizations/characters/{character}/add"
+      put : "/v1/channels/characters/name/{character.name}"
+      additional_bindings : {get : "/v1/channels/characters/id/{character.id}"}
     };
   }
 }
 
 message RequestChatChannelAuthChange {
-  string character = 1;
+  sro.characters.CharacterTarget character = 1;
   bool add = 2;
   repeated uint64 ids = 3;
-}
-
-message RequestAuthorizedChatChannels {
-  string character = 1;
 }
 
 message ChatChannel {
@@ -105,7 +106,7 @@ message CreateChannelMessage {
   string dimension = 2;
 }
 
-message ChannelTarget { uint64 channel_id = 1; }
+message ChatChannelTarget { uint64 id = 1; }
 
 message ChatMessage {
   string message = 1;
@@ -118,14 +119,12 @@ message SendChatMessageRequest {
 }
 
 message SendDirectMessageRequest {
-  string character = 1;
+  sro.characters.CharacterTarget target = 1;
   ChatMessage chat_message = 2;
 }
 
 message UpdateChatChannelRequest {
   uint64 channel_id = 1;
-  google.protobuf.StringValue name = 2;
-  google.protobuf.StringValue dimension = 3;
+  optional string name = 2;
+  optional string dimension = 3;
 }
-
-message CharacterName { string character = 1; }

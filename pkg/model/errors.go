@@ -1,6 +1,11 @@
 package model
 
-import "errors"
+import (
+	"errors"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
 
 var (
 	// ErrInvalidName thrown when a name has invalid characters
@@ -17,4 +22,8 @@ var (
 
 	// ErrInvalidServerLocation thrown when a server location is unknown
 	ErrInvalidServerLocation = errors.New("invalid server location")
+
+	ErrUnauthorized  = status.Error(codes.Unauthenticated, "not authorized")
+	ErrDoesNotExist  = status.Error(codes.InvalidArgument, "does not exist")
+	ErrHandleRequest = status.Error(codes.Internal, "unable to handle request")
 )

@@ -1,8 +1,9 @@
 package srv
 
 import (
-	aapb "agones.dev/agones/pkg/allocation/go"
 	"context"
+
+	aapb "agones.dev/agones/pkg/allocation/go"
 	gamebackend "github.com/ShatteredRealms/go-backend/cmd/gamebackend/app"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
@@ -19,7 +20,7 @@ type connectionServiceServer struct {
 
 func (s connectionServiceServer) ConnectGameServer(
 	ctx context.Context,
-	request *pb.ConnectGameServerRequest,
+	request *pb.CharacterTarget,
 ) (*pb.ConnectGameServerResponse, error) {
 	if s.server.GlobalConfig.GameBackend.Mode == config.LocalMode {
 		return &pb.ConnectGameServerResponse{
@@ -31,10 +32,10 @@ func (s connectionServiceServer) ConnectGameServer(
 	// If the current user can't get the character, then deny the request
 	character, err := s.server.CharactersClient.GetCharacter(
 		ctx,
-		&pb.CharacterTarget{CharacterId: request.CharacterId},
+		request,
 	)
 	if err != nil || character == nil {
-		log.WithContext(ctx).Errorf("unable to get character %d: %s", request.CharacterId, err)
+		log.WithContext(ctx).Errorf("unable to get character %v: %s", request.Target, err)
 		return nil, err
 	}
 

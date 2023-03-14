@@ -11,7 +11,7 @@ type CharacterRepository interface {
 	Save(ctx context.Context, character *model.Character) (*model.Character, error)
 	Delete(ctx context.Context, character *model.Character) error
 
-	FindById(ctx context.Context, id uint64) (*model.Character, error)
+	FindById(ctx context.Context, id uint) (*model.Character, error)
 	FindByName(ctx context.Context, name string) (*model.Character, error)
 
 	FindAllByOwner(ctx context.Context, owner string) (model.Characters, error)
@@ -19,7 +19,7 @@ type CharacterRepository interface {
 	FindAll(context.Context) ([]*model.Character, error)
 
 	WithTrx(trx *gorm.DB) CharacterRepository
-	Migrate() error
+	Migrate(ctx context.Context) error
 }
 
 type characterRepository struct {
@@ -71,7 +71,7 @@ func (r characterRepository) Delete(ctx context.Context, character *model.Charac
 	return r.DB.WithContext(ctx).Delete(&character).Error
 }
 
-func (r characterRepository) FindById(ctx context.Context, id uint64) (*model.Character, error) {
+func (r characterRepository) FindById(ctx context.Context, id uint) (*model.Character, error) {
 	var character *model.Character = nil
 	result := r.DB.WithContext(ctx).First(&character, id)
 	if result.Error != nil {
@@ -104,6 +104,6 @@ func (r characterRepository) WithTrx(trx *gorm.DB) CharacterRepository {
 	return r
 }
 
-func (r characterRepository) Migrate() error {
-	return r.DB.AutoMigrate(&model.Character{})
+func (r characterRepository) Migrate(ctx context.Context) error {
+	return r.DB.WithContext(ctx).AutoMigrate(&model.Character{})
 }

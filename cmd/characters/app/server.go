@@ -33,6 +33,8 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *Character
 	helpers.Check(ctx, err, "connecting to database")
 
 	repo := repository.NewCharacterRepository(db)
-	server.Service = service.NewCharacterService(repo)
+	service, err := service.NewCharacterService(ctx, repo)
+	helpers.Check(ctx, err, "character serivce")
+	server.Service = service
 	return server
 }

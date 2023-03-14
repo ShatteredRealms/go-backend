@@ -8,16 +8,18 @@ var (
 		"Female": {},
 	}
 
-	genderPbs = make([]*pb.Gender, len(Realms))
+	genderPbs          = make([]*pb.Gender, len(Realms))
+	gendersInitialized = false
 )
 
 func GetGenders() []*pb.Gender {
-	if len(genderPbs) == 0 {
+	if !gendersInitialized {
 		idx := 0
 		for genderName := range Genders {
 			genderPbs[idx] = &pb.Gender{Name: genderName}
 			idx++
 		}
+		gendersInitialized = true
 	}
 
 	return genderPbs

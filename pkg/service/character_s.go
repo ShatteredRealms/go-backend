@@ -2,25 +2,28 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"reflect"
 
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
+	log "github.com/sirupsen/logrus"
 )
 
 type CharacterService interface {
 	Create(ctx context.Context, ownerId string, name string, gender string, realm string) (*model.Character, error)
 	Edit(ctx context.Context, character *pb.EditCharacterRequest) (*model.Character, error)
-	Delete(ctx context.Context, id uint64) error
+	Delete(ctx context.Context, id uint) error
 
-	FindById(ctx context.Context, id uint64) (*model.Character, error)
+	FindById(ctx context.Context, id uint) (*model.Character, error)
 	FindByName(ctx context.Context, name string) (*model.Character, error)
 
 	FindAllByOwner(ctx context.Context, ownerId string) (model.Characters, error)
 
-	FindAll(context.Context) ([]*model.Character, error)
+	FindAll(context.Context) (model.Characters, error)
 
-	AddPlayTime(ctx context.Context, characterId uint64, amount uint64) (uint64, error)
+	AddPlayTime(ctx context.Context, characterId uint, amount uint64) (uint64, error)
 }
 
 type characterService struct {
@@ -31,10 +34,19 @@ func (s characterService) FindByName(ctx context.Context, name string) (*model.C
 	return s.repo.FindByName(ctx, name)
 }
 
-func NewCharacterService(r repository.CharacterRepository) CharacterService {
+func NewCharacterService(
+	ctx context.Context,
+	r repository.CharacterRepository,
+) (CharacterService, error) {
+
+	err := r.Migrate(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("migrate db: %w", err)
+	}
+
 	return characterService{
 		repo: r,
-	}
+	}, nil
 }
 
 func (s characterService) Create(ctx context.Context, ownerId string, name string, gender string, realm string) (*model.Character, error) {
@@ -53,34 +65,46 @@ func (s characterService) Create(ctx context.Context, ownerId string, name strin
 	return s.repo.Create(ctx, &character)
 }
 
-func (s characterService) FindById(ctx context.Context, id uint64) (*model.Character, error) {
+func (s characterService) FindById(ctx context.Context, id uint) (*model.Character, error) {
 	return s.repo.FindById(ctx, id)
 }
 
 func (s characterService) Edit(ctx context.Context, character *pb.EditCharacterRequest) (*model.Character, error) {
-	currentCharacter, err := s.FindById(ctx, character.Id)
+	var currentCharacter *model.Character
+	var err error
+
+	switch target := character.Target.Target.(type) {
+	case *pb.CharacterTarget_Id:
+		currentCharacter, err = s.FindById(ctx, uint(target.Id))
+	case *pb.CharacterTarget_Name:
+		currentCharacter, err = s.FindByName(ctx, target.Name)
+	default:
+		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
+		return nil, model.ErrHandleRequest
+	}
+
 	if err != nil {
 		return nil, err
 	}
 
-	if character.Name != nil {
-		currentCharacter.Name = character.Name.Value
+	if character.NewName != nil {
+		currentCharacter.Name = *character.NewName
 	}
 
 	if character.OwnerId != nil {
-		currentCharacter.OwnerId = character.OwnerId.Value
+		currentCharacter.OwnerId = *character.OwnerId
 	}
 
 	if character.PlayTime != nil {
-		currentCharacter.PlayTime = character.PlayTime.Value
+		currentCharacter.PlayTime = *character.PlayTime
 	}
 
 	if character.Gender != nil {
-		currentCharacter.Gender = character.Gender.Value
+		currentCharacter.Gender = *character.Gender
 	}
 
 	if character.Realm != nil {
-		currentCharacter.Realm = character.Realm.Value
+		currentCharacter.Realm = *character.Realm
 	}
 
 	err = currentCharacter.Validate()
@@ -91,7 +115,7 @@ func (s characterService) Edit(ctx context.Context, character *pb.EditCharacterR
 	return s.repo.Save(ctx, currentCharacter)
 }
 
-func (s characterService) Delete(ctx context.Context, id uint64) error {
+func (s characterService) Delete(ctx context.Context, id uint) error {
 	character, err := s.FindById(ctx, id)
 	if err != nil {
 		return err
@@ -100,7 +124,7 @@ func (s characterService) Delete(ctx context.Context, id uint64) error {
 	return s.repo.Delete(ctx, character)
 }
 
-func (s characterService) FindAll(ctx context.Context) ([]*model.Character, error) {
+func (s characterService) FindAll(ctx context.Context) (model.Characters, error) {
 	return s.repo.FindAll(ctx)
 }
 
@@ -108,7 +132,7 @@ func (s characterService) FindAllByOwner(ctx context.Context, owner string) (mod
 	return s.repo.FindAllByOwner(ctx, owner)
 }
 
-func (s characterService) AddPlayTime(ctx context.Context, characterId uint64, amount uint64) (uint64, error) {
+func (s characterService) AddPlayTime(ctx context.Context, characterId uint, amount uint64) (uint64, error) {
 	character, err := s.FindById(ctx, characterId)
 	if err != nil {
 		return 0, err

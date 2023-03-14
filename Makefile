@@ -43,7 +43,7 @@ time=$(shell date +%s)
 PROTO_DIR=$(ROOT_DIR)/api
 PROTO_THIRD_PARTY_DIR=$(ROOT_DIR)/third_party
 
-PROTO_FILES = $(notdir $(shell find $(PROTO_DIR) -name '*.proto'))
+PROTO_FILES = $(shell find $(PROTO_DIR) -name '*.proto')
 
 #   _____                    _
 #  |_   _|                  | |
@@ -104,13 +104,13 @@ clean-protos:
 protos: clean-protos $(PROTO_FILES)
 
 $(PROTO_FILES):
-	protoc "$(PROTO_DIR)/$@" \
+	protoc "$@" \
 		-I "$(PROTO_DIR)" \
 		-I "$(PROTO_THIRD_PARTY_DIR)" \
 		--go_out="$(ROOT_DIR)" \
 		--go-grpc_out="$(ROOT_DIR)" \
 		--grpc-gateway_out="$(ROOT_DIR)" \
-		--grpc-gateway_opt logtostderr=true
+		--grpc-gateway_opt logtostderr=true 
 
 download:
 	go mod download

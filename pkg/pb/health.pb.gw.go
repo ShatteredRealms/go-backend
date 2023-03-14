@@ -64,7 +64,7 @@ func RegisterHealthServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/sro.accounts.HealthService/Health", runtime.WithHTTPPathPattern("/v1/health"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/sro.HealthService/Health", runtime.WithHTTPPathPattern("/v1/health"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -87,7 +87,7 @@ func RegisterHealthServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 // RegisterHealthServiceHandlerFromEndpoint is same as RegisterHealthServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
 func RegisterHealthServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
-	conn, err := grpc.DialContext(ctx, endpoint, opts...)
+	conn, err := grpc.Dial(endpoint, opts...)
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func RegisterHealthServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/sro.accounts.HealthService/Health", runtime.WithHTTPPathPattern("/v1/health"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/sro.HealthService/Health", runtime.WithHTTPPathPattern("/v1/health"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return

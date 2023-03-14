@@ -17,10 +17,6 @@ type DBPoolConfig struct {
 	Slaves []DBConfig `yaml:"slaves"`
 }
 
-func (s *ServerAddress) Address() string {
-	return fmt.Sprintf("%s:%d", s.Host, s.Port)
-}
-
 func (c DBConfig) MySQLDSN() string {
 	// refer https://github.com/go-sql-driver/mysql#dsn-data-source-name for details
 	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
@@ -33,12 +29,12 @@ func (c DBConfig) MySQLDSN() string {
 }
 
 func (c DBConfig) PostgresDSN() string {
-	// refer https://github.com/go-sql-driver/mysql#dsn-data-source-name for details
+	// refer https://github.com/go-sql-driver/postsgres#dsn-data-source-name for details
 	return fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable",
 		c.Username,
 		c.Password,
 		c.Host,
 		c.Port,
-		c.Name,
+		c.Namem
 	)
 }

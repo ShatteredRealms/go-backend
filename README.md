@@ -2,21 +2,21 @@
 Golang implementation of microservices that manage Shattered Realms Online.
 
 ## Components
-* `api`: Proto definitions used in the architecture
-* `cmd`: Microservices
-  * `characters` - User playable character management
-  * `chat` - Chat service for sending messages between players and in chat channels
-  * `gamebackend` - Management of game servers, connections and settings
+* `api` Proto definitions used in the architecture
+* `cmd` Microservices
+  * `characters` User playable character management
+  * `chat` Chat service for sending messages between players and in chat channels
+  * `gamebackend` Management of game servers, connections and settings
 * `pkg`: Global components shared between microservices
-  * `config`: Configuration parameters
-  * `helpers`: Utility functions used throughout the microservices
-  * `pb`: Auto-generated go protobuf and gRPC files
-  * `repository`: Abstraction layer to the underlying database and storage mechanisms
-  * `service`: Services that use the repositories to perform necessary actions
-  * `srv`: gRPC service implementations
-* `test`: Configuration files and data for testing
-  * `db`: Temporary testing database connection 
-* `third_party`: Third party proto definitions
+  * `config` Configuration parameters
+  * `helpers` Utility functions used throughout the microservices
+  * `pb` Auto-generated go protobuf and gRPC files
+  * `repository` Abstraction layer to the underlying database and storage mechanisms
+  * `service` Services that use the repositories to perform necessary actions
+  * `srv` gRPC service implementations
+* `test` Configuration files and data for testing
+  * `db` Temporary testing database connection 
+* `third_party` Third party proto definitions
 
 # Development
 The `Makefile` is located within the `build` folder within the project root directory. All make commands should be run from there. A docker compose file has been included to run all required services.

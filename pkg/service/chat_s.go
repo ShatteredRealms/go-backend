@@ -33,8 +33,8 @@ type ChatService interface {
 	ChannelMessagesReader(ctx context.Context, channelId uint) *kafka.Reader
 	DirectMessagesReader(ctx context.Context, username string) *kafka.Reader
 
-	AuthorizedChannelsForCharacter(ctx context.Context, character string) (model.ChatChannels, error)
-	ChangeAuthorizationForCharacter(ctx context.Context, character string, channelIds []uint, addAuth bool) error
+	AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (model.ChatChannels, error)
+	ChangeAuthorizationForCharacter(ctx context.Context, characterId uint, channelIds []uint, addAuth bool) error
 }
 
 type chatService struct {
@@ -45,12 +45,12 @@ type chatService struct {
 	directMessageWriters  map[string]*kafka.Writer
 }
 
-func (s chatService) ChangeAuthorizationForCharacter(ctx context.Context, character string, channelIds []uint, addAuth bool) error {
-	return s.chatRepo.ChangeAuthorizationForCharacter(ctx, character, channelIds, addAuth)
+func (s chatService) ChangeAuthorizationForCharacter(ctx context.Context, characterId uint, channelIds []uint, addAuth bool) error {
+	return s.chatRepo.ChangeAuthorizationForCharacter(ctx, characterId, channelIds, addAuth)
 }
 
-func (s chatService) AuthorizedChannelsForCharacter(ctx context.Context, character string) (model.ChatChannels, error) {
-	return s.chatRepo.AuthorizedChannelsForCharacter(ctx, character)
+func (s chatService) AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (model.ChatChannels, error) {
+	return s.chatRepo.AuthorizedChannelsForCharacter(ctx, characterId)
 }
 
 func (s chatService) UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) error {
@@ -63,11 +63,11 @@ func (s chatService) UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannel
 	}
 
 	if pb.Name != nil {
-		channel.Name = pb.Name.Value
+		channel.Name = *pb.Name
 	}
 
-	if pb.Public != nil {
-		channel.Public = pb.Public.Value
+	if pb.Dimension != nil {
+		channel.Dimension = *pb.Dimension
 	}
 
 	return s.chatRepo.UpdateChannel(ctx, channel)
@@ -170,9 +170,14 @@ func NewChatService(ctx context.Context, chatRepo repository.ChatRepository, kaf
 	ctx, span := tracer.Start(ctx, "NewChatService")
 	defer span.End()
 
+	err := chatRepo.Migrate(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("migrate db: %w", err)
+	}
+
 	conn, err := repository.ConnectKafka(kafkaAddress)
 	if err != nil {
-		return nil, fmt.Errorf("connecting kafka: %v", err)
+		return nil, fmt.Errorf("connecting kafka: %w", err)
 	}
 
 	service := chatService{
