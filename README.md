@@ -4,18 +4,18 @@ Golang implementation of microservices that manage Shattered Realms Online.
 ## Components
 * `api`: Proto definitions used in the architecture
 * `cmd`: Microservices
-  * `cmd/characters` - User playable character management
-  * `cmd/chat` - Chat service for sending messages between players and in chat channels
-  * `cmd/gamebackend` - Management of game servers, connections and settings
+  * `characters` - User playable character management
+  * `chat` - Chat service for sending messages between players and in chat channels
+  * `gamebackend` - Management of game servers, connections and settings
 * `pkg`: Global components shared between microservices
-  * `pkg/config`: Configuration parameters
-  * `pkg/helpers`: Utility functions used throughout the microservices
-  * `pkg/pb`: Auto-generated go protobuf and gRPC files
-  * `pkg/repository`: Abstraction layer to the underlying database and storage mechanisms
-  * `pkg/service`: Services that use the repositories to perform necessary actions
-  * `pkg/srv`: gRPC service implementations
+  * `config`: Configuration parameters
+  * `helpers`: Utility functions used throughout the microservices
+  * `pb`: Auto-generated go protobuf and gRPC files
+  * `repository`: Abstraction layer to the underlying database and storage mechanisms
+  * `service`: Services that use the repositories to perform necessary actions
+  * `srv`: gRPC service implementations
 * `test`: Configuration files and data for testing
-  * `test/db`: Temporary testing database connection 
+  * `db`: Temporary testing database connection 
 * `third_party`: Third party proto definitions
 
 # Development
