@@ -25,7 +25,7 @@ func init() {
 func main() {
 	ctx := context.Background()
 	uptrace.ConfigureOpentelemetry(
-		uptrace.WithDSN(conf.Uptrace.DSN()),
+		uptrace.WithDSN(conf.Uptrace.DSN),
 		uptrace.WithServiceName(characters.ServiceName),
 		uptrace.WithServiceVersion(conf.Version),
 	)

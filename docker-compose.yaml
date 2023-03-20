@@ -7,6 +7,8 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - 22181:2181
+    networks:
+      - backend
 
   kafka:
     image: confluentinc/cp-kafka:latest
@@ -21,6 +23,8 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - backend
 
   clickhouse:
     image: clickhouse/clickhouse-server:22.7
@@ -37,6 +41,8 @@ services:
     ports:
       - '8123:8123'
       - '9000:9000'
+    networks:
+      - backend
 
   uptrace:
     image: 'uptrace/uptrace-dev:latest'
@@ -51,6 +57,8 @@ services:
       - '14318:14318'
     depends_on:
       - clickhouse
+    networks:
+      - backend
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.70.0
@@ -63,6 +71,8 @@ services:
     ports:
       - '4317:4317'
       - '4318:4318'
+    networks:
+      - backend
 
   alertmanager:
     image: prom/alertmanager:v0.24.0
@@ -75,17 +85,23 @@ services:
     command:
       - '--config.file=/etc/alertmanager/config.yml'
       - '--storage.path=/alertmanager'
+    networks:
+      - backend
 
   mailhog:
     image: mailhog/mailhog:v1.0.1
     restart: on-failure
     ports:
       - '8025:8025'
+    networks:
+      - backend
 
   vector:
     image: timberio/vector:0.24.X-alpine
     volumes:
       - ./test/vector.toml:/etc/vector/vector.toml:ro
+    networks:
+      - backend
 
   postgres:
     image: postgres
@@ -102,6 +118,8 @@ services:
     volumes: 
       - postgres:/var/lib/postgresql/data
       - ./test/db-init.sql:/docker-entrypoint-initdb.d/create_tables.sql
+    networks:
+      - backend
 
   keycloak:
     image: quay.io/keycloak/keycloak
@@ -119,9 +137,13 @@ services:
       - 8080:8080
     depends_on:
       - postgres
+    networks:
+      - backend
 
   sro-characters:
-    image: sro-characters:latest
+    build:
+      context: .
+      dockerfile: build/characters.Dockerfile
     ports:
       - 8081:8081
     depends_on:
@@ -129,9 +151,14 @@ services:
       - postgres
     volumes:
       - ./test/docker_config.yaml:/etc/sro/config.yaml
+    networks:
+      - envoymesh
+      - backend
 
   sro-chat:
-    image: sro-chat:latest
+    build:
+      context: .
+      dockerfile: build/chat.Dockerfile
     ports:
       - 8180:8180
     depends_on:
@@ -141,9 +168,14 @@ services:
       - postgres
     volumes:
       - ./test/docker_config.yaml:/etc/sro/config.yaml
+    networks:
+      - envoymesh
+      - backend
 
   sro-gamebackend:
-    image: sro-gamebackend:latest
+    build:
+      context: .
+      dockerfile: build/gamebackend.Dockerfile
     ports:
       - 8082:8082
     depends_on:
@@ -151,6 +183,23 @@ services:
       - uptrace
     volumes:
       - ./test/docker_config.yaml:/etc/sro/config.yaml
+    networks:
+      - envoymesh
+      - backend
+  
+  service-envoy:
+    build:
+      context: ./build/envoy
+      dockerfile: Dockerfile
+    ports:
+      - "9090:9090"
+      - "9901:9901"
+    expose:
+      - "80"
+      - "8081"
+    networks:
+      - envoymesh
+      - backend
 
 volumes:
   uptrace_data:
@@ -161,3 +210,7 @@ volumes:
     driver: local
   postgres:
     driver: local
+
+networks:
+  envoymesh:
+  backend:

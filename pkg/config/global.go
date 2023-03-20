@@ -122,10 +122,7 @@ func NewGlobalConfig() *GlobalConfig {
 			},
 		},
 		Uptrace: UptraceConfig{
-			Host:  "localhost",
-			Port:  14317,
-			Id:    "2",
-			Token: "project2_secret_token",
+			DSN: "http://project2_secret_token@localhost:14317/2",
 		},
 		Agones: AgonesConfig{
 			KeyFile:    "/etc/sro/auth/agones/client/key",

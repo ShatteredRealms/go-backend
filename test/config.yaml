@@ -1,13 +1,29 @@
-agones:
-  namespace: 'default'
-  allocator:
-    remote:
-      host: 'localhost'
+characters:
+  remote:
+    host: 'characters'
+    port: 80
+  mode: 'production'
+  keycloak:
+    baseUrl: 'http://localhost:8080'
+    Id: '738a426a-da91-4b16-b5fc-92d63a22eb76'
+    clientSecret: '**********'
+gamebackend:
+  remote:
+    host: 'gamebackend'
+    port: 80
+  mode: 'production'
+  keycloak:
+    baseUrl: 'http://localhost:8080'
+    Id: 'c3cacba8-cd16-4a4f-bc86-367274cb7cb5'
+    clientSecret: '**********'
+chat:
+  remote:
+    host: 'chat'
+    port: 80
+  mode: 'production'
+  keycloak:
+    baseUrl: 'http://localhost:8080'
+    Id: '4c79d4a0-a3fd-495f-b56e-eea508bb0862'
+    clientSecret: '**********'
 uptrace:
-  host: "localhost"
-  port: 14317
-  id: "2"
-  token: "project2_secret_token"
-keycloak:
-  baseUrl: "http://localhost:8080"
-  realm: "default"
+  dsn: http://project2_secret_token@localhost:14317/2

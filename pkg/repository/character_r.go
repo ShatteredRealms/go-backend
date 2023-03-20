@@ -68,7 +68,7 @@ func (r characterRepository) Save(ctx context.Context, character *model.Characte
 }
 
 func (r characterRepository) Delete(ctx context.Context, character *model.Character) error {
-	return r.DB.WithContext(ctx).Delete(&character).Error
+	return r.DB.WithContext(ctx).Delete(character).Error
 }
 
 func (r characterRepository) FindById(ctx context.Context, id uint) (*model.Character, error) {
@@ -92,7 +92,7 @@ func (r characterRepository) FindAll(ctx context.Context) ([]*model.Character, e
 
 func (r characterRepository) FindAllByOwner(ctx context.Context, owner string) (model.Characters, error) {
 	var characters model.Characters
-	return characters, r.DB.WithContext(ctx).Where("owner = ?", owner).Find(&characters).Error
+	return characters, r.DB.WithContext(ctx).Where("owner_id = ?", owner).Find(&characters).Error
 }
 
 func (r characterRepository) WithTrx(trx *gorm.DB) CharacterRepository {

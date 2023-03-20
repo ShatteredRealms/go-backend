@@ -24,7 +24,7 @@ service ChatService {
 
   rpc SendChatMessage(SendChatMessageRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put : "/v1/message/channel/{channel_id}"
+      put : "/v1/message/channel/id/{channel_id}"
       body : "*"
     };
   }

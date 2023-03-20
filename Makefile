@@ -25,7 +25,6 @@ endif
 
 # Application versions
 BASE_VERSION = $(shell git describe --tags --always --abbrev=0 --match='v[0-9]*.[0-9]*.[0-9]*' 2> /dev/null | sed 's/^.//')
-BASE_VERSION = v1.0.0
 COMMIT_HASH = $(shell git rev-parse --short HEAD)
 
 

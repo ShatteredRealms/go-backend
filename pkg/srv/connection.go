@@ -7,6 +7,7 @@ import (
 	gamebackend "github.com/ShatteredRealms/go-backend/cmd/gamebackend/app"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -72,8 +73,12 @@ func (s connectionServiceServer) ConnectGameServer(
 		},
 	}
 
-	serverCtx := helpers.ContextAddClientAuth(ctx, s.server.GlobalConfig.GameBackend.Keycloak.ClientId, s.server.GlobalConfig.GameBackend.Keycloak.ClientSecret)
-	allocatorResp, err := s.server.AgonesClient.Allocate(serverCtx, allocatorReq)
+	srvCtx, err := s.serverContext(ctx)
+	if err != nil {
+		log.WithContext(ctx).Errorf("create server context: %v", err)
+		return nil, model.ErrHandleRequest
+	}
+	allocatorResp, err := s.server.AgonesClient.Allocate(srvCtx, allocatorReq)
 	if err != nil {
 		log.WithContext(ctx).Errorf("allocating: %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -89,4 +94,21 @@ func NewConnectionServiceServer(server *gamebackend.GameBackendServerContext) pb
 	return &connectionServiceServer{
 		server: server,
 	}
+}
+
+func (s connectionServiceServer) serverContext(ctx context.Context) (context.Context, error) {
+	token, err := s.server.KeycloakClient.LoginClient(
+		ctx,
+		s.server.GlobalConfig.Chat.Keycloak.ClientId,
+		s.server.GlobalConfig.Chat.Keycloak.ClientSecret,
+		s.server.GlobalConfig.Chat.Keycloak.Realm,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return helpers.ContextAddClientToken(
+		ctx,
+		token.AccessToken,
+	), nil
 }

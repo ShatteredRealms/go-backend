@@ -30,8 +30,8 @@ type Character struct {
 	// Owner The username/account that owns the character
 	OwnerId string `gorm:"not null" json:"owner"`
 	Name    string `gorm:"not null;unique" json:"name"`
-	Gender  string `gorm:"not null" json:"gender_id"`
-	Realm   string `gorm:"not null" json:"realm_id"`
+	Gender  string `gorm:"not null" json:"gender"`
+	Realm   string `gorm:"not null" json:"realm"`
 
 	// PlayTime Time in minutes the character has played
 	PlayTime uint64 `gorm:"not null" json:"play_time"`

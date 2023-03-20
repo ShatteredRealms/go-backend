@@ -53,6 +53,7 @@ func (s *charactersServiceServer) AddCharacterPlayTime(
 ) (*pb.PlayTimeResponse, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -82,6 +83,7 @@ func (s *charactersServiceServer) CreateCharacter(
 ) (*pb.CharacterResponse, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -125,6 +127,7 @@ func (s *charactersServiceServer) DeleteCharacter(
 ) (*emptypb.Empty, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -159,6 +162,7 @@ func (s *charactersServiceServer) EditCharacter(
 ) (*emptypb.Empty, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -196,6 +200,7 @@ func (s *charactersServiceServer) GetCharacter(
 ) (*pb.CharacterResponse, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -224,10 +229,23 @@ func (s *charactersServiceServer) GetAllCharactersForUser(
 ) (*pb.CharactersResponse, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
-	chars, err := s.server.Service.FindAllByOwner(ctx, claims.Subject)
+	id, err := s.getUserIdFromTarget(ctx, request)
+	if err != nil {
+		log.WithContext(ctx).Errorf("get user id from target: %v", err)
+		return nil, model.ErrUnauthorized
+	}
+
+	// Validate requester has correct permission
+	if id != claims.Subject &&
+		!claims.HasResourceRole(RoleCharacterManagementOther, model.CharactersClientId) {
+		return nil, model.ErrUnauthorized
+	}
+
+	chars, err := s.server.Service.FindAllByOwner(ctx, id)
 	if err != nil {
 		log.WithContext(ctx).Errorf("find by owner %s: %v", claims.Subject, chars)
 		return nil, status.Error(codes.Internal, "unable to find chars")
@@ -243,6 +261,7 @@ func (s *charactersServiceServer) GetCharacters(
 ) (*pb.CharactersResponse, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -306,12 +325,21 @@ func NewCharactersServiceServer(
 	}, nil
 }
 
-func (s charactersServiceServer) serverContext(ctx context.Context) context.Context {
-	return helpers.ContextAddClientAuth(
+func (s charactersServiceServer) serverContext(ctx context.Context) (context.Context, error) {
+	token, err := s.server.KeycloakClient.LoginClient(
 		ctx,
-		s.server.GlobalConfig.Characters.Keycloak.ClientId,
-		s.server.GlobalConfig.Characters.Keycloak.ClientSecret,
+		s.server.GlobalConfig.Chat.Keycloak.ClientId,
+		s.server.GlobalConfig.Chat.Keycloak.ClientSecret,
+		s.server.GlobalConfig.Chat.Keycloak.Realm,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return helpers.ContextAddClientToken(
+		ctx,
+		token.AccessToken,
+	), nil
 }
 
 func (s charactersServiceServer) getCharacterTargetId(

@@ -7,6 +7,6 @@ import (
 
 func Check(ctx context.Context, err error, errContext string) {
 	if err != nil {
-		log.WithContext(ctx).Fatalf("%s: %w", errContext, err)
+		log.WithContext(ctx).Fatalf("%s: %v", errContext, err)
 	}
 }

@@ -35,6 +35,6 @@ func (c DBConfig) PostgresDSN() string {
 		c.Password,
 		c.Host,
 		c.Port,
-		c.Namem
+		c.Name,
 	)
 }

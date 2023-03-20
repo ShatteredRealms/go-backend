@@ -33,7 +33,7 @@ var (
 
 	RoleChatChannelManage = registerChatRole(&gocloak.Role{
 		Name:        gocloak.StringP("chat_manage"),
-		Description: gocloak.StringP("Allows viewin, creation, editing and deletion of chat channels."),
+		Description: gocloak.StringP("Allows viewing, creation, editing and deletion of chat channels."),
 	})
 )
 
@@ -48,6 +48,7 @@ func (s chatServiceServer) ConnectChannel(
 ) error {
 	claims, err := helpers.ExtractClaims(server.Context())
 	if err != nil {
+		log.WithContext(server.Context()).Errorf("extract claims: %v", err)
 		return model.ErrUnauthorized
 	}
 
@@ -83,6 +84,7 @@ func (s chatServiceServer) ConnectDirectMessage(
 ) error {
 	claims, err := helpers.ExtractClaims(server.Context())
 	if err != nil {
+		log.WithContext(server.Context()).Errorf("extract claims: %v", err)
 		return model.ErrUnauthorized
 	}
 
@@ -122,6 +124,7 @@ func (s chatServiceServer) SendChatMessage(
 ) (*emptypb.Empty, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -156,6 +159,7 @@ func (s chatServiceServer) SendDirectMessage(
 ) (*emptypb.Empty, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -171,7 +175,12 @@ func (s chatServiceServer) SendDirectMessage(
 		return nil, err
 	}
 
-	targetCharacterName, err := helpers.GetCharacterNameFromTarget(s.serverContext(ctx), s.server.CharacterService, request.Target)
+	srvCtx, err := s.serverContext(ctx)
+	if err != nil {
+		log.WithContext(ctx).Errorf("create server context: %v", err)
+		return nil, model.ErrHandleRequest
+	}
+	targetCharacterName, err := helpers.GetCharacterNameFromTarget(srvCtx, s.server.CharacterService, request.Target)
 	if err != nil {
 		return nil, err
 	}
@@ -195,6 +204,7 @@ func (s chatServiceServer) GetChannel(
 ) (*pb.ChatChannel, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -218,6 +228,7 @@ func (s chatServiceServer) CreateChannel(
 ) (*emptypb.Empty, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -252,6 +263,7 @@ func (s chatServiceServer) DeleteChannel(
 ) (*emptypb.Empty, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -281,6 +293,7 @@ func (s chatServiceServer) EditChannel(
 ) (*emptypb.Empty, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -308,6 +321,7 @@ func (s chatServiceServer) AllChatChannels(
 ) (*pb.ChatChannels, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -331,6 +345,7 @@ func (s chatServiceServer) GetAuthorizedChatChannels(
 ) (*pb.ChatChannels, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -339,7 +354,12 @@ func (s chatServiceServer) GetAuthorizedChatChannels(
 		return nil, model.ErrUnauthorized
 	}
 
-	targetCharacterId, err := helpers.GetCharacterIdFromTarget(s.serverContext(ctx), s.server.CharacterService, request)
+	srvCtx, err := s.serverContext(ctx)
+	if err != nil {
+		log.WithContext(ctx).Errorf("create server context: %v", err)
+		return nil, model.ErrHandleRequest
+	}
+	targetCharacterId, err := helpers.GetCharacterIdFromTarget(srvCtx, s.server.CharacterService, request)
 	if err != nil {
 		return nil, err
 	}
@@ -359,6 +379,7 @@ func (s chatServiceServer) UpdateUserChatChannelAuthorizations(
 ) (*emptypb.Empty, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -370,7 +391,12 @@ func (s chatServiceServer) UpdateUserChatChannelAuthorizations(
 	targetCharacterId := uint(0)
 	switch target := request.Character.Target.(type) {
 	case *pb.CharacterTarget_Name:
-		targetChar, err := s.server.CharacterService.GetCharacter(s.serverContext(ctx), request.Character)
+		srvCtx, err := s.serverContext(ctx)
+		if err != nil {
+			log.WithContext(ctx).Errorf("create server context: %v", err)
+			return nil, model.ErrHandleRequest
+		}
+		targetChar, err := s.server.CharacterService.GetCharacter(srvCtx, request.Character)
 		if err != nil {
 			return nil, err
 		}
@@ -432,23 +458,40 @@ func NewChatServiceServer(
 	}, nil
 }
 
-func (s chatServiceServer) serverContext(ctx context.Context) context.Context {
-	return helpers.ContextAddClientAuth(
+func (s chatServiceServer) serverContext(ctx context.Context) (context.Context, error) {
+	token, err := s.server.KeycloakClient.LoginClient(
 		ctx,
 		s.server.GlobalConfig.Chat.Keycloak.ClientId,
 		s.server.GlobalConfig.Chat.Keycloak.ClientSecret,
+		s.server.GlobalConfig.Chat.Keycloak.Realm,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return helpers.ContextAddClientToken(
+		ctx,
+		token.AccessToken,
+	), nil
 }
 
 func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, request *pb.CharacterTarget) (*pb.CharacterResponse, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "authentication required")
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
+		return nil, model.ErrUnauthorized
 	}
 
-	chars, err := s.server.CharacterService.GetAllCharactersForUser(s.serverContext(ctx), &pb.UserTarget{
-		Target: &pb.UserTarget_Id{claims.ID},
+	srvCtx, err := s.serverContext(ctx)
+	if err != nil {
+		log.WithContext(ctx).Errorf("create server context: %v", err)
+		return nil, model.ErrHandleRequest
+	}
+
+	chars, err := s.server.CharacterService.GetAllCharactersForUser(srvCtx, &pb.UserTarget{
+		Target: &pb.UserTarget_Id{Id: claims.Subject},
 	})
+	log.WithContext(ctx).Infof("found characters: %+v", chars)
 	if err != nil {
 		log.WithContext(ctx).Errorf("chat character service get for user: %v", err)
 		return nil, status.Errorf(codes.Internal, "unable to verify character")

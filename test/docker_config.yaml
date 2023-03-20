@@ -29,4 +29,4 @@ gamebackend:
   keycloak:
     baseUrl: http://keycloak:8080
 uptrace:
-  host: uptrace
+  dsn: http://project2_secret_token@uptrace:14317/2
