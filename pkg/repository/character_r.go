@@ -2,7 +2,10 @@ package repository
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/ShatteredRealms/go-backend/pkg/model"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -30,13 +33,16 @@ func (r characterRepository) FindByName(ctx context.Context, name string) (*mode
 	var character *model.Character = nil
 	result := r.DB.WithContext(ctx).Where("name = ?", name).Find(&character)
 	if result.Error != nil {
+		log.WithContext(ctx).Debugf("find by name err: %v", result.Error)
 		return nil, result.Error
 	}
 
 	if result.RowsAffected == 0 {
+		log.WithContext(ctx).Debugf("find by name: no rows affected. character: %+v", character)
 		return nil, nil
 	}
 
+	log.WithContext(ctx).Debugf("character name %s found", name)
 	return character, nil
 }
 
@@ -68,20 +74,26 @@ func (r characterRepository) Save(ctx context.Context, character *model.Characte
 }
 
 func (r characterRepository) Delete(ctx context.Context, character *model.Character) error {
-	return r.DB.WithContext(ctx).Delete(character).Error
+	if character == nil {
+		return fmt.Errorf("character is nil")
+	}
+	return r.DB.WithContext(ctx).Where("id = ?", character.ID).Delete(&character).Error
 }
 
 func (r characterRepository) FindById(ctx context.Context, id uint) (*model.Character, error) {
-	var character *model.Character = nil
-	result := r.DB.WithContext(ctx).First(&character, id)
+	var character *model.Character
+	result := r.DB.WithContext(ctx).Where("id = ?", id).Find(&character)
 	if result.Error != nil {
+		log.WithContext(ctx).Debugf("find by id err: %v", result.Error)
 		return nil, result.Error
 	}
 
-	if r.DB.RowsAffected == 0 {
+	if result.RowsAffected == 0 {
+		log.WithContext(ctx).Debugf("find by id: no rows affected. character: %+v", character)
 		return nil, nil
 	}
 
+	log.WithContext(ctx).Debugf("character id %d found", id)
 	return character, nil
 }
 

@@ -3,10 +3,12 @@ package model
 import (
 	"errors"
 	"fmt"
+	"regexp"
+	"time"
+
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	goaway "github.com/TwiN/go-away"
-	"gorm.io/gorm"
-	"regexp"
+	"gorm.io/plugin/soft_delete"
 )
 
 const (
@@ -25,11 +27,14 @@ var (
 )
 
 type Character struct {
-	gorm.Model
+	ID        uint `gorm:"primarykey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt soft_delete.DeletedAt `gorm:"uniqueIndex:udx_name"`
 
 	// Owner The username/account that owns the character
 	OwnerId string `gorm:"not null" json:"owner"`
-	Name    string `gorm:"not null;unique" json:"name"`
+	Name    string `gorm:"not null;uniqueIndex:udx_name" json:"name"`
 	Gender  string `gorm:"not null" json:"gender"`
 	Realm   string `gorm:"not null" json:"realm"`
 

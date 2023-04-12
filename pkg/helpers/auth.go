@@ -2,7 +2,8 @@ package helpers
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -11,10 +12,22 @@ const (
 )
 
 func ContextAddClientToken(ctx context.Context, token string) context.Context {
+	return ContextAddClientBearerToken(ctx, "Bearer "+token)
+}
+
+func ContextAddClientBearerToken(ctx context.Context, token string) context.Context {
 	md := metadata.New(
 		map[string]string{
-			"authorization": fmt.Sprintf("Bearer %s", token),
+			"authorization": token,
 		},
 	)
+
 	return metadata.AppendToOutgoingContext(metadata.NewOutgoingContext(ctx, md))
+}
+
+func PassAuthContext(ctx context.Context) context.Context {
+	return ContextAddClientBearerToken(
+		ctx,
+		metautils.ExtractIncoming(ctx).Get("authorization"),
+	)
 }

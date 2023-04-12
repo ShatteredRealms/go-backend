@@ -7,6 +7,7 @@ import (
 
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -200,6 +201,7 @@ func (s *charactersServiceServer) GetCharacter(
 ) (*pb.CharacterResponse, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
+		log.WithContext(ctx).Debugf("ctx auth: %v", metautils.ExtractIncoming(ctx).Get("authorization"))
 		log.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
@@ -212,6 +214,7 @@ func (s *charactersServiceServer) GetCharacter(
 
 	character, err := s.getCharacterFromTarget(ctx, request)
 	if err != nil {
+		log.WithContext(ctx).Errorf("get character from target: %v", err)
 		return nil, err
 	}
 
@@ -389,10 +392,12 @@ func (s charactersServiceServer) getCharacterFromTarget(
 	}
 
 	if err != nil {
+		log.WithContext(ctx).Debugf("err: %v", err)
 		return nil, model.ErrHandleRequest
 	}
 
 	if character == nil {
+		log.WithContext(ctx).Debugf("character not found")
 		return nil, model.ErrDoesNotExist
 	}
 

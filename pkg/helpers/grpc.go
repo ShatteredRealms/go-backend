@@ -51,3 +51,4 @@ func StartServer(
 		log.WithContext(ctx).Errorf("server stopped: %v", err)
 	}
 }
+

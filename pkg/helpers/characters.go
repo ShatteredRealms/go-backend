@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	"github.com/ShatteredRealms/go-backend/pkg/model"
@@ -14,6 +15,10 @@ func GetCharacterIdFromTarget(
 	charactersServiceClient pb.CharactersServiceClient,
 	target *pb.CharacterTarget,
 ) (uint, error) {
+	if target == nil {
+		return 0, fmt.Errorf("target cannot be nil")
+	}
+
 	targetCharacterId := uint(0)
 	switch t := target.Target.(type) {
 	case *pb.CharacterTarget_Name:

@@ -1,29 +1,29 @@
 characters:
+  keycloak:
+    baseUrl: 'http://localhost:8080'
+    clientSecret: '**********'
+    Id: '738a426a-da91-4b16-b5fc-92d63a22eb76'
   remote:
     host: 'characters'
-    port: 80
-  mode: 'production'
-  keycloak:
-    baseUrl: 'http://localhost:8080'
-    Id: '738a426a-da91-4b16-b5fc-92d63a22eb76'
-    clientSecret: '**********'
-gamebackend:
-  remote:
-    host: 'gamebackend'
-    port: 80
-  mode: 'production'
-  keycloak:
-    baseUrl: 'http://localhost:8080'
-    Id: 'c3cacba8-cd16-4a4f-bc86-367274cb7cb5'
-    clientSecret: '**********'
+    port: 8081
 chat:
+  kafka:
+    host: localhost
+    port: 29092
+  keycloak:
+    baseUrl: 'http://localhost:8080'
+    clientSecret: '**********'
+    Id: '4c79d4a0-a3fd-495f-b56e-eea508bb0862'
   remote:
     host: 'chat'
-    port: 80
-  mode: 'production'
+    port: 8180
+gamebackend:
   keycloak:
     baseUrl: 'http://localhost:8080'
-    Id: '4c79d4a0-a3fd-495f-b56e-eea508bb0862'
     clientSecret: '**********'
+    Id: 'c3cacba8-cd16-4a4f-bc86-367274cb7cb5'
+  remote:
+    host: 'gamebackend'
+    port: 8082
 uptrace:
   dsn: http://project2_secret_token@localhost:14317/2

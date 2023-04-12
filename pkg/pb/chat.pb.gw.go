@@ -931,7 +931,7 @@ func RegisterChatServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/sro.chat.ChatService/SendChatMessage", runtime.WithHTTPPathPattern("/v1/message/channel/{channel_id}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/sro.chat.ChatService/SendChatMessage", runtime.WithHTTPPathPattern("/v1/message/channel/id/{channel_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1336,7 +1336,7 @@ func RegisterChatServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/sro.chat.ChatService/SendChatMessage", runtime.WithHTTPPathPattern("/v1/message/channel/{channel_id}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/sro.chat.ChatService/SendChatMessage", runtime.WithHTTPPathPattern("/v1/message/channel/id/{channel_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1604,7 +1604,7 @@ var (
 
 	pattern_ChatService_ConnectDirectMessage_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 3}, []string{"v1", "message", "character", "id"}, ""))
 
-	pattern_ChatService_SendChatMessage_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "message", "channel", "channel_id"}, ""))
+	pattern_ChatService_SendChatMessage_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "message", "channel", "id", "channel_id"}, ""))
 
 	pattern_ChatService_SendDirectMessage_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "message", "character", "name", "target.name"}, ""))
 

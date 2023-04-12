@@ -1,0 +1,132 @@
+static_resources:
+  listeners:
+  - address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 9091
+    filter_chains:
+    - filters:
+      - name: envoy.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager 
+          access_log:
+          - name: envoy.access_loggers.stdout
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+          codec_type: auto
+          stat_prefix: ingress_http
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: service
+              domains:
+              - "*"
+              routes:
+              - match:
+                  prefix: "/characters/"
+                route:
+                  prefix_rewrite: "/"
+                  cluster: characters_service
+                  timeout: 0s
+              - match:
+                  prefix: "/gamebackend/"
+                route:
+                  prefix_rewrite: "/"
+                  cluster: gamebackend_service
+                  timeout: 0s
+              - match:
+                  prefix: "/chat/"
+                route:
+                  prefix_rewrite: "/"
+                  cluster: chat_service
+                  timeout: 0s
+              cors:
+                allow_origin_string_match:
+                - safe_regex:
+                    regex: "^.*$"
+                - safe_regex:
+                    regex: ".*"
+                allow_methods: "GET, POST, PUT, DELETE, OPTION"
+                expose_headers: "grpc-message, grpc-status"
+                allow_headers: "keep-alive, user-agent, cache-control, content-type, content-transfer-encoding, x-accept-content-transfer-encoding, x-accept-response-streaming, x-user-agent, x-grpc-web, grpc-timeout, authorization"
+          http_filters:
+          - name: envoy.http1bridge
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_http1_bridge.v3.Config
+          #     upgrade_protobuf_to_grpc: true
+          # - name: envoy.filters.http.grpc_http1_reverse_bridge
+          #   typed_config:
+          #     "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_http1_reverse_bridge.v3.FilterConfig
+          #   content_type: application/grpc+proto
+          - name: envoy.grpc_web
+            typed_config: 
+              "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_web.v3.GrpcWeb
+          - name: envoy.cors
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors
+          - name: envoy.router
+            typed_config: 
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+          common_tls_context:
+            alpn_protocols: h2
+            tls_certificates:
+            - certificate_chain: {filename: "/etc/localhost.pem"}
+              private_key: {filename: "/etc/localhost.pem"}
+
+  clusters:
+  - name: characters_service
+    connect_timeout: 0.25s
+    type: strict_dns
+    lb_policy: round_robin
+    load_assignment:
+      cluster_name: characters
+      endpoints:
+      - lb_endpoints:
+          - endpoint:
+              address:
+                socket_address:
+                  address: "host.docker.internal"
+                  port_value: 8081
+    http2_protocol_options: {}
+  - name: gamebackend_service
+    connect_timeout: 0.25s
+    type: strict_dns
+    lb_policy: round_robin
+    load_assignment:
+      cluster_name: gamebackend 
+      endpoints:
+      - lb_endpoints:
+          - endpoint:
+              address:
+                socket_address:
+                  address: "host.docker.internal"
+                  port_value: 8082
+    http2_protocol_options: {}
+  - name: chat_service
+    connect_timeout: 0.25s
+    type: strict_dns
+    lb_policy: round_robin
+    load_assignment:
+      cluster_name: chat
+      endpoints:
+      - lb_endpoints:
+          - endpoint:
+              address:
+                socket_address:
+                  address: "host.docker.internal"
+                  port_value: 8180
+    http2_protocol_options: {}
+
+admin:
+  address:
+    socket_address: { address: 127.0.0.1, port_value: 9911 }
+# admin:
+#   access_log_path: "/tmp/admin_access.log"
+#   address:
+#     socket_address:
+#       address: 0.0.0.0
+#       port_value: 9901

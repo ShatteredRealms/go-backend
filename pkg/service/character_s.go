@@ -118,7 +118,11 @@ func (s characterService) Edit(ctx context.Context, character *pb.EditCharacterR
 func (s characterService) Delete(ctx context.Context, id uint) error {
 	character, err := s.FindById(ctx, id)
 	if err != nil {
-		return err
+		return fmt.Errorf("find by id: %v", err)
+	}
+
+	if character == nil {
+		return fmt.Errorf("character id %d not found", id)
 	}
 
 	return s.repo.Delete(ctx, character)
