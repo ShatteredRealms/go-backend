@@ -32,7 +32,7 @@ func GetCharacterIdFromTarget(
 		targetCharacterId = uint(t.Id)
 
 	default:
-		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target.Target).Name())
+		log.WithContext(ctx).Errorf("target type unknown: %+v", target)
 		return 0, model.ErrHandleRequest
 	}
 

@@ -92,8 +92,13 @@ func ExtractToken(ctx context.Context) (string, error) {
 
 func ExtractClaims(ctx context.Context) (*model.SROClaims, error) {
 	token, err := ExtractToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	jwtToken, _, err := jwtParser.ParseUnverified(token, &model.SROClaims{})
 	if err != nil {
+		log.WithContext(ctx).Infof("invalid token: %s", token)
 		return nil, err
 	}
 

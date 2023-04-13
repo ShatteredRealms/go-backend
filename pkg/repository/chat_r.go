@@ -48,10 +48,10 @@ func (r chatRepository) ChangeAuthorizationForCharacter(ctx context.Context, cha
 func (r chatRepository) AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (model.ChatChannels, error) {
 	var channels model.ChatChannels
 	r.DB.
-		Model(&model.ChatChannelPermission{}).
-		Select("chat_channels.id chat_channels.name").
-		Joins("JOIN chat_channels ON chat_channels.id == chat_channel_permissions.channel_id").
-		Where("chat_channel_permissions.character_id == ?", characterId).
+		Model(&model.ChatChannel{}).
+		Select("id name").
+		Joins("JOIN chat_channel_permissions ON chat_channels.id = chat_channel_permissions.channel_id").
+		Where("chat_channel_permissions.character_id = ?", characterId).
 		Find(&channels)
 	return channels, r.DB.Error
 }
