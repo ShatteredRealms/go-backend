@@ -87,24 +87,24 @@ func (s characterService) Edit(ctx context.Context, character *pb.EditCharacterR
 		return nil, err
 	}
 
-	if character.NewName != nil {
-		currentCharacter.Name = *character.NewName
+	if character.OptionalNewName != nil {
+		currentCharacter.Name = character.OptionalNewName.(*pb.EditCharacterRequest_NewName).NewName
 	}
 
-	if character.OwnerId != nil {
-		currentCharacter.OwnerId = *character.OwnerId
+	if character.OptionalOwnerId != nil {
+		currentCharacter.OwnerId = character.OptionalOwnerId.(*pb.EditCharacterRequest_OwnerId).OwnerId
 	}
 
-	if character.PlayTime != nil {
-		currentCharacter.PlayTime = *character.PlayTime
+	if character.OptionalPlayTime != nil {
+		currentCharacter.PlayTime = character.OptionalPlayTime.(*pb.EditCharacterRequest_PlayTime).PlayTime
 	}
 
-	if character.Gender != nil {
-		currentCharacter.Gender = *character.Gender
+	if character.OptionalGender != nil {
+		currentCharacter.Gender = character.OptionalGender.(*pb.EditCharacterRequest_Gender).Gender
 	}
 
-	if character.Realm != nil {
-		currentCharacter.Realm = *character.Realm
+	if character.OptionalRealm != nil {
+		currentCharacter.Realm = character.OptionalRealm.(*pb.EditCharacterRequest_Realm).Realm
 	}
 
 	err = currentCharacter.Validate()

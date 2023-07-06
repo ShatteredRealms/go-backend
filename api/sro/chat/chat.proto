@@ -142,6 +142,6 @@ message SendDirectMessageRequest {
 
 message UpdateChatChannelRequest {
   uint64 channel_id = 1;
-  optional string name = 2;
-  optional string dimension = 3;
+  oneof optional_name { string name = 2; }
+  oneof optional_dimension { string dimension = 3; }
 }

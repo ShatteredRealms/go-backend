@@ -107,14 +107,14 @@ message EditCharacterRequest {
   CharacterTarget target = 1;
 
   // The user id that owns the character
-  optional string owner_id = 3;
-  optional string new_name = 4;
-  optional string gender = 5;
-  optional string realm = 6;
+  oneof optional_owner_id { string owner_id = 3; }
+  oneof optional_new_name { string new_name = 4; }
+  oneof optional_gender { string gender = 5; }
+  oneof optional_realm { string realm = 6; }
 
-  optional uint64 play_time = 7;
+  oneof optional_play_time { uint64 play_time = 7; }
 
-  optional Location location = 8;
+  oneof optional_location { Location location = 8; }
 }
 
 message CharacterResponse {

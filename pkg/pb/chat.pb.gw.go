@@ -67,7 +67,7 @@ func request_ChatService_ConnectChannel_0(ctx context.Context, marshaler runtime
 }
 
 var (
-	filter_ChatService_ConnectDirectMessage_0 = &utilities.DoubleArray{Encoding: map[string]int{"name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_ChatService_ConnectDirectMessage_0 = &utilities.DoubleArray{Encoding: map[string]int{"name": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
 )
 
 func request_ChatService_ConnectDirectMessage_0(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (ChatService_ConnectDirectMessageClient, runtime.ServerMetadata, error) {
@@ -117,7 +117,7 @@ func request_ChatService_ConnectDirectMessage_0(ctx context.Context, marshaler r
 }
 
 var (
-	filter_ChatService_ConnectDirectMessage_1 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_ChatService_ConnectDirectMessage_1 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
 )
 
 func request_ChatService_ConnectDirectMessage_1(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (ChatService_ConnectDirectMessageClient, runtime.ServerMetadata, error) {
@@ -303,7 +303,7 @@ func local_request_ChatService_SendDirectMessage_0(ctx context.Context, marshale
 }
 
 var (
-	filter_ChatService_SendDirectMessage_1 = &utilities.DoubleArray{Encoding: map[string]int{"target": 0, "id": 1}, Base: []int{1, 1, 1, 0}, Check: []int{0, 1, 2, 3}}
+	filter_ChatService_SendDirectMessage_1 = &utilities.DoubleArray{Encoding: map[string]int{"target": 0, "id": 1}, Base: []int{1, 2, 3, 2, 0, 0}, Check: []int{0, 1, 1, 2, 4, 3}}
 )
 
 func request_ChatService_SendDirectMessage_1(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -597,7 +597,7 @@ func local_request_ChatService_EditChannel_0(ctx context.Context, marshaler runt
 }
 
 var (
-	filter_ChatService_GetAuthorizedChatChannels_0 = &utilities.DoubleArray{Encoding: map[string]int{"name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_ChatService_GetAuthorizedChatChannels_0 = &utilities.DoubleArray{Encoding: map[string]int{"name": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
 )
 
 func request_ChatService_GetAuthorizedChatChannels_0(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -677,7 +677,7 @@ func local_request_ChatService_GetAuthorizedChatChannels_0(ctx context.Context, 
 }
 
 var (
-	filter_ChatService_GetAuthorizedChatChannels_1 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_ChatService_GetAuthorizedChatChannels_1 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
 )
 
 func request_ChatService_GetAuthorizedChatChannels_1(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -893,7 +893,7 @@ func local_request_ChatService_UpdateUserChatChannelAuthorizations_1(ctx context
 }
 
 var (
-	filter_ChatService_SetUserChatChannelAuthorizations_0 = &utilities.DoubleArray{Encoding: map[string]int{"character": 0, "name": 1}, Base: []int{1, 1, 1, 0}, Check: []int{0, 1, 2, 3}}
+	filter_ChatService_SetUserChatChannelAuthorizations_0 = &utilities.DoubleArray{Encoding: map[string]int{"character": 0, "name": 1}, Base: []int{1, 2, 3, 2, 0, 0}, Check: []int{0, 1, 1, 2, 4, 3}}
 )
 
 func request_ChatService_SetUserChatChannelAuthorizations_0(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -963,7 +963,7 @@ func local_request_ChatService_SetUserChatChannelAuthorizations_0(ctx context.Co
 }
 
 var (
-	filter_ChatService_SetUserChatChannelAuthorizations_1 = &utilities.DoubleArray{Encoding: map[string]int{"character": 0, "id": 1}, Base: []int{1, 1, 1, 0}, Check: []int{0, 1, 2, 3}}
+	filter_ChatService_SetUserChatChannelAuthorizations_1 = &utilities.DoubleArray{Encoding: map[string]int{"character": 0, "id": 1}, Base: []int{1, 2, 3, 2, 0, 0}, Check: []int{0, 1, 1, 2, 4, 3}}
 )
 
 func request_ChatService_SetUserChatChannelAuthorizations_1(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -1415,7 +1415,7 @@ func RegisterChatServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 // RegisterChatServiceHandlerFromEndpoint is same as RegisterChatServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
 func RegisterChatServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
-	conn, err := grpc.Dial(endpoint, opts...)
+	conn, err := grpc.DialContext(ctx, endpoint, opts...)
 	if err != nil {
 		return err
 	}

@@ -54,21 +54,21 @@ func (s chatService) AuthorizedChannelsForCharacter(ctx context.Context, charact
 	return s.chatRepo.AuthorizedChannelsForCharacter(ctx, characterId)
 }
 
-func (s chatService) UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) error {
+func (s chatService) UpdateChannel(ctx context.Context, request *pb.UpdateChatChannelRequest) error {
 	ctx, span := tracer.Start(ctx, "UpdateChannel")
 	defer span.End()
 
-	channel, err := s.GetChannel(ctx, uint(pb.ChannelId))
+	channel, err := s.GetChannel(ctx, uint(request.ChannelId))
 	if err != nil {
 		return err
 	}
 
-	if pb.Name != nil {
-		channel.Name = *pb.Name
+	if request.OptionalName != nil {
+		channel.Name = request.OptionalName.(*pb.UpdateChatChannelRequest_Name).Name
 	}
 
-	if pb.Dimension != nil {
-		channel.Dimension = *pb.Dimension
+	if request.OptionalDimension != nil {
+		channel.Dimension = request.OptionalDimension.(*pb.UpdateChatChannelRequest_Dimension).Dimension
 	}
 
 	return s.chatRepo.UpdateChannel(ctx, channel)

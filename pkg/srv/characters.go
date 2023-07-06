@@ -183,7 +183,7 @@ func (s *charactersServiceServer) EditCharacter(
 
 	// Validate requester has correct permission to change playtime otherwise don't allow changing
 	if !claims.HasResourceRole(RoleAddCharacterPlayTime, model.CharactersClientId) {
-		request.PlayTime = nil
+		request.OptionalPlayTime = nil
 	}
 
 	_, err = s.server.Service.Edit(ctx, request)

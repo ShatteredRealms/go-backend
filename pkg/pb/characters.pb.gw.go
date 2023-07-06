@@ -87,7 +87,7 @@ func local_request_CharactersService_GetCharacters_0(ctx context.Context, marsha
 }
 
 var (
-	filter_CharactersService_GetCharacter_0 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_CharactersService_GetCharacter_0 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
 )
 
 func request_CharactersService_GetCharacter_0(ctx context.Context, marshaler runtime.Marshaler, client CharactersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -167,7 +167,7 @@ func local_request_CharactersService_GetCharacter_0(ctx context.Context, marshal
 }
 
 var (
-	filter_CharactersService_GetCharacter_1 = &utilities.DoubleArray{Encoding: map[string]int{"name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_CharactersService_GetCharacter_1 = &utilities.DoubleArray{Encoding: map[string]int{"name": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
 )
 
 func request_CharactersService_GetCharacter_1(ctx context.Context, marshaler runtime.Marshaler, client CharactersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -383,7 +383,7 @@ func local_request_CharactersService_CreateCharacter_1(ctx context.Context, mars
 }
 
 var (
-	filter_CharactersService_DeleteCharacter_0 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_CharactersService_DeleteCharacter_0 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
 )
 
 func request_CharactersService_DeleteCharacter_0(ctx context.Context, marshaler runtime.Marshaler, client CharactersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -463,7 +463,7 @@ func local_request_CharactersService_DeleteCharacter_0(ctx context.Context, mars
 }
 
 var (
-	filter_CharactersService_DeleteCharacter_1 = &utilities.DoubleArray{Encoding: map[string]int{"name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_CharactersService_DeleteCharacter_1 = &utilities.DoubleArray{Encoding: map[string]int{"name": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
 )
 
 func request_CharactersService_DeleteCharacter_1(ctx context.Context, marshaler runtime.Marshaler, client CharactersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -543,7 +543,7 @@ func local_request_CharactersService_DeleteCharacter_1(ctx context.Context, mars
 }
 
 var (
-	filter_CharactersService_GetAllCharactersForUser_0 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_CharactersService_GetAllCharactersForUser_0 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
 )
 
 func request_CharactersService_GetAllCharactersForUser_0(ctx context.Context, marshaler runtime.Marshaler, client CharactersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -623,7 +623,7 @@ func local_request_CharactersService_GetAllCharactersForUser_0(ctx context.Conte
 }
 
 var (
-	filter_CharactersService_GetAllCharactersForUser_1 = &utilities.DoubleArray{Encoding: map[string]int{"username": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_CharactersService_GetAllCharactersForUser_1 = &utilities.DoubleArray{Encoding: map[string]int{"username": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
 )
 
 func request_CharactersService_GetAllCharactersForUser_1(ctx context.Context, marshaler runtime.Marshaler, client CharactersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -1361,7 +1361,7 @@ func RegisterCharactersServiceHandlerServer(ctx context.Context, mux *runtime.Se
 // RegisterCharactersServiceHandlerFromEndpoint is same as RegisterCharactersServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
 func RegisterCharactersServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
-	conn, err := grpc.Dial(endpoint, opts...)
+	conn, err := grpc.DialContext(ctx, endpoint, opts...)
 	if err != nil {
 		return err
 	}

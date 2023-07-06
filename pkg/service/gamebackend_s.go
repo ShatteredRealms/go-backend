@@ -1,6 +1,9 @@
 package service
 
-import "go.opentelemetry.io/otel"
+import (
+	"github.com/ShatteredRealms/go-backend/pkg/repository"
+	"go.opentelemetry.io/otel"
+)
 
 var (
 	gamebackendTracer = otel.Tracer("Inner-GamebackendService")
