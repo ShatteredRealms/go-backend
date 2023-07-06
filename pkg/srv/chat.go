@@ -142,6 +142,8 @@ func (s chatServiceServer) SendChatMessage(
 		return nil, err
 	}
 
+	// TODO(wil): Validate user can chat in channel
+
 	if err := s.server.ChatService.SendChannelMessage(
 		ctx,
 		request.ChatMessage.CharacterName,
@@ -416,7 +418,7 @@ func (s chatServiceServer) UpdateUserChatChannelAuthorizations(
 		ctx,
 		targetCharacterId,
 		*helpers.ArrayOfUint64ToUint(&request.Ids),
-		true,
+		request.Add,
 	)
 	if err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {

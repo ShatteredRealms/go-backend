@@ -34,7 +34,7 @@ service ChatService {
     option (google.api.http) = {
       put : "/v1/message/character/name/{target.name}"
       body : "*"
-      additional_bindings : {get : "/v1/message/character/name/{target.id}"}
+      additional_bindings : {put : "/v1/message/character/name/{target.id}"}
     };
   }
 
@@ -82,9 +82,26 @@ service ChatService {
       returns (google.protobuf.Empty) {
     option (google.api.http) = {
       put : "/v1/channels/characters/name/{character.name}"
-      additional_bindings : {get : "/v1/channels/characters/id/{character.id}"}
+      additional_bindings : {
+        put : "/v1/channels/characters/id/{character.id}"
+        body : "*"
+      }
+      body : "*"
     };
   }
+
+  rpc SetUserChatChannelAuthorizations(RequestSetChannelAuth)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post : "/v1/channels/characters/name/{character.name}"
+      additional_bindings : {post : "/v1/channels/characters/id/{character.id}"}
+    };
+  }
+}
+
+message RequestSetChannelAuth {
+  sro.characters.CharacterTarget character = 1;
+  repeated uint64 ids = 2;
 }
 
 message RequestChatChannelAuthChange {

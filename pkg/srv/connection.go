@@ -10,6 +10,8 @@ import (
 	gamebackend "github.com/ShatteredRealms/go-backend/cmd/gamebackend/app"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/model"
+
 	// "github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	log "github.com/sirupsen/logrus"
@@ -22,6 +24,7 @@ import (
 type connectionServiceServer struct {
 	pb.UnimplementedConnectionServiceServer
 	server *gamebackend.GameBackendServerContext
+	agones *versioned.Clientset
 }
 
 func (s connectionServiceServer) ConnectGameServer(
@@ -40,11 +43,21 @@ func (s connectionServiceServer) ConnectGameServer(
 	}
 
 	if s.server.GlobalConfig.GameBackend.Mode == config.LocalMode {
-		log.WithContext(ctx).Debug("using local game server")
+		log.WithContext(ctx).Debugf("%s using local game server", character.Name)
 		return &pb.ConnectGameServerResponse{
 			Address: "127.0.0.1",
 			Port:    7777,
 		}, nil
+	}
+
+	// Check if player is playing
+	out, err := s.agones.AgonesV1().GameServers("sro").List(ctx, metav1.ListOptions{})
+	for _, gs := range out.Items {
+		for _, pId := range gs.Status.Players.IDs {
+			if character.GetOwner() == pId {
+
+			}
+		}
 	}
 
 	world := "Scene_Demo"
@@ -52,60 +65,18 @@ func (s connectionServiceServer) ConnectGameServer(
 		world = character.Location.World
 	}
 
-	log.WithContext(ctx).Debugf("character name %s connecting to world: %s", character.Name, world)
+	log.WithContext(ctx).Debugf("%s requesting connection to gameserver with world %s", character.Name, world)
 
-	// allocatorReq := &aapb.AllocationRequest{
-	// 	Namespace: s.server.GlobalConfig.Agones.Namespace,
-	// 	GameServerSelectors: []*aapb.GameServerSelector{
-	// 		{
-	// 			//MatchLabels: map[string]string{
-	// 			//	"world": world,
-	// 			//},
-	// 			GameServerState: aapb.GameServerSelector_ALLOCATED,
-	// 			Players: &aapb.PlayerSelector{
-	// 				MinAvailable: 1,
-	// 				MaxAvailable: 1000,
-	// 			},
-	// 		},
-	// 		{
-	// 			//MatchLabels: map[string]string{
-	// 			//	"world": world,
-	// 			//},
-	// 			GameServerState: aapb.GameServerSelector_READY,
-	// 			Players: &aapb.PlayerSelector{
-	// 				MinAvailable: 1,
-	// 				MaxAvailable: 1000,
-	// 			},
-	// 		},
-	// 	},
-	// }
-
+	// Request allocation
 	srvCtx, err := s.serverContext(ctx)
-	// if err != nil {
-	// 	log.WithContext(ctx).Errorf("create server context: %v", err)
-	// 	return nil, model.ErrHandleRequest
-	// }
-	// allocatorResp, err := s.server.AgonesClient.Allocate(srvCtx, allocatorReq)
-	// if err != nil {
-	// 	log.WithContext(ctx).Errorf("allocating: %v", err)
-	// 	return nil, status.Error(codes.Internal, err.Error())
-	// }
-
-	conf, err := rest.InClusterConfig()
 	if err != nil {
-		log.WithContext(ctx).Errorf("creating config: %v", err)
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	agones, err := versioned.NewForConfig(conf)
-	if err != nil {
-		log.WithContext(ctx).Errorf("creating agones connection: %v", err)
-		return nil, status.Error(codes.Internal, err.Error())
+		log.WithContext(ctx).Errorf("create server context: %v", err)
+		return nil, model.ErrHandleRequest
 	}
 
 	allocatedState := v1.GameServerStateAllocated
 	readyState := v1.GameServerStateReady
-	resp, err := agones.AllocationV1().GameServerAllocations(s.server.GlobalConfig.Agones.Namespace).Create(
+	resp, err := s.agones.AllocationV1().GameServerAllocations(s.server.GlobalConfig.Agones.Namespace).Create(
 		srvCtx,
 		&aav1.GameServerAllocation{
 			TypeMeta:   metav1.TypeMeta{},
@@ -142,10 +113,26 @@ func (s connectionServiceServer) ConnectGameServer(
 	}, nil
 }
 
-func NewConnectionServiceServer(server *gamebackend.GameBackendServerContext) pb.ConnectionServiceServer {
+func NewConnectionServiceServer(
+	ctx context.Context,
+	server *gamebackend.GameBackendServerContext,
+) (pb.ConnectionServiceServer, error) {
+	conf, err := rest.InClusterConfig()
+	if err != nil {
+		log.WithContext(ctx).Errorf("creating config: %v", err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	agones, err := versioned.NewForConfig(conf)
+	if err != nil {
+		log.WithContext(ctx).Errorf("creating agones connection: %v", err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	return &connectionServiceServer{
 		server: server,
-	}
+		agones: agones,
+	}, nil
 }
 
 func (s connectionServiceServer) serverContext(ctx context.Context) (context.Context, error) {

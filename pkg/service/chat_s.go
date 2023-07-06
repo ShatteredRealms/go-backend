@@ -35,6 +35,7 @@ type ChatService interface {
 
 	AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (model.ChatChannels, error)
 	ChangeAuthorizationForCharacter(ctx context.Context, characterId uint, channelIds []uint, addAuth bool) error
+	// SetAuthorizationForCharacter(ctx context.Context, characterId uint, channelsIds []uint) error
 }
 
 type chatService struct {

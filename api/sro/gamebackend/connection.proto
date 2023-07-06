@@ -13,9 +13,17 @@ service ConnectionService {
       additional_bindings : {get : "/v1/connect/character/name/{name}"}
     };
   }
+
+  rpc IsPlaying(sro.characters.CharacterTarget)
+      returns (ConnectGameServerResponse) {
+    option (google.api.http) = {
+      get : "/v1/status/character/id/{id}"
+    };
+  }
 }
 
 message ConnectGameServerResponse {
   string address = 1;
   uint32 port = 2;
+  string connection_id = 3;
 }

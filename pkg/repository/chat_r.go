@@ -42,14 +42,13 @@ func (r chatRepository) ChangeAuthorizationForCharacter(ctx context.Context, cha
 		return nil
 	}
 
-	return r.DB.Delete(&model.ChatChannelPermission{}, "characterName = ? AND channelId IN ?", characterId, channelIds).Error
+	return r.DB.Delete(&model.ChatChannelPermission{}, "character_id = ? AND channel_id IN ?", characterId, channelIds).Error
 }
 
 func (r chatRepository) AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (model.ChatChannels, error) {
 	var channels model.ChatChannels
 	r.DB.
 		Model(&model.ChatChannel{}).
-		Select("id name").
 		Joins("JOIN chat_channel_permissions ON chat_channels.id = chat_channel_permissions.channel_id").
 		Where("chat_channel_permissions.character_id = ?", characterId).
 		Find(&channels)

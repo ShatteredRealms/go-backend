@@ -39,7 +39,9 @@ func main() {
 	err := pb.RegisterHealthServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
 	helpers.Check(ctx, err, "register health service handler endpoint")
 
-	pb.RegisterConnectionServiceServer(grpcServer, srv.NewConnectionServiceServer(server))
+	connServer, err := srv.NewConnectionServiceServer(ctx, server)
+	helpers.Check(ctx, err, "creating connection service server")
+	pb.RegisterConnectionServiceServer(grpcServer, connServer)
 	err = pb.RegisterConnectionServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
 	helpers.Check(ctx, err, "register connection service handler endpoint")
 

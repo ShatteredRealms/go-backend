@@ -34,6 +34,7 @@ type ChatServiceClient interface {
 	EditChannel(ctx context.Context, in *UpdateChatChannelRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetAuthorizedChatChannels(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*ChatChannels, error)
 	UpdateUserChatChannelAuthorizations(ctx context.Context, in *RequestChatChannelAuthChange, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	SetUserChatChannelAuthorizations(ctx context.Context, in *RequestSetChannelAuth, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type chatServiceClient struct {
@@ -189,6 +190,15 @@ func (c *chatServiceClient) UpdateUserChatChannelAuthorizations(ctx context.Cont
 	return out, nil
 }
 
+func (c *chatServiceClient) SetUserChatChannelAuthorizations(ctx context.Context, in *RequestSetChannelAuth, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/sro.chat.ChatService/SetUserChatChannelAuthorizations", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChatServiceServer is the server API for ChatService service.
 // All implementations must embed UnimplementedChatServiceServer
 // for forward compatibility
@@ -204,6 +214,7 @@ type ChatServiceServer interface {
 	EditChannel(context.Context, *UpdateChatChannelRequest) (*emptypb.Empty, error)
 	GetAuthorizedChatChannels(context.Context, *CharacterTarget) (*ChatChannels, error)
 	UpdateUserChatChannelAuthorizations(context.Context, *RequestChatChannelAuthChange) (*emptypb.Empty, error)
+	SetUserChatChannelAuthorizations(context.Context, *RequestSetChannelAuth) (*emptypb.Empty, error)
 	mustEmbedUnimplementedChatServiceServer()
 }
 
@@ -243,6 +254,9 @@ func (UnimplementedChatServiceServer) GetAuthorizedChatChannels(context.Context,
 }
 func (UnimplementedChatServiceServer) UpdateUserChatChannelAuthorizations(context.Context, *RequestChatChannelAuthChange) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserChatChannelAuthorizations not implemented")
+}
+func (UnimplementedChatServiceServer) SetUserChatChannelAuthorizations(context.Context, *RequestSetChannelAuth) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetUserChatChannelAuthorizations not implemented")
 }
 func (UnimplementedChatServiceServer) mustEmbedUnimplementedChatServiceServer() {}
 
@@ -461,6 +475,24 @@ func _ChatService_UpdateUserChatChannelAuthorizations_Handler(srv interface{}, c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChatService_SetUserChatChannelAuthorizations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestSetChannelAuth)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).SetUserChatChannelAuthorizations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/sro.chat.ChatService/SetUserChatChannelAuthorizations",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).SetUserChatChannelAuthorizations(ctx, req.(*RequestSetChannelAuth))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ChatService_ServiceDesc is the grpc.ServiceDesc for ChatService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -503,6 +535,10 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateUserChatChannelAuthorizations",
 			Handler:    _ChatService_UpdateUserChatChannelAuthorizations_Handler,
+		},
+		{
+			MethodName: "SetUserChatChannelAuthorizations",
+			Handler:    _ChatService_SetUserChatChannelAuthorizations_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

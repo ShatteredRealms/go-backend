@@ -7,14 +7,14 @@ import (
 
 type ChatChannel struct {
 	gorm.Model
-	Name      string `gorm:"unique_index:idx_channel" json:"name"`
-	Dimension string `gorm:"unique_index:idx_channel" json:"dimension"`
+	Name      string `gorm:"uniqueIndex:idx_channel" json:"name"`
+	Dimension string `gorm:"uniqueIndex:idx_channel" json:"dimension"`
 }
 type ChatChannels []*ChatChannel
 
 type ChatChannelPermission struct {
-	ChannelId   uint `gorm:"unique_index:idx_permission" json:"channelId"`
-	CharacterId uint `gorm:"unique_index:idx_permission" json:"characterId"`
+	ChannelId   uint `gorm:"uniqueIndex:idx_permission" json:"channelId"`
+	CharacterId uint `gorm:"uniqueIndex:idx_permission" json:"characterId"`
 }
 type ChatChannelPermissions []*ChatChannelPermission
 
