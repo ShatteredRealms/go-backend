@@ -2,9 +2,9 @@ syntax = "proto3";
 package sro.characters;
 option go_package = "pkg/pb";
 
-import "sro/globals.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "sro/globals.proto";
 
 service CharactersService {
   rpc GetGenders(google.protobuf.Empty) returns (Genders) {
@@ -19,20 +19,20 @@ service CharactersService {
     };
   }
 
-  rpc GetCharacters(google.protobuf.Empty) returns (CharactersResponse) {
+  rpc GetCharacters(google.protobuf.Empty) returns (CharactersDetails) {
     option (google.api.http) = {
       get : "/v1/characters"
     };
   }
 
-  rpc GetCharacter(CharacterTarget) returns (CharacterResponse) {
+  rpc GetCharacter(CharacterTarget) returns (CharacterDetails) {
     option (google.api.http) = {
       get : "/v1/characters/id/{id}"
       additional_bindings : {get : "/v1/characters/name/{name}"}
     };
   }
 
-  rpc CreateCharacter(CreateCharacterRequest) returns (CharacterResponse) {
+  rpc CreateCharacter(CreateCharacterRequest) returns (CharacterDetails) {
     option (google.api.http) = {
       post : "/v1/users/id/{owner.id}/characters"
       body : "*"
@@ -50,7 +50,7 @@ service CharactersService {
     };
   }
 
-  rpc GetAllCharactersForUser(sro.UserTarget) returns (CharactersResponse) {
+  rpc GetAllCharactersForUser(sro.UserTarget) returns (CharactersDetails) {
     option (google.api.http) = {
       get : "/v1/users/id/{id}/characters"
       additional_bindings : {get : "/v1/users/username/{username}/characters"}
@@ -117,7 +117,7 @@ message EditCharacterRequest {
   oneof optional_location { Location location = 8; }
 }
 
-message CharacterResponse {
+message CharacterDetails {
   uint64 id = 1;
   string owner = 2;
   string name = 3;
@@ -134,7 +134,7 @@ message Location {
   float z = 4;
 }
 
-message CharactersResponse { repeated CharacterResponse characters = 1; }
+message CharactersDetails { repeated CharacterDetails characters = 1; }
 
 message Gender { string name = 1; }
 

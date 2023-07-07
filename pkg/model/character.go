@@ -94,8 +94,8 @@ func (c *Character) ValidateRealm() error {
 	return ErrInvalidRealm
 }
 
-func (c *Character) ToPb() *pb.CharacterResponse {
-	return &pb.CharacterResponse{
+func (c *Character) ToPb() *pb.CharacterDetails {
+	return &pb.CharacterDetails{
 		Id:       uint64(c.ID),
 		Owner:    c.OwnerId,
 		Name:     c.Name,
@@ -106,8 +106,8 @@ func (c *Character) ToPb() *pb.CharacterResponse {
 	}
 }
 
-func (c Characters) ToPb() *pb.CharactersResponse {
-	resp := &pb.CharactersResponse{Characters: make([]*pb.CharacterResponse, len(c))}
+func (c Characters) ToPb() *pb.CharactersDetails {
+	resp := &pb.CharactersDetails{Characters: make([]*pb.CharacterDetails, len(c))}
 	for idx, character := range c {
 		resp.Characters[idx] = character.ToPb()
 	}

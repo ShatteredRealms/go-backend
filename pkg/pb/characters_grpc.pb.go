@@ -37,11 +37,11 @@ const (
 type CharactersServiceClient interface {
 	GetGenders(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Genders, error)
 	GetRealms(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Realms, error)
-	GetCharacters(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CharactersResponse, error)
-	GetCharacter(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*CharacterResponse, error)
-	CreateCharacter(ctx context.Context, in *CreateCharacterRequest, opts ...grpc.CallOption) (*CharacterResponse, error)
+	GetCharacters(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CharactersDetails, error)
+	GetCharacter(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*CharacterDetails, error)
+	CreateCharacter(ctx context.Context, in *CreateCharacterRequest, opts ...grpc.CallOption) (*CharacterDetails, error)
 	DeleteCharacter(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetAllCharactersForUser(ctx context.Context, in *UserTarget, opts ...grpc.CallOption) (*CharactersResponse, error)
+	GetAllCharactersForUser(ctx context.Context, in *UserTarget, opts ...grpc.CallOption) (*CharactersDetails, error)
 	EditCharacter(ctx context.Context, in *EditCharacterRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Adds the given amount of playtime to the character and returns the total
 	// playtime
@@ -74,8 +74,8 @@ func (c *charactersServiceClient) GetRealms(ctx context.Context, in *emptypb.Emp
 	return out, nil
 }
 
-func (c *charactersServiceClient) GetCharacters(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CharactersResponse, error) {
-	out := new(CharactersResponse)
+func (c *charactersServiceClient) GetCharacters(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CharactersDetails, error) {
+	out := new(CharactersDetails)
 	err := c.cc.Invoke(ctx, CharactersService_GetCharacters_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -83,8 +83,8 @@ func (c *charactersServiceClient) GetCharacters(ctx context.Context, in *emptypb
 	return out, nil
 }
 
-func (c *charactersServiceClient) GetCharacter(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*CharacterResponse, error) {
-	out := new(CharacterResponse)
+func (c *charactersServiceClient) GetCharacter(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*CharacterDetails, error) {
+	out := new(CharacterDetails)
 	err := c.cc.Invoke(ctx, CharactersService_GetCharacter_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -92,8 +92,8 @@ func (c *charactersServiceClient) GetCharacter(ctx context.Context, in *Characte
 	return out, nil
 }
 
-func (c *charactersServiceClient) CreateCharacter(ctx context.Context, in *CreateCharacterRequest, opts ...grpc.CallOption) (*CharacterResponse, error) {
-	out := new(CharacterResponse)
+func (c *charactersServiceClient) CreateCharacter(ctx context.Context, in *CreateCharacterRequest, opts ...grpc.CallOption) (*CharacterDetails, error) {
+	out := new(CharacterDetails)
 	err := c.cc.Invoke(ctx, CharactersService_CreateCharacter_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -110,8 +110,8 @@ func (c *charactersServiceClient) DeleteCharacter(ctx context.Context, in *Chara
 	return out, nil
 }
 
-func (c *charactersServiceClient) GetAllCharactersForUser(ctx context.Context, in *UserTarget, opts ...grpc.CallOption) (*CharactersResponse, error) {
-	out := new(CharactersResponse)
+func (c *charactersServiceClient) GetAllCharactersForUser(ctx context.Context, in *UserTarget, opts ...grpc.CallOption) (*CharactersDetails, error) {
+	out := new(CharactersDetails)
 	err := c.cc.Invoke(ctx, CharactersService_GetAllCharactersForUser_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -143,11 +143,11 @@ func (c *charactersServiceClient) AddCharacterPlayTime(ctx context.Context, in *
 type CharactersServiceServer interface {
 	GetGenders(context.Context, *emptypb.Empty) (*Genders, error)
 	GetRealms(context.Context, *emptypb.Empty) (*Realms, error)
-	GetCharacters(context.Context, *emptypb.Empty) (*CharactersResponse, error)
-	GetCharacter(context.Context, *CharacterTarget) (*CharacterResponse, error)
-	CreateCharacter(context.Context, *CreateCharacterRequest) (*CharacterResponse, error)
+	GetCharacters(context.Context, *emptypb.Empty) (*CharactersDetails, error)
+	GetCharacter(context.Context, *CharacterTarget) (*CharacterDetails, error)
+	CreateCharacter(context.Context, *CreateCharacterRequest) (*CharacterDetails, error)
 	DeleteCharacter(context.Context, *CharacterTarget) (*emptypb.Empty, error)
-	GetAllCharactersForUser(context.Context, *UserTarget) (*CharactersResponse, error)
+	GetAllCharactersForUser(context.Context, *UserTarget) (*CharactersDetails, error)
 	EditCharacter(context.Context, *EditCharacterRequest) (*emptypb.Empty, error)
 	// Adds the given amount of playtime to the character and returns the total
 	// playtime
@@ -165,19 +165,19 @@ func (UnimplementedCharactersServiceServer) GetGenders(context.Context, *emptypb
 func (UnimplementedCharactersServiceServer) GetRealms(context.Context, *emptypb.Empty) (*Realms, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRealms not implemented")
 }
-func (UnimplementedCharactersServiceServer) GetCharacters(context.Context, *emptypb.Empty) (*CharactersResponse, error) {
+func (UnimplementedCharactersServiceServer) GetCharacters(context.Context, *emptypb.Empty) (*CharactersDetails, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCharacters not implemented")
 }
-func (UnimplementedCharactersServiceServer) GetCharacter(context.Context, *CharacterTarget) (*CharacterResponse, error) {
+func (UnimplementedCharactersServiceServer) GetCharacter(context.Context, *CharacterTarget) (*CharacterDetails, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCharacter not implemented")
 }
-func (UnimplementedCharactersServiceServer) CreateCharacter(context.Context, *CreateCharacterRequest) (*CharacterResponse, error) {
+func (UnimplementedCharactersServiceServer) CreateCharacter(context.Context, *CreateCharacterRequest) (*CharacterDetails, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateCharacter not implemented")
 }
 func (UnimplementedCharactersServiceServer) DeleteCharacter(context.Context, *CharacterTarget) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteCharacter not implemented")
 }
-func (UnimplementedCharactersServiceServer) GetAllCharactersForUser(context.Context, *UserTarget) (*CharactersResponse, error) {
+func (UnimplementedCharactersServiceServer) GetAllCharactersForUser(context.Context, *UserTarget) (*CharactersDetails, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllCharactersForUser not implemented")
 }
 func (UnimplementedCharactersServiceServer) EditCharacter(context.Context, *EditCharacterRequest) (*emptypb.Empty, error) {

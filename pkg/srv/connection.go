@@ -19,7 +19,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 )
@@ -131,18 +130,32 @@ func (s connectionServiceServer) ConnectGameServer(
 func (s connectionServiceServer) VerifyConnect(
 	ctx context.Context,
 	request *pb.VerifyConnectRequest,
-) (*emptypb.Empty, error) {
+) (*pb.CharacterDetails, error) {
 	id, err := uuid.FromBytes([]byte(request.ConnectionId))
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid id")
 	}
 
-	err = s.server.GamebackendService.CheckPlayerConnection(ctx, &id, request.ServerName)
+	pc, err := s.server.GamebackendService.CheckPlayerConnection(ctx, &id, request.ServerName)
 	if err != nil {
 		return nil, status.Error(codes.OK, err.Error())
 	}
 
-	return &emptypb.Empty{}, nil
+	// If the current user can't get the character, then deny the request
+	character, err := s.server.CharactersClient.GetCharacter(
+		helpers.PassAuthContext(ctx),
+		&pb.CharacterTarget{
+			Target: &pb.CharacterTarget_Name{
+				Name: pc.Character,
+			},
+		},
+	)
+	if err != nil || character == nil {
+		log.WithContext(ctx).Errorf("unable to get character %v: %s", pc.Character, err)
+		return nil, status.Errorf(codes.Internal, "unable to find character")
+	}
+
+	return character, nil
 }
 
 func NewConnectionServiceServer(

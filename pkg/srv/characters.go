@@ -81,7 +81,7 @@ func (s *charactersServiceServer) AddCharacterPlayTime(
 func (s *charactersServiceServer) CreateCharacter(
 	ctx context.Context,
 	request *pb.CreateCharacterRequest,
-) (*pb.CharacterResponse, error) {
+) (*pb.CharacterDetails, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
 		log.WithContext(ctx).Errorf("extract claims: %v", err)
@@ -110,7 +110,7 @@ func (s *charactersServiceServer) CreateCharacter(
 		return nil, status.Error(codes.Internal, "unable to create character")
 	}
 
-	return &pb.CharacterResponse{
+	return &pb.CharacterDetails{
 		Id:       uint64(char.ID),
 		Owner:    char.OwnerId,
 		Name:     char.Name,
@@ -198,7 +198,7 @@ func (s *charactersServiceServer) EditCharacter(
 func (s *charactersServiceServer) GetCharacter(
 	ctx context.Context,
 	request *pb.CharacterTarget,
-) (*pb.CharacterResponse, error) {
+) (*pb.CharacterDetails, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
 		log.WithContext(ctx).Debugf("ctx auth: %v", metautils.ExtractIncoming(ctx).Get("authorization"))
@@ -229,7 +229,7 @@ func (s *charactersServiceServer) GetCharacter(
 func (s *charactersServiceServer) GetAllCharactersForUser(
 	ctx context.Context,
 	request *pb.UserTarget,
-) (*pb.CharactersResponse, error) {
+) (*pb.CharactersDetails, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
 		log.WithContext(ctx).Errorf("extract claims: %v", err)
@@ -261,7 +261,7 @@ func (s *charactersServiceServer) GetAllCharactersForUser(
 func (s *charactersServiceServer) GetCharacters(
 	ctx context.Context,
 	msg *emptypb.Empty,
-) (*pb.CharactersResponse, error) {
+) (*pb.CharactersDetails, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
 		log.WithContext(ctx).Errorf("extract claims: %v", err)

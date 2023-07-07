@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -30,8 +29,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ConnectionServiceClient interface {
 	ConnectGameServer(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*ConnectGameServerResponse, error)
-	VerifyConnect(ctx context.Context, in *VerifyConnectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	IsPlaying(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*ConnectGameServerResponse, error)
+	VerifyConnect(ctx context.Context, in *VerifyConnectRequest, opts ...grpc.CallOption) (*CharacterDetails, error)
+	IsPlaying(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*ConnectionStatus, error)
 }
 
 type connectionServiceClient struct {
@@ -51,8 +50,8 @@ func (c *connectionServiceClient) ConnectGameServer(ctx context.Context, in *Cha
 	return out, nil
 }
 
-func (c *connectionServiceClient) VerifyConnect(ctx context.Context, in *VerifyConnectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *connectionServiceClient) VerifyConnect(ctx context.Context, in *VerifyConnectRequest, opts ...grpc.CallOption) (*CharacterDetails, error) {
+	out := new(CharacterDetails)
 	err := c.cc.Invoke(ctx, ConnectionService_VerifyConnect_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -60,8 +59,8 @@ func (c *connectionServiceClient) VerifyConnect(ctx context.Context, in *VerifyC
 	return out, nil
 }
 
-func (c *connectionServiceClient) IsPlaying(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*ConnectGameServerResponse, error) {
-	out := new(ConnectGameServerResponse)
+func (c *connectionServiceClient) IsPlaying(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*ConnectionStatus, error) {
+	out := new(ConnectionStatus)
 	err := c.cc.Invoke(ctx, ConnectionService_IsPlaying_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -74,8 +73,8 @@ func (c *connectionServiceClient) IsPlaying(ctx context.Context, in *CharacterTa
 // for forward compatibility
 type ConnectionServiceServer interface {
 	ConnectGameServer(context.Context, *CharacterTarget) (*ConnectGameServerResponse, error)
-	VerifyConnect(context.Context, *VerifyConnectRequest) (*emptypb.Empty, error)
-	IsPlaying(context.Context, *CharacterTarget) (*ConnectGameServerResponse, error)
+	VerifyConnect(context.Context, *VerifyConnectRequest) (*CharacterDetails, error)
+	IsPlaying(context.Context, *CharacterTarget) (*ConnectionStatus, error)
 	mustEmbedUnimplementedConnectionServiceServer()
 }
 
@@ -86,10 +85,10 @@ type UnimplementedConnectionServiceServer struct {
 func (UnimplementedConnectionServiceServer) ConnectGameServer(context.Context, *CharacterTarget) (*ConnectGameServerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConnectGameServer not implemented")
 }
-func (UnimplementedConnectionServiceServer) VerifyConnect(context.Context, *VerifyConnectRequest) (*emptypb.Empty, error) {
+func (UnimplementedConnectionServiceServer) VerifyConnect(context.Context, *VerifyConnectRequest) (*CharacterDetails, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyConnect not implemented")
 }
-func (UnimplementedConnectionServiceServer) IsPlaying(context.Context, *CharacterTarget) (*ConnectGameServerResponse, error) {
+func (UnimplementedConnectionServiceServer) IsPlaying(context.Context, *CharacterTarget) (*ConnectionStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsPlaying not implemented")
 }
 func (UnimplementedConnectionServiceServer) mustEmbedUnimplementedConnectionServiceServer() {}

@@ -480,7 +480,7 @@ func (s chatServiceServer) serverContext(ctx context.Context) (context.Context, 
 	), nil
 }
 
-func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, request *pb.CharacterTarget) (*pb.CharacterResponse, error) {
+func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, request *pb.CharacterTarget) (*pb.CharacterDetails, error) {
 	claims, err := helpers.ExtractClaims(ctx)
 	if err != nil {
 		log.WithContext(ctx).Infof("extract claims failed: %v", err)

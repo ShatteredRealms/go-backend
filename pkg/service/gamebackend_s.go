@@ -22,7 +22,7 @@ type gamebackendService struct {
 
 type GamebackendService interface {
 	CreatePendingConnection(ctx context.Context, character string, serverName string) (*model.PendingConnection, error)
-	CheckPlayerConnection(ctx context.Context, id *uuid.UUID, serverName string) error
+	CheckPlayerConnection(ctx context.Context, id *uuid.UUID, serverName string) (*model.PendingConnection, error)
 }
 
 func NewGamebackendService(
@@ -49,15 +49,15 @@ func (s *gamebackendService) CreatePendingConnection(
 }
 
 // DeletePendingConnection implements GamebackendService.
-func (s *gamebackendService) CheckPlayerConnection(ctx context.Context, id *uuid.UUID, serverName string) error {
+func (s *gamebackendService) CheckPlayerConnection(ctx context.Context, id *uuid.UUID, serverName string) (*model.PendingConnection, error) {
 	pc := s.gamebackendRepo.FindPendingConnection(ctx, id)
 	if pc == nil {
-		return fmt.Errorf("invalid id")
+		return nil, fmt.Errorf("invalid id")
 	}
 
 	if pc.ServerName != serverName {
 		logrus.WithContext(ctx).Warningf("%s requested: %s, but required: %s", pc.Character, serverName, pc.ServerName)
-		return fmt.Errorf("invalid server")
+		return nil, fmt.Errorf("invalid server")
 	}
 
 	// @TODO(wil): Make expiration time a configuration variable
@@ -65,9 +65,9 @@ func (s *gamebackendService) CheckPlayerConnection(ctx context.Context, id *uuid
 	if expireTime.Unix() < time.Now().Unix() {
 		logrus.WithContext(ctx).Infof("connection expired for %s", pc.Character)
 		s.gamebackendRepo.DeletePendingConnection(ctx, id)
-		return fmt.Errorf("expired")
+		return nil, fmt.Errorf("expired")
 	}
 
 	s.gamebackendRepo.DeletePendingConnection(ctx, id)
-	return nil
+	return pc, nil
 }
