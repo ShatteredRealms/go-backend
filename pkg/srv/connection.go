@@ -12,12 +12,14 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/google/uuid"
 
 	// "github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 )
@@ -114,7 +116,7 @@ func (s connectionServiceServer) ConnectGameServer(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	pc, err := s.server.GamebackendService.CreatePendingConnection(ctx, character.Name, resp.Name)
+	pc, err := s.server.GamebackendService.CreatePendingConnection(ctx, character.Name, resp.Status.NodeName)
 	if err != nil {
 		return nil, fmt.Errorf("create pending connection: %w", err)
 	}
@@ -124,6 +126,23 @@ func (s connectionServiceServer) ConnectGameServer(
 		Port:         uint32(resp.Status.Ports[0].Port),
 		ConnectionId: pc.Id.String(),
 	}, nil
+}
+
+func (s connectionServiceServer) VerifyConnect(
+	ctx context.Context,
+	request *pb.VerifyConnectRequest,
+) (*emptypb.Empty, error) {
+	id, err := uuid.FromBytes([]byte(request.ConnectionId))
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid id")
+	}
+
+	err = s.server.GamebackendService.CheckPlayerConnection(ctx, &id, request.ServerName)
+	if err != nil {
+		return nil, status.Error(codes.OK, err.Error())
+	}
+
+	return &emptypb.Empty{}, nil
 }
 
 func NewConnectionServiceServer(

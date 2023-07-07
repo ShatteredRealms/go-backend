@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -20,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	ConnectionService_ConnectGameServer_FullMethodName = "/sro.gamebackend.ConnectionService/ConnectGameServer"
+	ConnectionService_VerifyConnect_FullMethodName     = "/sro.gamebackend.ConnectionService/VerifyConnect"
 	ConnectionService_IsPlaying_FullMethodName         = "/sro.gamebackend.ConnectionService/IsPlaying"
 )
 
@@ -28,6 +30,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ConnectionServiceClient interface {
 	ConnectGameServer(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*ConnectGameServerResponse, error)
+	VerifyConnect(ctx context.Context, in *VerifyConnectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	IsPlaying(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*ConnectGameServerResponse, error)
 }
 
@@ -48,6 +51,15 @@ func (c *connectionServiceClient) ConnectGameServer(ctx context.Context, in *Cha
 	return out, nil
 }
 
+func (c *connectionServiceClient) VerifyConnect(ctx context.Context, in *VerifyConnectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, ConnectionService_VerifyConnect_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *connectionServiceClient) IsPlaying(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*ConnectGameServerResponse, error) {
 	out := new(ConnectGameServerResponse)
 	err := c.cc.Invoke(ctx, ConnectionService_IsPlaying_FullMethodName, in, out, opts...)
@@ -62,6 +74,7 @@ func (c *connectionServiceClient) IsPlaying(ctx context.Context, in *CharacterTa
 // for forward compatibility
 type ConnectionServiceServer interface {
 	ConnectGameServer(context.Context, *CharacterTarget) (*ConnectGameServerResponse, error)
+	VerifyConnect(context.Context, *VerifyConnectRequest) (*emptypb.Empty, error)
 	IsPlaying(context.Context, *CharacterTarget) (*ConnectGameServerResponse, error)
 	mustEmbedUnimplementedConnectionServiceServer()
 }
@@ -72,6 +85,9 @@ type UnimplementedConnectionServiceServer struct {
 
 func (UnimplementedConnectionServiceServer) ConnectGameServer(context.Context, *CharacterTarget) (*ConnectGameServerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConnectGameServer not implemented")
+}
+func (UnimplementedConnectionServiceServer) VerifyConnect(context.Context, *VerifyConnectRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerifyConnect not implemented")
 }
 func (UnimplementedConnectionServiceServer) IsPlaying(context.Context, *CharacterTarget) (*ConnectGameServerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsPlaying not implemented")
@@ -107,6 +123,24 @@ func _ConnectionService_ConnectGameServer_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ConnectionService_VerifyConnect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyConnectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConnectionServiceServer).VerifyConnect(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConnectionService_VerifyConnect_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConnectionServiceServer).VerifyConnect(ctx, req.(*VerifyConnectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ConnectionService_IsPlaying_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CharacterTarget)
 	if err := dec(in); err != nil {
@@ -135,6 +169,10 @@ var ConnectionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ConnectGameServer",
 			Handler:    _ConnectionService_ConnectGameServer_Handler,
+		},
+		{
+			MethodName: "VerifyConnect",
+			Handler:    _ConnectionService_VerifyConnect_Handler,
 		},
 		{
 			MethodName: "IsPlaying",

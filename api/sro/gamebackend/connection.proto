@@ -3,7 +3,9 @@ package sro.gamebackend;
 option go_package = "pkg/pb";
 
 import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
 import "sro/characters/characters.proto";
+import "sro/globals.proto";
 
 service ConnectionService {
   rpc ConnectGameServer(sro.characters.CharacterTarget)
@@ -11,6 +13,13 @@ service ConnectionService {
     option (google.api.http) = {
       get : "/v1/connect/character/id/{id}"
       additional_bindings : {get : "/v1/connect/character/name/{name}"}
+    };
+  }
+
+  rpc VerifyConnect(VerifyConnectRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post : "/v1/connect/verify"
+      body : "*"
     };
   }
 
@@ -26,4 +35,9 @@ message ConnectGameServerResponse {
   string address = 1;
   uint32 port = 2;
   string connection_id = 3;
+}
+
+message VerifyConnectRequest {
+  string connection_id = 1;
+  string server_name = 2;
 }
