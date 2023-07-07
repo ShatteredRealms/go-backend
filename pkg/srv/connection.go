@@ -2,6 +2,7 @@ package srv
 
 import (
 	"context"
+	"fmt"
 
 	// aapb "agones.dev/agones/pkg/allocation/go"
 	v1 "agones.dev/agones/pkg/apis/agones/v1"
@@ -43,10 +44,16 @@ func (s connectionServiceServer) ConnectGameServer(
 	}
 
 	if s.server.GlobalConfig.GameBackend.Mode == config.LocalMode {
+		pc, err := s.server.GamebackendService.CreatePendingConnection(ctx, character.Name, "localhost")
+		if err != nil {
+			return nil, fmt.Errorf("create pending connection: %w", err)
+		}
+
 		log.WithContext(ctx).Debugf("%s using local game server", character.Name)
 		return &pb.ConnectGameServerResponse{
-			Address: "127.0.0.1",
-			Port:    7777,
+			Address:      "127.0.0.1",
+			Port:         7777,
+			ConnectionId: pc.Id.String(),
 		}, nil
 	}
 
@@ -107,9 +114,15 @@ func (s connectionServiceServer) ConnectGameServer(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	pc, err := s.server.GamebackendService.CreatePendingConnection(ctx, character.Name, resp.Name)
+	if err != nil {
+		return nil, fmt.Errorf("create pending connection: %w", err)
+	}
+
 	return &pb.ConnectGameServerResponse{
-		Address: resp.Status.Address,
-		Port:    uint32(resp.Status.Ports[0].Port),
+		Address:      resp.Status.Address,
+		Port:         uint32(resp.Status.Ports[0].Port),
+		ConnectionId: pc.Id.String(),
 	}, nil
 }
 
@@ -117,21 +130,27 @@ func NewConnectionServiceServer(
 	ctx context.Context,
 	server *gamebackend.GameBackendServerContext,
 ) (pb.ConnectionServiceServer, error) {
-	conf, err := rest.InClusterConfig()
-	if err != nil {
-		log.WithContext(ctx).Errorf("creating config: %v", err)
-		return nil, status.Error(codes.Internal, err.Error())
-	}
+	if server.GlobalConfig.GameBackend.Mode != config.LocalMode {
+		conf, err := rest.InClusterConfig()
+		if err != nil {
+			log.WithContext(ctx).Errorf("creating config: %v", err)
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 
-	agones, err := versioned.NewForConfig(conf)
-	if err != nil {
-		log.WithContext(ctx).Errorf("creating agones connection: %v", err)
-		return nil, status.Error(codes.Internal, err.Error())
+		agones, err := versioned.NewForConfig(conf)
+		if err != nil {
+			log.WithContext(ctx).Errorf("creating agones connection: %v", err)
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		return &connectionServiceServer{
+			server: server,
+			agones: agones,
+		}, nil
 	}
 
 	return &connectionServiceServer{
 		server: server,
-		agones: agones,
 	}, nil
 }
 

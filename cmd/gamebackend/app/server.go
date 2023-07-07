@@ -1,20 +1,23 @@
 package gamebackend
 
 import (
-	aapb "agones.dev/agones/pkg/allocation/go"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"os"
+
+	aapb "agones.dev/agones/pkg/allocation/go"
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/ShatteredRealms/go-backend/pkg/repository"
+	"github.com/ShatteredRealms/go-backend/pkg/service"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"os"
 )
 
 var (
@@ -22,11 +25,12 @@ var (
 )
 
 type GameBackendServerContext struct {
-	GlobalConfig     *config.GlobalConfig
-	CharactersClient pb.CharactersServiceClient
-	AgonesClient     aapb.AllocationServiceClient
-	KeycloakClient   *gocloak.GoCloak
-	Tracer           trace.Tracer
+	GlobalConfig       *config.GlobalConfig
+	CharactersClient   pb.CharactersServiceClient
+	GamebackendService service.GamebackendService
+	AgonesClient       aapb.AllocationServiceClient
+	KeycloakClient     *gocloak.GoCloak
+	Tracer             trace.Tracer
 }
 
 func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *GameBackendServerContext {
@@ -45,6 +49,14 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *GameBacke
 		helpers.Check(ctx, err, "connecting to agones")
 		server.AgonesClient = aapb.NewAllocationServiceClient(ac)
 	}
+
+	db, err := repository.ConnectDB(conf.GameBackend.DB)
+	helpers.Check(ctx, err, "connecting to database")
+
+	repo := repository.NewGamebackendRepository(db)
+	gamebackendService, err := service.NewGamebackendService(ctx, repo)
+	helpers.Check(ctx, err, "gamebackend service")
+	server.GamebackendService = gamebackendService
 
 	return server
 }

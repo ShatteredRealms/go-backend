@@ -1,8 +1,12 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"time"
 
-type NewCharacterConnection struct {
+	"github.com/google/uuid"
+)
+
+type PendingConnection struct {
 	// Id secret used by a server to lookup a pending connection
 	Id uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
 
@@ -11,4 +15,7 @@ type NewCharacterConnection struct {
 
 	// ServerName the name of the server the character is assigned to
 	ServerName string
+
+	// CreatedAt when the pending connection was created
+	CreatedAt time.Time
 }
