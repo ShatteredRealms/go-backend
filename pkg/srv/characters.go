@@ -218,7 +218,8 @@ func (s *charactersServiceServer) GetCharacter(
 		return nil, err
 	}
 
-	if character.OwnerId != claims.Subject && claims.HasResourceRole(RoleCharacterManagementOther, model.CharactersClientId) {
+	if character.OwnerId != claims.Subject && !claims.HasResourceRole(RoleCharacterManagementOther, model.CharactersClientId) {
+		log.WithContext(ctx).Infof("user %s requested character %s without %s", claims.Subject, character.Name, *RoleCharacterManagementOther.Name)
 		return nil, model.ErrUnauthorized
 	}
 

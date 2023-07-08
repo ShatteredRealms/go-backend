@@ -13,6 +13,7 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/google/uuid"
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 
 	// "github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
@@ -131,15 +132,17 @@ func (s connectionServiceServer) VerifyConnect(
 	ctx context.Context,
 	request *pb.VerifyConnectRequest,
 ) (*pb.CharacterDetails, error) {
-	id, err := uuid.FromBytes([]byte(request.ConnectionId))
+	id, err := uuid.Parse(request.ConnectionId)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid id")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid id: %s", request.ConnectionId)
 	}
 
 	pc, err := s.server.GamebackendService.CheckPlayerConnection(ctx, &id, request.ServerName)
 	if err != nil {
 		return nil, status.Error(codes.OK, err.Error())
 	}
+
+	log.WithContext(ctx).Debugf("passed ctx: %+v", metautils.ExtractIncoming(ctx).Get("authorization"))
 
 	// If the current user can't get the character, then deny the request
 	character, err := s.server.CharactersClient.GetCharacter(

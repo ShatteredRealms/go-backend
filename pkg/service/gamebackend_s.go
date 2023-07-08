@@ -52,7 +52,7 @@ func (s *gamebackendService) CreatePendingConnection(
 func (s *gamebackendService) CheckPlayerConnection(ctx context.Context, id *uuid.UUID, serverName string) (*model.PendingConnection, error) {
 	pc := s.gamebackendRepo.FindPendingConnection(ctx, id)
 	if pc == nil {
-		return nil, fmt.Errorf("invalid id")
+		return nil, fmt.Errorf("connection not found")
 	}
 
 	if pc.ServerName != serverName {
