@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
@@ -35,6 +36,8 @@ type dimensionService interface {
 	FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error)
 	FindAllDimensions(ctx context.Context) (model.Dimensions, error)
 	EditDimension(ctx context.Context, request *pb.EditDimensionRequest) (*model.Dimension, error)
+	DeleteDimensionByName(ctx context.Context, name string) error
+	DeleteDimensionById(ctx context.Context, id *uuid.UUID) error
 }
 
 type mapService interface {
@@ -50,9 +53,9 @@ type mapService interface {
 	FindMapsByNames(ctx context.Context, names []string) (model.Maps, error)
 	FindMapsByIds(ctx context.Context, ids []*uuid.UUID) (model.Maps, error)
 	FindAllMaps(ctx context.Context) (model.Maps, error)
+	EditMap(ctx context.Context, request *pb.EditMapRequest) (*model.Map, error)
 	DeleteMapByName(ctx context.Context, name string) error
 	DeleteMapById(ctx context.Context, id *uuid.UUID) error
-	EditMap(ctx context.Context, request *pb.EditMapRequest) (*model.Map, error)
 }
 
 type chatTemplateService interface {
@@ -65,9 +68,9 @@ type chatTemplateService interface {
 	FindChatTemplatesByNames(ctx context.Context, names []string) (model.ChatTemplates, error)
 	FindChatTemplatesByIds(ctx context.Context, ids []*uuid.UUID) (model.ChatTemplates, error)
 	FindAllChatTemplates(ctx context.Context) (model.ChatTemplates, error)
+	EditChatTemplate(ctx context.Context, request *pb.EditChatTemplateRequest) (*model.ChatTemplate, error)
 	DeleteChatTemplateByName(ctx context.Context, name string) error
 	DeleteChatTemplateById(ctx context.Context, id *uuid.UUID) error
-	EditChatTemplate(ctx context.Context, request *pb.EditChatTemplateRequest) (*model.ChatTemplate, error)
 }
 
 type connectionService interface {
@@ -158,6 +161,16 @@ func (s *gamebackendService) DeleteChatTemplateByName(ctx context.Context, name 
 	return s.gamebackendRepo.DeleteChatTemplateByName(ctx, name)
 }
 
+// DeleteDimensionById implements GamebackendService.
+func (s *gamebackendService) DeleteDimensionById(ctx context.Context, id *uuid.UUID) error {
+	return s.gamebackendRepo.DeleteDimensionById(ctx, id)
+}
+
+// DeleteDimensionByName implements GamebackendService.
+func (s *gamebackendService) DeleteDimensionByName(ctx context.Context, name string) error {
+	return s.gamebackendRepo.DeleteDimensionByName(ctx, name)
+}
+
 // DeleteMapById implements GamebackendService.
 func (s *gamebackendService) DeleteMapById(ctx context.Context, id *uuid.UUID) error {
 	return s.gamebackendRepo.DeleteMapById(ctx, id)
@@ -235,13 +248,9 @@ func (s *gamebackendService) EditDimension(ctx context.Context, request *pb.Edit
 	}
 
 	if request.EditMaps {
-		ids := make([]*uuid.UUID, len(request.MapIds))
-		for idx, stringId := range request.MapIds {
-			id, err := uuid.Parse(stringId)
-			if err != nil {
-				return nil, fmt.Errorf("invalid map id: %s", stringId)
-			}
-			ids[idx] = &id
+		ids, err := helpers.ParseUUIDs(request.MapIds)
+		if err != nil {
+			return nil, fmt.Errorf("map ids: %w", err)
 		}
 
 		maps, err := s.gamebackendRepo.FindMapsByIds(ctx, ids)
@@ -253,13 +262,9 @@ func (s *gamebackendService) EditDimension(ctx context.Context, request *pb.Edit
 	}
 
 	if request.EditChatTemplates {
-		ids := make([]*uuid.UUID, len(request.ChatTemplateIds))
-		for idx, stringId := range request.ChatTemplateIds {
-			id, err := uuid.Parse(stringId)
-			if err != nil {
-				return nil, fmt.Errorf("invalid chat template id: %s", stringId)
-			}
-			ids[idx] = &id
+		ids, err := helpers.ParseUUIDs(request.ChatTemplateIds)
+		if err != nil {
+			return nil, fmt.Errorf("chat template ids: %w", err)
 		}
 
 		chatTemplates, err := s.gamebackendRepo.FindChatTemplatesByIds(ctx, ids)

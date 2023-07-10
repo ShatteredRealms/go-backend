@@ -73,3 +73,12 @@ func (dimension *Dimension) ToPb() *pb.Dimension {
 		ChatTemplates: dimension.ChatTemplates.ToPb(),
 	}
 }
+
+func (dimensions Dimensions) ToPb() []*pb.Dimension {
+	out := make([]*pb.Dimension, len(dimensions))
+	for idx, c := range dimensions {
+		out[idx] = c.ToPb()
+	}
+
+	return out
+}

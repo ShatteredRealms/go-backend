@@ -146,6 +146,7 @@ message CreateDimensionRequest {
   string version = 2;
   repeated string map_ids = 3;
   repeated string chat_template_ids = 4;
+  string location = 5;
 }
 
 message DuplicateDimensionRequest {
