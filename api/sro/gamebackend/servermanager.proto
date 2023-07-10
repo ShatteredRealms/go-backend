@@ -164,6 +164,8 @@ message EditDimensionRequest {
 
   bool edit_chat_templates = 6;
   repeated string chat_template_ids = 7;
+
+  oneof optional_location { string location = 8; }
 }
 
 message Dimension {

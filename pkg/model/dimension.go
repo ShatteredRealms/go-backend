@@ -28,8 +28,8 @@ type Dimension struct {
 	Name           string        `gorm:"unique"`
 	ServerLocation string        `gorm:"not null"`
 	Version        string        `gorm:"not null"`
-	Maps           Maps          `gorm:"foreignKey:Id"`
-	ChatTemplates  ChatTemplates `gorm:"foreignKey:Id"`
+	Maps           Maps          `gorm:"many2many:dimension_maps"`
+	ChatTemplates  ChatTemplates `gorm:"many2many:dimension_chat_templates"`
 }
 
 type Dimensions []*Dimension

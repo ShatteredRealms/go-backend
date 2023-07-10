@@ -45,5 +45,11 @@ func main() {
 	err = pb.RegisterConnectionServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
 	helpers.Check(ctx, err, "register connection service handler endpoint")
 
+	serverManagerServer, err := srv.NewServerManagerServiceServer(ctx, server)
+	helpers.Check(ctx, err, "creating server manager service server")
+	pb.RegisterServerManagerServiceServer(grpcServer, serverManagerServer)
+	err = pb.RegisterServerManagerServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
+	helpers.Check(ctx, err, "register server manager service handler endpoint")
+
 	helpers.StartServer(ctx, grpcServer, gwmux, server.GlobalConfig.GameBackend.Local.Address())
 }

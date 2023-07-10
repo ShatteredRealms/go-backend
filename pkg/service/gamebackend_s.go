@@ -247,6 +247,10 @@ func (s *gamebackendService) EditDimension(ctx context.Context, request *pb.Edit
 		currentDimension.Version = request.OptionalVersion.(*pb.EditDimensionRequest_Version).Version
 	}
 
+	if request.OptionalLocation != nil {
+		currentDimension.ServerLocation = request.OptionalLocation.(*pb.EditDimensionRequest_Location).Location
+	}
+
 	if request.EditMaps {
 		ids, err := helpers.ParseUUIDs(request.MapIds)
 		if err != nil {

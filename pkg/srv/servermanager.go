@@ -52,7 +52,7 @@ func (s *serverManagerServiceServer) CreateChatTemplate(
 
 	chatTemplate, err := s.server.GamebackendService.CreateChatTemplate(ctx, request.Name)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "creating: %w", err)
+		return nil, status.Errorf(codes.Internal, "creating: %s", err.Error())
 	}
 
 	return chatTemplate.ToPb(), nil
@@ -87,7 +87,7 @@ func (s *serverManagerServiceServer) CreateDimension(
 		chatTemplateIds,
 	)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "creating: %w", err)
+		return nil, status.Errorf(codes.Internal, "creating: %s", err.Error())
 	}
 
 	return dimension.ToPb(), nil
@@ -111,7 +111,7 @@ func (s *serverManagerServiceServer) CreateMap(
 		request.Instanced,
 	)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "creating: %w", err)
+		return nil, status.Errorf(codes.Internal, "creating: %s", err.Error())
 	}
 
 	return m.ToPb(), nil
@@ -387,6 +387,10 @@ func (s *serverManagerServiceServer) GetChatTemplate(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	if out == nil {
+		return nil, model.ErrDoesNotExist
+	}
+
 	return out.ToPb(), nil
 }
 
@@ -421,6 +425,10 @@ func (s *serverManagerServiceServer) GetDimension(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	if out == nil {
+		return nil, model.ErrDoesNotExist
+	}
+
 	return out.ToPb(), nil
 }
 
@@ -453,6 +461,10 @@ func (s *serverManagerServiceServer) GetMap(
 
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	if out == nil {
+		return nil, model.ErrDoesNotExist
 	}
 
 	return out.ToPb(), nil

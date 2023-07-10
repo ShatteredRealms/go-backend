@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type gamebackendRepository struct {
@@ -176,7 +177,7 @@ func (r *gamebackendRepository) CreateDimension(
 		ChatTemplates:  chatTemplates,
 	}
 
-	if err := r.DB.WithContext(ctx).Create(&dimension).Error; err != nil {
+	if err := r.DB.WithContext(ctx).Preload(clause.Associations).Create(&dimension).Error; err != nil {
 		return nil, err
 	}
 
@@ -252,7 +253,7 @@ func (r *gamebackendRepository) DuplicateDimension(
 
 	dimension.Id = nil
 	dimension.Name = name
-	if err = r.DB.WithContext(ctx).Create(&dimension).Error; err != nil {
+	if err = r.DB.WithContext(ctx).Preload(clause.Associations).Create(&dimension).Error; err != nil {
 		return nil, err
 	}
 
@@ -277,7 +278,7 @@ func (r *gamebackendRepository) SaveDimension(
 	ctx context.Context,
 	dimension *model.Dimension,
 ) (*model.Dimension, error) {
-	err := r.DB.WithContext(ctx).Save(&dimension).Error
+	err := r.DB.WithContext(ctx).Preload(clause.Associations).Save(&dimension).Error
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +305,7 @@ func (r *gamebackendRepository) FindAllChatTemplates(ctx context.Context) (model
 // FindAllDimensions implements GamebackendRepository.
 func (r *gamebackendRepository) FindAllDimensions(ctx context.Context) (model.Dimensions, error) {
 	var dimensions model.Dimensions
-	return dimensions, r.DB.WithContext(ctx).Find(&dimensions).Error
+	return dimensions, r.DB.WithContext(ctx).Preload(clause.Associations).Find(&dimensions).Error
 }
 
 // FindAllMaps implements GamebackendRepository.
@@ -346,7 +347,7 @@ func (r *gamebackendRepository) FindChatTemplateByName(ctx context.Context, name
 // FindDimensionById implements GamebackendRepository.
 func (r *gamebackendRepository) FindDimensionById(ctx context.Context, id *uuid.UUID) (*model.Dimension, error) {
 	var dimension *model.Dimension
-	result := r.DB.WithContext(ctx).Find(&dimension, id)
+	result := r.DB.WithContext(ctx).Preload(clause.Associations).Find(&dimension, id)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -361,7 +362,7 @@ func (r *gamebackendRepository) FindDimensionById(ctx context.Context, id *uuid.
 // FindDimensionByName implements GamebackendRepository.
 func (r *gamebackendRepository) FindDimensionByName(ctx context.Context, name string) (*model.Dimension, error) {
 	var dimension *model.Dimension
-	result := r.DB.WithContext(ctx).Find(&dimension, "name = ?", name)
+	result := r.DB.WithContext(ctx).Preload(clause.Associations).Find(&dimension, "name = ?", name)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -424,13 +425,13 @@ func (r *gamebackendRepository) FindChatTemplatesByNames(
 // FindDimensionsByIds implements GamebackendRepository.
 func (r *gamebackendRepository) FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error) {
 	var found model.Dimensions
-	return found, r.DB.WithContext(ctx).Find(&found, ids).Error
+	return found, r.DB.WithContext(ctx).Preload(clause.Associations).Find(&found, ids).Error
 }
 
 // FindDimensionsByNames implements GamebackendRepository.
 func (r *gamebackendRepository) FindDimensionsByNames(ctx context.Context, names []string) (model.Dimensions, error) {
 	var found model.Dimensions
-	return found, r.DB.WithContext(ctx).Find(&found, "name IN ?", names).Error
+	return found, r.DB.WithContext(ctx).Preload(clause.Associations).Find(&found, "name IN ?", names).Error
 }
 
 // FindMapsByIds implements GamebackendRepository.
