@@ -7,7 +7,11 @@ import (
 	"github.com/Nerzal/gocloak/v13"
 )
 
-var ()
+func registerRole(roles *[]*gocloak.Role, role *gocloak.Role) *gocloak.Role {
+	newRoles := append(*roles, role)
+	roles = &newRoles
+	return role
+}
 
 func createRoles(
 	ctx context.Context,

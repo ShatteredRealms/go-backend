@@ -22,6 +22,14 @@ service ConnectionService {
     };
   }
 
+  rpc TransferPlayer(TransferPlayerRequest)
+      returns (ConnectGameServerResponse) {
+    option (google.api.http) = {
+      post : "/v1/transfer"
+      body : "*"
+    };
+  }
+
   rpc IsPlaying(sro.characters.CharacterTarget) returns (ConnectionStatus) {
     option (google.api.http) = {
       get : "/v1/status/character/id/{id}"
@@ -42,3 +50,8 @@ message VerifyConnectRequest {
 }
 
 message ConnectionStatus { bool online = 1; }
+
+message TransferPlayerRequest {
+  string character = 1;
+  sro.characters.Location location = 2;
+}

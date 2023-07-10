@@ -3,9 +3,8 @@ package model
 import (
 	"errors"
 	"fmt"
-	goaway "github.com/TwiN/go-away"
-	"gorm.io/gorm"
-	"regexp"
+
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
 )
 
 const (
@@ -14,8 +13,6 @@ const (
 )
 
 var (
-	DimensionNameRegex, _ = regexp.Compile("^[a-zA-Z0-9]+$")
-
 	// ErrDimensionNameToShort ErrDimensionNameToLong thrown when a character name is too short
 	ErrDimensionNameToShort = errors.New(fmt.Sprintf("name must be at least %d characters", MinCharacterNameLength))
 
@@ -27,10 +24,15 @@ var (
 // separate and cannot interact with other dimensions. This is recursive, meaning all entities that are tied to a
 // dimension cannot interact with other dimensions.
 type Dimension struct {
-	gorm.Model
-	Name           string `gorm:"unique" json:"name"`
-	ServerLocation string `gorm:"not null" json:"serverLocation"`
+	Model
+	Name           string        `gorm:"unique"`
+	ServerLocation string        `gorm:"not null"`
+	Version        string        `gorm:"not null"`
+	Maps           Maps          `gorm:"foreignKey:Id"`
+	ChatTemplates  ChatTemplates `gorm:"foreignKey:Id"`
 }
+
+type Dimensions []*Dimension
 
 func (c *Dimension) ValidateLocation() error {
 	if _, ok := ServerLocations[c.ServerLocation]; ok {
@@ -40,22 +42,34 @@ func (c *Dimension) ValidateLocation() error {
 	return ErrInvalidServerLocation
 }
 
-func (c *Dimension) ValidateName() error {
-	if len(c.Name) < MinDimensionNameLength {
+func (dimension *Dimension) ValidateName() error {
+	if len(dimension.Name) < MinDimensionNameLength {
 		return ErrDimensionNameToShort
 	}
 
-	if len(c.Name) > MaxDimensionNameLength {
+	if len(dimension.Name) > MaxDimensionNameLength {
 		return ErrDimensionNameToLong
 	}
 
-	if !DimensionNameRegex.MatchString(c.Name) {
-		return ErrInvalidName
-	}
-
-	if goaway.IsProfane(c.Name) {
-		return ErrNameProfane
-	}
-
 	return nil
+}
+
+func (dimension *Dimension) ToPb() *pb.Dimension {
+	maps := make([]*pb.Map, len(dimension.Maps))
+	for idx, m := range dimension.Maps {
+		maps[idx] = m.ToPb()
+	}
+
+	chatTemplates := make([]*pb.ChatTemplate, len(dimension.ChatTemplates))
+	for idx, ct := range dimension.ChatTemplates {
+		chatTemplates[idx] = ct.ToPb()
+	}
+
+	return &pb.Dimension{
+		Id:            dimension.Id.String(),
+		Name:          dimension.Name,
+		Version:       dimension.Version,
+		Maps:          dimension.Maps.ToPb(),
+		ChatTemplates: dimension.ChatTemplates.ToPb(),
+	}
 }

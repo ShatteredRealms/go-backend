@@ -1,0 +1,239 @@
+syntax = "proto3";
+package sro.gamebackend;
+option go_package = "pkg/pb";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+service ServerManagerService {
+  rpc CreateDimension(CreateDimensionRequest) returns (Dimension) {
+    option (google.api.http) = {
+      post : "/v1/dimensions"
+      body : "*"
+    };
+  }
+
+  rpc DuplicateDimension(DuplicateDimensionRequest) returns (Dimension) {
+    option (google.api.http) = {
+      post : "/v1/dimensions/duplicate/name/{target.name}"
+      additional_bindings : {post : "/v1/dimensions/duplicate/id/{target.id}"}
+      body : "*"
+    };
+  }
+
+  rpc GetDimension(DimensionTarget) returns (Dimension) {
+    option (google.api.http) = {
+      get : "/v1/dimensions/name/{name}"
+      additional_bindings : {get : "/v1/dimensions/id/{id}"}
+    };
+  }
+
+  rpc GetAllDimension(google.protobuf.Empty) returns (Dimensions) {
+    option (google.api.http) = {
+      get : "/v1/dimensions"
+    };
+  }
+
+  rpc EditDimension(EditDimensionRequest) returns (Dimension) {
+    option (google.api.http) = {
+      put : "/v1/dimensions/name/{target.name}"
+      additional_bindings : {put : "/v1/dimensions/id/{target.id}"}
+      body : "*"
+    };
+  }
+
+  rpc DeleteDimension(DimensionTarget) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete : "/v1/dimensions/name/{name}"
+      additional_bindings : {delete : "/v1/dimensions/id/{id}"}
+    };
+  }
+
+  rpc CreateMap(CreateMapRequest) returns (Map) {
+    option (google.api.http) = {
+      post : "/v1/maps"
+      body : "*"
+    };
+  }
+
+  rpc GetMap(MapTarget) returns (Map) {
+    option (google.api.http) = {
+      get : "/v1/maps/name/{name}"
+      additional_bindings : {get : "/v1/maps/id/{id}"}
+    };
+  }
+
+  rpc GetAllMaps(google.protobuf.Empty) returns (Maps) {
+    option (google.api.http) = {
+      get : "/v1/maps"
+    };
+  }
+
+  rpc EditMap(EditMapRequest) returns (Map) {
+    option (google.api.http) = {
+      put : "/v1/maps/name/{target.name}"
+      additional_bindings : {put : "/v1/maps/id/{target.id}"}
+      body : "*"
+    };
+  }
+
+  rpc DeleteMap(MapTarget) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete : "/v1/maps/name/{name}"
+      additional_bindings : {delete : "/v1/maps/id/{id}"}
+    };
+  }
+
+  rpc CreateChatTemplate(CreateChatTemplateRequest) returns (ChatTemplate) {
+    option (google.api.http) = {
+      post : "/v1/chattemplates"
+      body : "*"
+    };
+  }
+
+  rpc GetChatTemplate(ChatTemplateTarget) returns (ChatTemplate) {
+    option (google.api.http) = {
+      get : "/v1/chattemplates/name/{name}"
+      additional_bindings : {get : "/v1/chattemplates/id/{id}"}
+    };
+  }
+
+  rpc GetAllChatTemplates(google.protobuf.Empty) returns (ChatTemplates) {
+    option (google.api.http) = {
+      get : "/v1/chattemplates"
+    };
+  }
+
+  rpc EditChatTemplate(EditChatTemplateRequest) returns (ChatTemplate) {
+    option (google.api.http) = {
+      put : "/v1/chattemplates/name/{target.name}"
+      additional_bindings : {put : "/v1/chattemplates/id/{target.id}"}
+      body : "*"
+    };
+  }
+
+  rpc DeleteChatTemplate(ChatTemplateTarget) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete : "/v1/chattemplates/name/{name}"
+      additional_bindings : {delete : "/v1/chattemplates/id/{id}"}
+    };
+  }
+}
+
+message DimensionTarget {
+  oneof FindBy {
+    string id = 1;
+    string name = 2;
+  }
+}
+
+message MapTarget {
+  oneof FindBy {
+    string id = 1;
+    string name = 2;
+  }
+}
+
+message ChatTemplateTarget {
+  oneof FindBy {
+    string id = 1;
+    string name = 2;
+  }
+}
+
+message CreateDimensionRequest {
+  string name = 1;
+  string version = 2;
+  repeated string map_ids = 3;
+  repeated string chat_template_ids = 4;
+}
+
+message DuplicateDimensionRequest {
+  DimensionTarget target = 1;
+  string name = 2;
+}
+
+message EditDimensionRequest {
+  DimensionTarget target = 1;
+  oneof optional_name { string name = 2; }
+  oneof optional_version { string version = 3; }
+
+  bool edit_maps = 4;
+  repeated string map_ids = 5;
+
+  bool edit_chat_templates = 6;
+  repeated string chat_template_ids = 7;
+}
+
+message Dimension {
+  // Unique id for the dimension
+  string id = 1;
+
+  // Unique name of the dimension
+  string name = 2;
+
+  // Server version used for each server instance
+  string version = 3;
+
+  // All maps the realm should have available
+  repeated Map maps = 4;
+
+  // All chat templates used
+  repeated ChatTemplate chat_templates = 5;
+
+  // Physical server location
+  string location = 6;
+}
+
+message Dimensions { repeated Dimension dimensions = 1; }
+
+message CreateMapRequest {
+  string name = 1;
+  string path = 2;
+  uint64 max_players = 3;
+  bool instanced = 4;
+}
+
+message Map {
+  // Unique id for the map
+  string id = 1;
+
+  // User friendly name
+  string name = 2;
+
+  // Path to the map for the server to laod
+  string path = 3;
+
+  // maximum amount of players to allow
+  uint64 max_players = 4;
+
+  // whether the map is instanced
+  bool instanced = 5;
+}
+
+message EditMapRequest {
+  MapTarget target = 1;
+  oneof optional_name { string name = 2; }
+  oneof optional_path { string path = 3; }
+  oneof optional_max_players { uint64 max_players = 4; }
+  oneof optional_instanced { bool instanced = 5; }
+}
+
+message Maps { repeated Map maps = 1; }
+
+message CreateChatTemplateRequest { string name = 1; }
+
+message EditChatTemplateRequest { 
+  ChatTemplateTarget target = 1;
+oneof optional_name { string name = 2; }
+}
+
+message ChatTemplate {
+  // Unique id for the template
+  string id = 1;
+
+  // Unique name for the chat
+  string name = 2;
+}
+
+message ChatTemplates { repeated ChatTemplate chat_templates = 1; }

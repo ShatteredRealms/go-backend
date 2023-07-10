@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	ConnectionService_ConnectGameServer_FullMethodName = "/sro.gamebackend.ConnectionService/ConnectGameServer"
 	ConnectionService_VerifyConnect_FullMethodName     = "/sro.gamebackend.ConnectionService/VerifyConnect"
+	ConnectionService_TransferPlayer_FullMethodName    = "/sro.gamebackend.ConnectionService/TransferPlayer"
 	ConnectionService_IsPlaying_FullMethodName         = "/sro.gamebackend.ConnectionService/IsPlaying"
 )
 
@@ -30,6 +31,7 @@ const (
 type ConnectionServiceClient interface {
 	ConnectGameServer(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*ConnectGameServerResponse, error)
 	VerifyConnect(ctx context.Context, in *VerifyConnectRequest, opts ...grpc.CallOption) (*CharacterDetails, error)
+	TransferPlayer(ctx context.Context, in *TransferPlayerRequest, opts ...grpc.CallOption) (*ConnectGameServerResponse, error)
 	IsPlaying(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*ConnectionStatus, error)
 }
 
@@ -59,6 +61,15 @@ func (c *connectionServiceClient) VerifyConnect(ctx context.Context, in *VerifyC
 	return out, nil
 }
 
+func (c *connectionServiceClient) TransferPlayer(ctx context.Context, in *TransferPlayerRequest, opts ...grpc.CallOption) (*ConnectGameServerResponse, error) {
+	out := new(ConnectGameServerResponse)
+	err := c.cc.Invoke(ctx, ConnectionService_TransferPlayer_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *connectionServiceClient) IsPlaying(ctx context.Context, in *CharacterTarget, opts ...grpc.CallOption) (*ConnectionStatus, error) {
 	out := new(ConnectionStatus)
 	err := c.cc.Invoke(ctx, ConnectionService_IsPlaying_FullMethodName, in, out, opts...)
@@ -74,6 +85,7 @@ func (c *connectionServiceClient) IsPlaying(ctx context.Context, in *CharacterTa
 type ConnectionServiceServer interface {
 	ConnectGameServer(context.Context, *CharacterTarget) (*ConnectGameServerResponse, error)
 	VerifyConnect(context.Context, *VerifyConnectRequest) (*CharacterDetails, error)
+	TransferPlayer(context.Context, *TransferPlayerRequest) (*ConnectGameServerResponse, error)
 	IsPlaying(context.Context, *CharacterTarget) (*ConnectionStatus, error)
 	mustEmbedUnimplementedConnectionServiceServer()
 }
@@ -87,6 +99,9 @@ func (UnimplementedConnectionServiceServer) ConnectGameServer(context.Context, *
 }
 func (UnimplementedConnectionServiceServer) VerifyConnect(context.Context, *VerifyConnectRequest) (*CharacterDetails, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyConnect not implemented")
+}
+func (UnimplementedConnectionServiceServer) TransferPlayer(context.Context, *TransferPlayerRequest) (*ConnectGameServerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TransferPlayer not implemented")
 }
 func (UnimplementedConnectionServiceServer) IsPlaying(context.Context, *CharacterTarget) (*ConnectionStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsPlaying not implemented")
@@ -140,6 +155,24 @@ func _ConnectionService_VerifyConnect_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ConnectionService_TransferPlayer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TransferPlayerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConnectionServiceServer).TransferPlayer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConnectionService_TransferPlayer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConnectionServiceServer).TransferPlayer(ctx, req.(*TransferPlayerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ConnectionService_IsPlaying_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CharacterTarget)
 	if err := dec(in); err != nil {
@@ -172,6 +205,10 @@ var ConnectionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "VerifyConnect",
 			Handler:    _ConnectionService_VerifyConnect_Handler,
+		},
+		{
+			MethodName: "TransferPlayer",
+			Handler:    _ConnectionService_TransferPlayer_Handler,
 		},
 		{
 			MethodName: "IsPlaying",
