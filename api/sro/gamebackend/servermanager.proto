@@ -83,41 +83,6 @@ service ServerManagerService {
       additional_bindings : {delete : "/v1/maps/id/{id}"}
     };
   }
-
-  rpc CreateChatTemplate(CreateChatTemplateRequest) returns (ChatTemplate) {
-    option (google.api.http) = {
-      post : "/v1/chattemplates"
-      body : "*"
-    };
-  }
-
-  rpc GetChatTemplate(ChatTemplateTarget) returns (ChatTemplate) {
-    option (google.api.http) = {
-      get : "/v1/chattemplates/name/{name}"
-      additional_bindings : {get : "/v1/chattemplates/id/{id}"}
-    };
-  }
-
-  rpc GetAllChatTemplates(google.protobuf.Empty) returns (ChatTemplates) {
-    option (google.api.http) = {
-      get : "/v1/chattemplates"
-    };
-  }
-
-  rpc EditChatTemplate(EditChatTemplateRequest) returns (ChatTemplate) {
-    option (google.api.http) = {
-      put : "/v1/chattemplates/name/{target.name}"
-      additional_bindings : {put : "/v1/chattemplates/id/{target.id}"}
-      body : "*"
-    };
-  }
-
-  rpc DeleteChatTemplate(ChatTemplateTarget) returns (google.protobuf.Empty) {
-    option (google.api.http) = {
-      delete : "/v1/chattemplates/name/{name}"
-      additional_bindings : {delete : "/v1/chattemplates/id/{id}"}
-    };
-  }
 }
 
 message DimensionTarget {
@@ -134,19 +99,11 @@ message MapTarget {
   }
 }
 
-message ChatTemplateTarget {
-  oneof FindBy {
-    string id = 1;
-    string name = 2;
-  }
-}
-
 message CreateDimensionRequest {
   string name = 1;
   string version = 2;
   repeated string map_ids = 3;
-  repeated string chat_template_ids = 4;
-  string location = 5;
+  string location = 4;
 }
 
 message DuplicateDimensionRequest {
@@ -161,9 +118,6 @@ message EditDimensionRequest {
 
   bool edit_maps = 4;
   repeated string map_ids = 5;
-
-  bool edit_chat_templates = 6;
-  repeated string chat_template_ids = 7;
 
   oneof optional_location { string location = 8; }
 }
@@ -180,9 +134,6 @@ message Dimension {
 
   // All maps the realm should have available
   repeated Map maps = 4;
-
-  // All chat templates used
-  repeated ChatTemplate chat_templates = 5;
 
   // Physical server location
   string location = 6;
@@ -223,20 +174,3 @@ message EditMapRequest {
 }
 
 message Maps { repeated Map maps = 1; }
-
-message CreateChatTemplateRequest { string name = 1; }
-
-message EditChatTemplateRequest { 
-  ChatTemplateTarget target = 1;
-oneof optional_name { string name = 2; }
-}
-
-message ChatTemplate {
-  // Unique id for the template
-  string id = 1;
-
-  // Unique name for the chat
-  string name = 2;
-}
-
-message ChatTemplates { repeated ChatTemplate chat_templates = 1; }

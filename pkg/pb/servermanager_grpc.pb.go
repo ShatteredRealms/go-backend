@@ -20,22 +20,17 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ServerManagerService_CreateDimension_FullMethodName     = "/sro.gamebackend.ServerManagerService/CreateDimension"
-	ServerManagerService_DuplicateDimension_FullMethodName  = "/sro.gamebackend.ServerManagerService/DuplicateDimension"
-	ServerManagerService_GetDimension_FullMethodName        = "/sro.gamebackend.ServerManagerService/GetDimension"
-	ServerManagerService_GetAllDimension_FullMethodName     = "/sro.gamebackend.ServerManagerService/GetAllDimension"
-	ServerManagerService_EditDimension_FullMethodName       = "/sro.gamebackend.ServerManagerService/EditDimension"
-	ServerManagerService_DeleteDimension_FullMethodName     = "/sro.gamebackend.ServerManagerService/DeleteDimension"
-	ServerManagerService_CreateMap_FullMethodName           = "/sro.gamebackend.ServerManagerService/CreateMap"
-	ServerManagerService_GetMap_FullMethodName              = "/sro.gamebackend.ServerManagerService/GetMap"
-	ServerManagerService_GetAllMaps_FullMethodName          = "/sro.gamebackend.ServerManagerService/GetAllMaps"
-	ServerManagerService_EditMap_FullMethodName             = "/sro.gamebackend.ServerManagerService/EditMap"
-	ServerManagerService_DeleteMap_FullMethodName           = "/sro.gamebackend.ServerManagerService/DeleteMap"
-	ServerManagerService_CreateChatTemplate_FullMethodName  = "/sro.gamebackend.ServerManagerService/CreateChatTemplate"
-	ServerManagerService_GetChatTemplate_FullMethodName     = "/sro.gamebackend.ServerManagerService/GetChatTemplate"
-	ServerManagerService_GetAllChatTemplates_FullMethodName = "/sro.gamebackend.ServerManagerService/GetAllChatTemplates"
-	ServerManagerService_EditChatTemplate_FullMethodName    = "/sro.gamebackend.ServerManagerService/EditChatTemplate"
-	ServerManagerService_DeleteChatTemplate_FullMethodName  = "/sro.gamebackend.ServerManagerService/DeleteChatTemplate"
+	ServerManagerService_CreateDimension_FullMethodName    = "/sro.gamebackend.ServerManagerService/CreateDimension"
+	ServerManagerService_DuplicateDimension_FullMethodName = "/sro.gamebackend.ServerManagerService/DuplicateDimension"
+	ServerManagerService_GetDimension_FullMethodName       = "/sro.gamebackend.ServerManagerService/GetDimension"
+	ServerManagerService_GetAllDimension_FullMethodName    = "/sro.gamebackend.ServerManagerService/GetAllDimension"
+	ServerManagerService_EditDimension_FullMethodName      = "/sro.gamebackend.ServerManagerService/EditDimension"
+	ServerManagerService_DeleteDimension_FullMethodName    = "/sro.gamebackend.ServerManagerService/DeleteDimension"
+	ServerManagerService_CreateMap_FullMethodName          = "/sro.gamebackend.ServerManagerService/CreateMap"
+	ServerManagerService_GetMap_FullMethodName             = "/sro.gamebackend.ServerManagerService/GetMap"
+	ServerManagerService_GetAllMaps_FullMethodName         = "/sro.gamebackend.ServerManagerService/GetAllMaps"
+	ServerManagerService_EditMap_FullMethodName            = "/sro.gamebackend.ServerManagerService/EditMap"
+	ServerManagerService_DeleteMap_FullMethodName          = "/sro.gamebackend.ServerManagerService/DeleteMap"
 )
 
 // ServerManagerServiceClient is the client API for ServerManagerService service.
@@ -53,11 +48,6 @@ type ServerManagerServiceClient interface {
 	GetAllMaps(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Maps, error)
 	EditMap(ctx context.Context, in *EditMapRequest, opts ...grpc.CallOption) (*Map, error)
 	DeleteMap(ctx context.Context, in *MapTarget, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	CreateChatTemplate(ctx context.Context, in *CreateChatTemplateRequest, opts ...grpc.CallOption) (*ChatTemplate, error)
-	GetChatTemplate(ctx context.Context, in *ChatTemplateTarget, opts ...grpc.CallOption) (*ChatTemplate, error)
-	GetAllChatTemplates(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ChatTemplates, error)
-	EditChatTemplate(ctx context.Context, in *EditChatTemplateRequest, opts ...grpc.CallOption) (*ChatTemplate, error)
-	DeleteChatTemplate(ctx context.Context, in *ChatTemplateTarget, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type serverManagerServiceClient struct {
@@ -167,51 +157,6 @@ func (c *serverManagerServiceClient) DeleteMap(ctx context.Context, in *MapTarge
 	return out, nil
 }
 
-func (c *serverManagerServiceClient) CreateChatTemplate(ctx context.Context, in *CreateChatTemplateRequest, opts ...grpc.CallOption) (*ChatTemplate, error) {
-	out := new(ChatTemplate)
-	err := c.cc.Invoke(ctx, ServerManagerService_CreateChatTemplate_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *serverManagerServiceClient) GetChatTemplate(ctx context.Context, in *ChatTemplateTarget, opts ...grpc.CallOption) (*ChatTemplate, error) {
-	out := new(ChatTemplate)
-	err := c.cc.Invoke(ctx, ServerManagerService_GetChatTemplate_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *serverManagerServiceClient) GetAllChatTemplates(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ChatTemplates, error) {
-	out := new(ChatTemplates)
-	err := c.cc.Invoke(ctx, ServerManagerService_GetAllChatTemplates_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *serverManagerServiceClient) EditChatTemplate(ctx context.Context, in *EditChatTemplateRequest, opts ...grpc.CallOption) (*ChatTemplate, error) {
-	out := new(ChatTemplate)
-	err := c.cc.Invoke(ctx, ServerManagerService_EditChatTemplate_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *serverManagerServiceClient) DeleteChatTemplate(ctx context.Context, in *ChatTemplateTarget, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, ServerManagerService_DeleteChatTemplate_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // ServerManagerServiceServer is the server API for ServerManagerService service.
 // All implementations must embed UnimplementedServerManagerServiceServer
 // for forward compatibility
@@ -227,11 +172,6 @@ type ServerManagerServiceServer interface {
 	GetAllMaps(context.Context, *emptypb.Empty) (*Maps, error)
 	EditMap(context.Context, *EditMapRequest) (*Map, error)
 	DeleteMap(context.Context, *MapTarget) (*emptypb.Empty, error)
-	CreateChatTemplate(context.Context, *CreateChatTemplateRequest) (*ChatTemplate, error)
-	GetChatTemplate(context.Context, *ChatTemplateTarget) (*ChatTemplate, error)
-	GetAllChatTemplates(context.Context, *emptypb.Empty) (*ChatTemplates, error)
-	EditChatTemplate(context.Context, *EditChatTemplateRequest) (*ChatTemplate, error)
-	DeleteChatTemplate(context.Context, *ChatTemplateTarget) (*emptypb.Empty, error)
 	mustEmbedUnimplementedServerManagerServiceServer()
 }
 
@@ -271,21 +211,6 @@ func (UnimplementedServerManagerServiceServer) EditMap(context.Context, *EditMap
 }
 func (UnimplementedServerManagerServiceServer) DeleteMap(context.Context, *MapTarget) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteMap not implemented")
-}
-func (UnimplementedServerManagerServiceServer) CreateChatTemplate(context.Context, *CreateChatTemplateRequest) (*ChatTemplate, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateChatTemplate not implemented")
-}
-func (UnimplementedServerManagerServiceServer) GetChatTemplate(context.Context, *ChatTemplateTarget) (*ChatTemplate, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetChatTemplate not implemented")
-}
-func (UnimplementedServerManagerServiceServer) GetAllChatTemplates(context.Context, *emptypb.Empty) (*ChatTemplates, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAllChatTemplates not implemented")
-}
-func (UnimplementedServerManagerServiceServer) EditChatTemplate(context.Context, *EditChatTemplateRequest) (*ChatTemplate, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method EditChatTemplate not implemented")
-}
-func (UnimplementedServerManagerServiceServer) DeleteChatTemplate(context.Context, *ChatTemplateTarget) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteChatTemplate not implemented")
 }
 func (UnimplementedServerManagerServiceServer) mustEmbedUnimplementedServerManagerServiceServer() {}
 
@@ -498,96 +423,6 @@ func _ServerManagerService_DeleteMap_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ServerManagerService_CreateChatTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateChatTemplateRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ServerManagerServiceServer).CreateChatTemplate(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ServerManagerService_CreateChatTemplate_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServerManagerServiceServer).CreateChatTemplate(ctx, req.(*CreateChatTemplateRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ServerManagerService_GetChatTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ChatTemplateTarget)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ServerManagerServiceServer).GetChatTemplate(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ServerManagerService_GetChatTemplate_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServerManagerServiceServer).GetChatTemplate(ctx, req.(*ChatTemplateTarget))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ServerManagerService_GetAllChatTemplates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ServerManagerServiceServer).GetAllChatTemplates(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ServerManagerService_GetAllChatTemplates_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServerManagerServiceServer).GetAllChatTemplates(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ServerManagerService_EditChatTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(EditChatTemplateRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ServerManagerServiceServer).EditChatTemplate(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ServerManagerService_EditChatTemplate_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServerManagerServiceServer).EditChatTemplate(ctx, req.(*EditChatTemplateRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ServerManagerService_DeleteChatTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ChatTemplateTarget)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ServerManagerServiceServer).DeleteChatTemplate(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ServerManagerService_DeleteChatTemplate_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServerManagerServiceServer).DeleteChatTemplate(ctx, req.(*ChatTemplateTarget))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // ServerManagerService_ServiceDesc is the grpc.ServiceDesc for ServerManagerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -638,26 +473,6 @@ var ServerManagerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteMap",
 			Handler:    _ServerManagerService_DeleteMap_Handler,
-		},
-		{
-			MethodName: "CreateChatTemplate",
-			Handler:    _ServerManagerService_CreateChatTemplate_Handler,
-		},
-		{
-			MethodName: "GetChatTemplate",
-			Handler:    _ServerManagerService_GetChatTemplate_Handler,
-		},
-		{
-			MethodName: "GetAllChatTemplates",
-			Handler:    _ServerManagerService_GetAllChatTemplates_Handler,
-		},
-		{
-			MethodName: "EditChatTemplate",
-			Handler:    _ServerManagerService_EditChatTemplate_Handler,
-		},
-		{
-			MethodName: "DeleteChatTemplate",
-			Handler:    _ServerManagerService_DeleteChatTemplate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -25,17 +25,16 @@ var (
 // dimension cannot interact with other dimensions.
 type Dimension struct {
 	Model
-	Name           string        `gorm:"unique"`
-	ServerLocation string        `gorm:"not null"`
-	Version        string        `gorm:"not null"`
-	Maps           Maps          `gorm:"many2many:dimension_maps"`
-	ChatTemplates  ChatTemplates `gorm:"many2many:dimension_chat_templates"`
+	Name     string `gorm:"unique"`
+	Location string `gorm:"not null"`
+	Version  string `gorm:"not null"`
+	Maps     Maps   `gorm:"many2many:dimension_maps"`
 }
 
 type Dimensions []*Dimension
 
 func (c *Dimension) ValidateLocation() error {
-	if _, ok := ServerLocations[c.ServerLocation]; ok {
+	if _, ok := ServerLocations[c.Location]; ok {
 		return nil
 	}
 
@@ -60,18 +59,12 @@ func (dimension *Dimension) ToPb() *pb.Dimension {
 		maps[idx] = m.ToPb()
 	}
 
-	chatTemplates := make([]*pb.ChatTemplate, len(dimension.ChatTemplates))
-	for idx, ct := range dimension.ChatTemplates {
-		chatTemplates[idx] = ct.ToPb()
-	}
-
 	return &pb.Dimension{
-		Id:            dimension.Id.String(),
-		Name:          dimension.Name,
-		Version:       dimension.Version,
-		Maps:          dimension.Maps.ToPb(),
-		ChatTemplates: dimension.ChatTemplates.ToPb(),
-		Location:      dimension.ServerLocation,
+		Id:       dimension.Id.String(),
+		Name:     dimension.Name,
+		Version:  dimension.Version,
+		Maps:     dimension.Maps.ToPb(),
+		Location: dimension.Location,
 	}
 }
 
@@ -82,4 +75,13 @@ func (dimensions Dimensions) ToPb() []*pb.Dimension {
 	}
 
 	return out
+}
+
+func (dimension *Dimension) GetImageName() string {
+	version := "latest"
+	if dimension.Version != "" {
+		version = dimension.Version
+	}
+
+	return fmt.Sprintf("779965382548.dkr.ecr.us-east-1.amazonaws.com/sro/game:%s", version)
 }

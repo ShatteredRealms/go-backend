@@ -23,13 +23,13 @@ type dimensionRepository interface {
 		location string,
 		version string,
 		mapIds []*uuid.UUID,
-		chatTemplateIds []*uuid.UUID,
 	) (*model.Dimension, error)
 	DuplicateDimension(ctx context.Context, refId *uuid.UUID, name string) (*model.Dimension, error)
 	FindDimensionByName(ctx context.Context, name string) (*model.Dimension, error)
 	FindDimensionById(ctx context.Context, id *uuid.UUID) (*model.Dimension, error)
 	FindDimensionsByNames(ctx context.Context, names []string) (model.Dimensions, error)
 	FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error)
+	FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error)
 	FindAllDimensions(ctx context.Context) (model.Dimensions, error)
 	SaveDimension(ctx context.Context, dimension *model.Dimension) (*model.Dimension, error)
 	DeleteDimensionByName(ctx context.Context, name string) error
@@ -54,21 +54,6 @@ type mapRepository interface {
 	DeleteMapById(ctx context.Context, id *uuid.UUID) error
 }
 
-type chatTemplateRepository interface {
-	CreateChatTemplate(
-		ctx context.Context,
-		name string,
-	) (*model.ChatTemplate, error)
-	FindChatTemplateByName(ctx context.Context, name string) (*model.ChatTemplate, error)
-	FindChatTemplateById(ctx context.Context, id *uuid.UUID) (*model.ChatTemplate, error)
-	FindChatTemplatesByNames(ctx context.Context, names []string) (model.ChatTemplates, error)
-	FindChatTemplatesByIds(ctx context.Context, ids []*uuid.UUID) (model.ChatTemplates, error)
-	FindAllChatTemplates(ctx context.Context) (model.ChatTemplates, error)
-	SaveChatTemplate(ctx context.Context, chatTemplate *model.ChatTemplate) (*model.ChatTemplate, error)
-	DeleteChatTemplateByName(ctx context.Context, name string) error
-	DeleteChatTemplateById(ctx context.Context, id *uuid.UUID) error
-}
-
 type GamebackendRepository interface {
 	CreatePendingConnection(ctx context.Context, character string, serverName string) (*model.PendingConnection, error)
 	DeletePendingConnection(ctx context.Context, id *uuid.UUID) error
@@ -76,7 +61,6 @@ type GamebackendRepository interface {
 
 	dimensionRepository
 	mapRepository
-	chatTemplateRepository
 
 	WithTrx(trx *gorm.DB) GamebackendRepository
 	Migrate(ctx context.Context) error
@@ -137,19 +121,6 @@ func (r *gamebackendRepository) FindPendingConnection(ctx context.Context, id *u
 	return pendingConnection
 }
 
-// CreateChatTemplate implements GamebackendRepository.
-func (r *gamebackendRepository) CreateChatTemplate(ctx context.Context, name string) (*model.ChatTemplate, error) {
-	chatTemplate := &model.ChatTemplate{
-		Name: name,
-	}
-
-	if err := r.DB.WithContext(ctx).Create(&chatTemplate).Error; err != nil {
-		return nil, err
-	}
-
-	return chatTemplate, nil
-}
-
 // CreateDimension implements GamebackendRepository.
 func (r *gamebackendRepository) CreateDimension(
 	ctx context.Context,
@@ -157,24 +128,17 @@ func (r *gamebackendRepository) CreateDimension(
 	location string,
 	version string,
 	mapIds []*uuid.UUID,
-	chatTemplateIds []*uuid.UUID,
 ) (*model.Dimension, error) {
 	maps, err := r.FindMapsByIds(ctx, mapIds)
 	if err != nil {
 		return nil, err
 	}
 
-	chatTemplates, err := r.FindChatTemplatesByIds(ctx, chatTemplateIds)
-	if err != nil {
-		return nil, err
-	}
-
 	dimension := &model.Dimension{
-		Name:           name,
-		ServerLocation: location,
-		Version:        version,
-		Maps:           maps,
-		ChatTemplates:  chatTemplates,
+		Name:     name,
+		Location: location,
+		Version:  version,
+		Maps:     maps,
 	}
 
 	if err := r.DB.WithContext(ctx).Preload(clause.Associations).Create(&dimension).Error; err != nil {
@@ -204,16 +168,6 @@ func (r *gamebackendRepository) CreateMap(
 	}
 
 	return newMap, nil
-}
-
-// DeleteChatTemplateById implements GamebackendRepository.
-func (r *gamebackendRepository) DeleteChatTemplateById(ctx context.Context, id *uuid.UUID) error {
-	return r.DB.WithContext(ctx).Delete(&model.ChatTemplate{}, id).Error
-}
-
-// DeleteChatTemplateByName implements GamebackendRepository.
-func (r *gamebackendRepository) DeleteChatTemplateByName(ctx context.Context, name string) error {
-	return r.DB.WithContext(ctx).Delete(&model.ChatTemplate{}, "name = ?", name).Error
 }
 
 // DeleteDimensionById implements GamebackendRepository.
@@ -260,19 +214,6 @@ func (r *gamebackendRepository) DuplicateDimension(
 	return dimension, nil
 }
 
-// SaveChatTemplate implements GamebackendRepository.
-func (r *gamebackendRepository) SaveChatTemplate(
-	ctx context.Context,
-	chatTemplate *model.ChatTemplate,
-) (*model.ChatTemplate, error) {
-	err := r.DB.WithContext(ctx).Save(&chatTemplate).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return chatTemplate, nil
-}
-
 // SaveDimension implements GamebackendRepository.
 func (r *gamebackendRepository) SaveDimension(
 	ctx context.Context,
@@ -296,12 +237,6 @@ func (r *gamebackendRepository) SaveMap(ctx context.Context, m *model.Map) (*mod
 	return m, nil
 }
 
-// FindAllChatTemplates implements GamebackendRepository.
-func (r *gamebackendRepository) FindAllChatTemplates(ctx context.Context) (model.ChatTemplates, error) {
-	var chatTemplates model.ChatTemplates
-	return chatTemplates, r.DB.WithContext(ctx).Find(&chatTemplates).Error
-}
-
 // FindAllDimensions implements GamebackendRepository.
 func (r *gamebackendRepository) FindAllDimensions(ctx context.Context) (model.Dimensions, error) {
 	var dimensions model.Dimensions
@@ -312,36 +247,6 @@ func (r *gamebackendRepository) FindAllDimensions(ctx context.Context) (model.Di
 func (r *gamebackendRepository) FindAllMaps(ctx context.Context) (model.Maps, error) {
 	var maps model.Maps
 	return maps, r.DB.WithContext(ctx).Find(&maps).Error
-}
-
-// FindChatTemplateById implements GamebackendRepository.
-func (r *gamebackendRepository) FindChatTemplateById(ctx context.Context, id *uuid.UUID) (*model.ChatTemplate, error) {
-	var chatTemplate *model.ChatTemplate
-	result := r.DB.WithContext(ctx).Find(&chatTemplate, id)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	if result.RowsAffected == 0 {
-		return nil, nil
-	}
-
-	return chatTemplate, nil
-}
-
-// FindChatTemplateByName implements GamebackendRepository.
-func (r *gamebackendRepository) FindChatTemplateByName(ctx context.Context, name string) (*model.ChatTemplate, error) {
-	var chatTemplate *model.ChatTemplate
-	result := r.DB.WithContext(ctx).Find(&chatTemplate, "name = ?", name)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	if result.RowsAffected == 0 {
-		return nil, nil
-	}
-
-	return chatTemplate, nil
 }
 
 // FindDimensionById implements GamebackendRepository.
@@ -404,24 +309,6 @@ func (r *gamebackendRepository) FindMapByName(ctx context.Context, name string) 
 	return m, nil
 }
 
-// FindChatTemplatesByIds implements GamebackendRepository.
-func (r *gamebackendRepository) FindChatTemplatesByIds(
-	ctx context.Context,
-	ids []*uuid.UUID,
-) (model.ChatTemplates, error) {
-	var found model.ChatTemplates
-	return found, r.DB.WithContext(ctx).Find(&found, ids).Error
-}
-
-// FindChatTemplatesByNames implements GamebackendRepository.
-func (r *gamebackendRepository) FindChatTemplatesByNames(
-	ctx context.Context,
-	names []string,
-) (model.ChatTemplates, error) {
-	var found model.ChatTemplates
-	return found, r.DB.WithContext(ctx).Find(&found, "name IN ?", names).Error
-}
-
 // FindDimensionsByIds implements GamebackendRepository.
 func (r *gamebackendRepository) FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error) {
 	var found model.Dimensions
@@ -446,6 +333,16 @@ func (r *gamebackendRepository) FindMapsByNames(ctx context.Context, names []str
 	return found, r.DB.WithContext(ctx).Find(&found, "name IN ?", names).Error
 }
 
+// FindDimensionsWithMapIds implements GamebackendRepository.
+func (r *gamebackendRepository) FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error) {
+	var found model.Dimensions
+	return found, r.DB.WithContext(ctx).
+		Model(&model.Map{}).
+		Where("id IN ?", ids).
+		Association("Maps").
+		Find(&found)
+}
+
 // WithTrx implmeents GamebackendRepository.
 func (r *gamebackendRepository) WithTrx(trx *gorm.DB) GamebackendRepository {
 	if trx == nil {
@@ -461,7 +358,6 @@ func (r *gamebackendRepository) Migrate(ctx context.Context) error {
 	return r.DB.WithContext(ctx).AutoMigrate(
 		&model.PendingConnection{},
 		&model.Dimension{},
-		&model.ChatTemplate{},
 		&model.Map{},
 	)
 }

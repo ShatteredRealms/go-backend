@@ -27,13 +27,13 @@ type dimensionService interface {
 		location string,
 		version string,
 		mapIds []*uuid.UUID,
-		chatTemplateIds []*uuid.UUID,
 	) (*model.Dimension, error)
 	DuplicateDimension(ctx context.Context, refId *uuid.UUID, name string) (*model.Dimension, error)
 	FindDimensionByName(ctx context.Context, name string) (*model.Dimension, error)
 	FindDimensionById(ctx context.Context, id *uuid.UUID) (*model.Dimension, error)
 	FindDimensionsByNames(ctx context.Context, names []string) (model.Dimensions, error)
 	FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error)
+	FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error)
 	FindAllDimensions(ctx context.Context) (model.Dimensions, error)
 	EditDimension(ctx context.Context, request *pb.EditDimensionRequest) (*model.Dimension, error)
 	DeleteDimensionByName(ctx context.Context, name string) error
@@ -58,21 +58,6 @@ type mapService interface {
 	DeleteMapById(ctx context.Context, id *uuid.UUID) error
 }
 
-type chatTemplateService interface {
-	CreateChatTemplate(
-		ctx context.Context,
-		name string,
-	) (*model.ChatTemplate, error)
-	FindChatTemplateByName(ctx context.Context, name string) (*model.ChatTemplate, error)
-	FindChatTemplateById(ctx context.Context, id *uuid.UUID) (*model.ChatTemplate, error)
-	FindChatTemplatesByNames(ctx context.Context, names []string) (model.ChatTemplates, error)
-	FindChatTemplatesByIds(ctx context.Context, ids []*uuid.UUID) (model.ChatTemplates, error)
-	FindAllChatTemplates(ctx context.Context) (model.ChatTemplates, error)
-	EditChatTemplate(ctx context.Context, request *pb.EditChatTemplateRequest) (*model.ChatTemplate, error)
-	DeleteChatTemplateByName(ctx context.Context, name string) error
-	DeleteChatTemplateById(ctx context.Context, id *uuid.UUID) error
-}
-
 type connectionService interface {
 	CreatePendingConnection(ctx context.Context, character string, serverName string) (*model.PendingConnection, error)
 	CheckPlayerConnection(ctx context.Context, id *uuid.UUID, serverName string) (*model.PendingConnection, error)
@@ -82,7 +67,6 @@ type GamebackendService interface {
 	connectionService
 	dimensionService
 	mapService
-	chatTemplateService
 }
 
 type gamebackendService struct {
@@ -136,29 +120,14 @@ func (s *gamebackendService) CheckPlayerConnection(ctx context.Context, id *uuid
 	return pc, nil
 }
 
-// CreateChatTemplate implements GamebackendService.
-func (s *gamebackendService) CreateChatTemplate(ctx context.Context, name string) (*model.ChatTemplate, error) {
-	return s.gamebackendRepo.CreateChatTemplate(ctx, name)
-}
-
 // CreateDimension implements GamebackendService.
-func (s *gamebackendService) CreateDimension(ctx context.Context, name string, location string, version string, mapIds []*uuid.UUID, chatTemplateIds []*uuid.UUID) (*model.Dimension, error) {
-	return s.gamebackendRepo.CreateDimension(ctx, name, location, version, mapIds, chatTemplateIds)
+func (s *gamebackendService) CreateDimension(ctx context.Context, name string, location string, version string, mapIds []*uuid.UUID) (*model.Dimension, error) {
+	return s.gamebackendRepo.CreateDimension(ctx, name, location, version, mapIds)
 }
 
 // CreateMap implements GamebackendService.
 func (s *gamebackendService) CreateMap(ctx context.Context, name string, path string, maxPlayers uint64, instanced bool) (*model.Map, error) {
 	return s.gamebackendRepo.CreateMap(ctx, name, path, maxPlayers, instanced)
-}
-
-// DeleteChatTemplateById implements GamebackendService.
-func (s *gamebackendService) DeleteChatTemplateById(ctx context.Context, id *uuid.UUID) error {
-	return s.gamebackendRepo.DeleteChatTemplateById(ctx, id)
-}
-
-// DeleteChatTemplateByName implements GamebackendService.
-func (s *gamebackendService) DeleteChatTemplateByName(ctx context.Context, name string) error {
-	return s.gamebackendRepo.DeleteChatTemplateByName(ctx, name)
 }
 
 // DeleteDimensionById implements GamebackendService.
@@ -184,36 +153,6 @@ func (s *gamebackendService) DeleteMapByName(ctx context.Context, name string) e
 // DuplicateDimension implements GamebackendService.
 func (s *gamebackendService) DuplicateDimension(ctx context.Context, refId *uuid.UUID, name string) (*model.Dimension, error) {
 	return s.gamebackendRepo.DuplicateDimension(ctx, refId, name)
-}
-
-// EditChatTemplate implements GamebackendService.
-func (s *gamebackendService) EditChatTemplate(ctx context.Context, request *pb.EditChatTemplateRequest) (*model.ChatTemplate, error) {
-	var currentChatTemplate *model.ChatTemplate
-	var err error
-
-	switch target := request.Target.FindBy.(type) {
-	case *pb.ChatTemplateTarget_Id:
-		id, err := uuid.Parse(target.Id)
-		if err != nil {
-			return nil, err
-		}
-		currentChatTemplate, err = s.FindChatTemplateById(ctx, &id)
-	case *pb.ChatTemplateTarget_Name:
-		currentChatTemplate, err = s.FindChatTemplateByName(ctx, target.Name)
-	default:
-		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
-		return nil, model.ErrHandleRequest
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	if request.OptionalName != nil {
-		currentChatTemplate.Name = request.OptionalName.(*pb.EditChatTemplateRequest_Name).Name
-	}
-
-	return s.gamebackendRepo.SaveChatTemplate(ctx, currentChatTemplate)
 }
 
 // EditDimension implements GamebackendService.
@@ -248,7 +187,7 @@ func (s *gamebackendService) EditDimension(ctx context.Context, request *pb.Edit
 	}
 
 	if request.OptionalLocation != nil {
-		currentDimension.ServerLocation = request.OptionalLocation.(*pb.EditDimensionRequest_Location).Location
+		currentDimension.Location = request.OptionalLocation.(*pb.EditDimensionRequest_Location).Location
 	}
 
 	if request.EditMaps {
@@ -263,20 +202,6 @@ func (s *gamebackendService) EditDimension(ctx context.Context, request *pb.Edit
 		}
 
 		currentDimension.Maps = maps
-	}
-
-	if request.EditChatTemplates {
-		ids, err := helpers.ParseUUIDs(request.ChatTemplateIds)
-		if err != nil {
-			return nil, fmt.Errorf("chat template ids: %w", err)
-		}
-
-		chatTemplates, err := s.gamebackendRepo.FindChatTemplatesByIds(ctx, ids)
-		if err != nil {
-			return nil, fmt.Errorf("getting chats: %w", err)
-		}
-
-		currentDimension.ChatTemplates = chatTemplates
 	}
 
 	return s.gamebackendRepo.SaveDimension(ctx, currentDimension)
@@ -324,11 +249,6 @@ func (s *gamebackendService) EditMap(ctx context.Context, request *pb.EditMapReq
 	return s.gamebackendRepo.SaveMap(ctx, currentMap)
 }
 
-// FindAllChatTemplates implements GamebackendService.
-func (s *gamebackendService) FindAllChatTemplates(ctx context.Context) (model.ChatTemplates, error) {
-	return s.gamebackendRepo.FindAllChatTemplates(ctx)
-}
-
 // FindAllDimensions implements GamebackendService.
 func (s *gamebackendService) FindAllDimensions(ctx context.Context) (model.Dimensions, error) {
 	return s.gamebackendRepo.FindAllDimensions(ctx)
@@ -337,26 +257,6 @@ func (s *gamebackendService) FindAllDimensions(ctx context.Context) (model.Dimen
 // FindAllMaps implements GamebackendService.
 func (s *gamebackendService) FindAllMaps(ctx context.Context) (model.Maps, error) {
 	return s.gamebackendRepo.FindAllMaps(ctx)
-}
-
-// FindChatTemplateById implements GamebackendService.
-func (s *gamebackendService) FindChatTemplateById(ctx context.Context, id *uuid.UUID) (*model.ChatTemplate, error) {
-	return s.gamebackendRepo.FindChatTemplateById(ctx, id)
-}
-
-// FindChatTemplateByName implements GamebackendService.
-func (s *gamebackendService) FindChatTemplateByName(ctx context.Context, name string) (*model.ChatTemplate, error) {
-	return s.gamebackendRepo.FindChatTemplateByName(ctx, name)
-}
-
-// FindChatTemplatesByIds implements GamebackendService.
-func (s *gamebackendService) FindChatTemplatesByIds(ctx context.Context, ids []*uuid.UUID) (model.ChatTemplates, error) {
-	return s.gamebackendRepo.FindChatTemplatesByIds(ctx, ids)
-}
-
-// FindChatTemplatesByNames implements GamebackendService.
-func (s *gamebackendService) FindChatTemplatesByNames(ctx context.Context, names []string) (model.ChatTemplates, error) {
-	return s.gamebackendRepo.FindChatTemplatesByNames(ctx, names)
 }
 
 // FindDimensionById implements GamebackendService.
@@ -377,6 +277,11 @@ func (s *gamebackendService) FindDimensionsByIds(ctx context.Context, ids []*uui
 // FindDimensionsByNames implements GamebackendService.
 func (s *gamebackendService) FindDimensionsByNames(ctx context.Context, names []string) (model.Dimensions, error) {
 	return s.gamebackendRepo.FindDimensionsByNames(ctx, names)
+}
+
+// FindDimensionsWithMapIds implements GamebackendService.
+func (s *gamebackendService) FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error) {
+	return s.gamebackendRepo.FindDimensionsWithMapIds(ctx, ids)
 }
 
 // FindMapById implements GamebackendService.
