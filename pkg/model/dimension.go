@@ -71,6 +71,7 @@ func (dimension *Dimension) ToPb() *pb.Dimension {
 		Version:       dimension.Version,
 		Maps:          dimension.Maps.ToPb(),
 		ChatTemplates: dimension.ChatTemplates.ToPb(),
+		Location:      dimension.ServerLocation,
 	}
 }
 
