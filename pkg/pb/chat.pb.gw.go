@@ -86,12 +86,12 @@ func request_ChatService_ConnectDirectMessage_0(ctx context.Context, marshaler r
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "name")
 	}
 
-	if protoReq.Target == nil {
-		protoReq.Target = &CharacterTarget_Name{}
-	} else if _, ok := protoReq.Target.(*CharacterTarget_Name); !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *CharacterTarget_Name, but: %t\n", protoReq.Target)
+	if protoReq.Type == nil {
+		protoReq.Type = &CharacterTarget_Name{}
+	} else if _, ok := protoReq.Type.(*CharacterTarget_Name); !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *CharacterTarget_Name, but: %t\n", protoReq.Type)
 	}
-	protoReq.Target.(*CharacterTarget_Name).Name, err = runtime.String(val)
+	protoReq.Type.(*CharacterTarget_Name).Name, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "name", err)
 	}
@@ -136,12 +136,12 @@ func request_ChatService_ConnectDirectMessage_1(ctx context.Context, marshaler r
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	if protoReq.Target == nil {
-		protoReq.Target = &CharacterTarget_Id{}
-	} else if _, ok := protoReq.Target.(*CharacterTarget_Id); !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *CharacterTarget_Id, but: %t\n", protoReq.Target)
+	if protoReq.Type == nil {
+		protoReq.Type = &CharacterTarget_Id{}
+	} else if _, ok := protoReq.Type.(*CharacterTarget_Id); !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *CharacterTarget_Id, but: %t\n", protoReq.Type)
 	}
-	protoReq.Target.(*CharacterTarget_Id).Id, err = runtime.Uint64(val)
+	protoReq.Type.(*CharacterTarget_Id).Id, err = runtime.Uint64(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
@@ -616,12 +616,12 @@ func request_ChatService_GetAuthorizedChatChannels_0(ctx context.Context, marsha
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "name")
 	}
 
-	if protoReq.Target == nil {
-		protoReq.Target = &CharacterTarget_Name{}
-	} else if _, ok := protoReq.Target.(*CharacterTarget_Name); !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *CharacterTarget_Name, but: %t\n", protoReq.Target)
+	if protoReq.Type == nil {
+		protoReq.Type = &CharacterTarget_Name{}
+	} else if _, ok := protoReq.Type.(*CharacterTarget_Name); !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *CharacterTarget_Name, but: %t\n", protoReq.Type)
 	}
-	protoReq.Target.(*CharacterTarget_Name).Name, err = runtime.String(val)
+	protoReq.Type.(*CharacterTarget_Name).Name, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "name", err)
 	}
@@ -654,12 +654,12 @@ func local_request_ChatService_GetAuthorizedChatChannels_0(ctx context.Context, 
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "name")
 	}
 
-	if protoReq.Target == nil {
-		protoReq.Target = &CharacterTarget_Name{}
-	} else if _, ok := protoReq.Target.(*CharacterTarget_Name); !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *CharacterTarget_Name, but: %t\n", protoReq.Target)
+	if protoReq.Type == nil {
+		protoReq.Type = &CharacterTarget_Name{}
+	} else if _, ok := protoReq.Type.(*CharacterTarget_Name); !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *CharacterTarget_Name, but: %t\n", protoReq.Type)
 	}
-	protoReq.Target.(*CharacterTarget_Name).Name, err = runtime.String(val)
+	protoReq.Type.(*CharacterTarget_Name).Name, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "name", err)
 	}
@@ -696,12 +696,12 @@ func request_ChatService_GetAuthorizedChatChannels_1(ctx context.Context, marsha
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	if protoReq.Target == nil {
-		protoReq.Target = &CharacterTarget_Id{}
-	} else if _, ok := protoReq.Target.(*CharacterTarget_Id); !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *CharacterTarget_Id, but: %t\n", protoReq.Target)
+	if protoReq.Type == nil {
+		protoReq.Type = &CharacterTarget_Id{}
+	} else if _, ok := protoReq.Type.(*CharacterTarget_Id); !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *CharacterTarget_Id, but: %t\n", protoReq.Type)
 	}
-	protoReq.Target.(*CharacterTarget_Id).Id, err = runtime.Uint64(val)
+	protoReq.Type.(*CharacterTarget_Id).Id, err = runtime.Uint64(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
@@ -734,12 +734,12 @@ func local_request_ChatService_GetAuthorizedChatChannels_1(ctx context.Context, 
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	if protoReq.Target == nil {
-		protoReq.Target = &CharacterTarget_Id{}
-	} else if _, ok := protoReq.Target.(*CharacterTarget_Id); !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *CharacterTarget_Id, but: %t\n", protoReq.Target)
+	if protoReq.Type == nil {
+		protoReq.Type = &CharacterTarget_Id{}
+	} else if _, ok := protoReq.Type.(*CharacterTarget_Id); !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "expect type: *CharacterTarget_Id, but: %t\n", protoReq.Type)
 	}
-	protoReq.Target.(*CharacterTarget_Id).Id, err = runtime.Uint64(val)
+	protoReq.Type.(*CharacterTarget_Id).Id, err = runtime.Uint64(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}

@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/ShatteredRealms/go-backend/cmd/characters/app"
+	"github.com/ShatteredRealms/go-backend/cmd/character/app"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 )
 
@@ -26,24 +26,24 @@ func main() {
 	ctx := context.Background()
 	uptrace.ConfigureOpentelemetry(
 		uptrace.WithDSN(conf.Uptrace.DSN),
-		uptrace.WithServiceName(characters.ServiceName),
+		uptrace.WithServiceName(character.ServiceName),
 		uptrace.WithServiceVersion(conf.Version),
 	)
 
-	server := characters.NewServerContext(ctx, conf)
+	server := character.NewServerContext(ctx, conf)
 	grpcServer, gwmux := helpers.InitServerDefaults()
-	address := server.GlobalConfig.Characters.Local.Address()
+	address := server.GlobalConfig.Character.Local.Address()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
 	pb.RegisterHealthServiceServer(grpcServer, srv.NewHealthServiceServer())
 	err := pb.RegisterHealthServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
 	helpers.Check(ctx, err, "register health service handler endpoint")
 
-	css, err := srv.NewCharactersServiceServer(ctx, server)
+	css, err := srv.NewCharacterServiceServer(ctx, server)
 	helpers.Check(ctx, err, "create characters service server")
-	pb.RegisterCharactersServiceServer(grpcServer, css)
-	err = pb.RegisterCharactersServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
+	pb.RegisterCharacterServiceServer(grpcServer, css)
+	err = pb.RegisterCharacterServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
 	helpers.Check(ctx, err, "registering characters service handler endpoint")
 
-	helpers.StartServer(ctx, grpcServer, gwmux, server.GlobalConfig.Characters.Local.Address())
+	helpers.StartServer(ctx, grpcServer, gwmux, server.GlobalConfig.Character.Local.Address())
 }

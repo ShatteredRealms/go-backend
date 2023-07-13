@@ -73,7 +73,7 @@ func (s characterService) Edit(ctx context.Context, character *pb.EditCharacterR
 	var currentCharacter *model.Character
 	var err error
 
-	switch target := character.Target.Target.(type) {
+	switch target := character.Target.Type.(type) {
 	case *pb.CharacterTarget_Id:
 		currentCharacter, err = s.FindById(ctx, uint(target.Id))
 	case *pb.CharacterTarget_Name:

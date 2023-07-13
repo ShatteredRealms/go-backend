@@ -19,7 +19,7 @@ var (
 type ChatServerContext struct {
 	GlobalConfig     *config.GlobalConfig
 	ChatService      service.ChatService
-	CharacterService pb.CharactersServiceClient
+	CharacterService pb.CharacterServiceClient
 	KeycloakClient   *gocloak.GoCloak
 	Tracer           trace.Tracer
 }
@@ -39,9 +39,9 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *ChatServe
 	helpers.Check(ctx, err, "chat service")
 	server.ChatService = chatService
 
-	charactersConn, err := helpers.GrpcClientWithOtel(conf.Characters.Remote.Address())
+	charactersConn, err := helpers.GrpcClientWithOtel(conf.Character.Remote.Address())
 	helpers.Check(ctx, err, "connect characters service")
-	server.CharacterService = pb.NewCharactersServiceClient(charactersConn)
+	server.CharacterService = pb.NewCharacterServiceClient(charactersConn)
 
 	return server
 }

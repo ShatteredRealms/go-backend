@@ -25,7 +25,7 @@ var (
 // dimension cannot interact with other dimensions.
 type Dimension struct {
 	Model
-	Name     string `gorm:"unique"`
+	Name     string `gorm:"uniqueIndex:idx_deleted"`
 	Location string `gorm:"not null"`
 	Version  string `gorm:"not null"`
 	Maps     Maps   `gorm:"many2many:dimension_maps"`

@@ -3,10 +3,11 @@ package sro.gamebackend;
 option go_package = "pkg/pb";
 
 import "google/api/annotations.proto";
-import "sro/characters/characters.proto";
+import "sro/character/character.proto";
+import "sro/globals.proto";
 
 service ConnectionService {
-  rpc ConnectGameServer(sro.characters.CharacterTarget)
+  rpc ConnectGameServer(sro.character.CharacterTarget)
       returns (ConnectGameServerResponse) {
     option (google.api.http) = {
       get : "/v1/connect/character/id/{id}"
@@ -15,7 +16,7 @@ service ConnectionService {
   }
 
   rpc VerifyConnect(VerifyConnectRequest)
-      returns (sro.characters.CharacterDetails) {
+      returns (sro.character.CharacterDetails) {
     option (google.api.http) = {
       post : "/v1/connect/verify"
       body : "*"
@@ -30,7 +31,7 @@ service ConnectionService {
     };
   }
 
-  rpc IsPlaying(sro.characters.CharacterTarget) returns (ConnectionStatus) {
+  rpc IsPlaying(sro.character.CharacterTarget) returns (ConnectionStatus) {
     option (google.api.http) = {
       get : "/v1/status/character/id/{id}"
       additional_bindings : {get : "/v1/status/character/name/{name}"}
@@ -53,5 +54,5 @@ message ConnectionStatus { bool online = 1; }
 
 message TransferPlayerRequest {
   string character = 1;
-  sro.characters.Location location = 2;
+  sro.Location location = 2;
 }

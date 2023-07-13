@@ -11,7 +11,7 @@ type Model struct {
 	Id        *uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	DeletedAt gorm.DeletedAt `gorm:"uniqueIndex:idx_deleted"`
 }
 
 func (m *Model) IsCreated() bool {

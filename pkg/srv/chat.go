@@ -136,7 +136,7 @@ func (s chatServiceServer) SendChatMessage(
 
 	if _, err = s.verifyUserOwnsCharacter(
 		ctx,
-		&pb.CharacterTarget{Target: &pb.CharacterTarget_Name{Name: request.ChatMessage.CharacterName}},
+		&pb.CharacterTarget{Type: &pb.CharacterTarget_Name{Name: request.ChatMessage.CharacterName}},
 	); err != nil {
 		log.WithContext(ctx).Infof("verify owns character failed: %v", err)
 		return nil, err
@@ -174,7 +174,7 @@ func (s chatServiceServer) SendDirectMessage(
 
 	if _, err = s.verifyUserOwnsCharacter(
 		ctx,
-		&pb.CharacterTarget{Target: &pb.CharacterTarget_Name{Name: request.ChatMessage.CharacterName}},
+		&pb.CharacterTarget{Type: &pb.CharacterTarget_Name{Name: request.ChatMessage.CharacterName}},
 	); err != nil {
 		return nil, err
 	}
@@ -393,7 +393,7 @@ func (s chatServiceServer) UpdateUserChatChannelAuthorizations(
 	}
 
 	targetCharacterId := uint(0)
-	switch target := request.Character.Target.(type) {
+	switch target := request.Character.Type.(type) {
 	case *pb.CharacterTarget_Name:
 		srvCtx, err := s.serverContext(ctx)
 		if err != nil {
@@ -501,7 +501,7 @@ func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, request 
 		return nil, status.Errorf(codes.Internal, "unable to verify character")
 	}
 
-	switch target := request.Target.(type) {
+	switch target := request.Type.(type) {
 	case *pb.CharacterTarget_Id:
 		for _, c := range chars.Characters {
 			if c.Id == target.Id {
@@ -517,7 +517,7 @@ func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, request 
 		}
 
 	default:
-		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(request.Target).Name())
+		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(request.Type).Name())
 		return nil, model.ErrHandleRequest
 	}
 

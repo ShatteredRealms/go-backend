@@ -12,28 +12,37 @@ var (
 )
 
 type GlobalConfig struct {
-	Characters  SROServer     `yaml:"characters"`
-	GameBackend SROServer     `yaml:"gamebackend"`
-	Chat        SROServer     `yaml:"chat"`
-	Uptrace     UptraceConfig `yaml:"uptrace"`
-	Agones      AgonesConfig  `json:"agones"`
+	Character   CharacterServer   `yaml:"characters"`
+	GameBackend GamebackendServer `yaml:"gamebackend"`
+	Chat        ChatServer        `yaml:"chat"`
+	Uptrace     UptraceConfig     `yaml:"uptrace"`
+	Agones      AgonesConfig      `json:"agones"`
 	Version     string
 }
 
 func NewGlobalConfig() *GlobalConfig {
 	config := &GlobalConfig{
-		Characters: SROServer{
-			Local: ServerAddress{
-				Port: 8081,
-				Host: "",
+		Character: CharacterServer{
+			SROServer: SROServer{
+				Local: ServerAddress{
+					Port: 8081,
+					Host: "",
+				},
+				Remote: ServerAddress{
+					Port: 8081,
+					Host: "",
+				},
+				Mode:     LocalMode,
+				LogLevel: log.InfoLevel,
+				Keycloak: KeycloakClientConfig{
+					Realm:        "default",
+					BaseURL:      "http://localhost:8080",
+					ClientId:     model.CharactersClientId,
+					ClientSecret: "**********",
+					Id:           "738a426a-da91-4b16-b5fc-92d63a22eb76",
+				},
 			},
-			Remote: ServerAddress{
-				Port: 8081,
-				Host: "",
-			},
-			Mode:     LocalMode,
-			LogLevel: log.InfoLevel,
-			DB: DBPoolConfig{
+			PostgresConfig: DBPoolConfig{
 				Master: DBConfig{
 					Host:     "localhost",
 					Port:     "5432",
@@ -41,31 +50,36 @@ func NewGlobalConfig() *GlobalConfig {
 					Username: "postgres",
 					Password: "password",
 				},
-				Slaves: []DBConfig{},
 			},
-			Kafka: ServerAddress{
-				Port: 29092,
-				Host: "localhost",
-			},
-			Keycloak: KeycloakClientConfig{
-				Realm:        "default",
-				BaseURL:      "http://localhost:8080",
-				ClientId:     model.CharactersClientId,
-				ClientSecret: "**********",
-				Id:           "738a426a-da91-4b16-b5fc-92d63a22eb76",
+			MongoConfig: DBPoolConfig{
+				Master: DBConfig{
+					Host:     "localhost",
+					Port:     "27017",
+					Username: "mongo",
+					Password: "password",
+				},
 			},
 		},
-		GameBackend: SROServer{
-			Local: ServerAddress{
-				Port: 8082,
-				Host: "",
+		GameBackend: GamebackendServer{
+			SROServer: SROServer{
+				Local: ServerAddress{
+					Port: 8082,
+					Host: "",
+				},
+				Remote: ServerAddress{
+					Port: 8082,
+					Host: "",
+				},
+				Mode:     LocalMode,
+				LogLevel: log.InfoLevel,
+				Keycloak: KeycloakClientConfig{
+					Realm:        "default",
+					BaseURL:      "http://localhost:8080",
+					ClientId:     model.GamebackendClientId,
+					ClientSecret: "**********",
+					Id:           "c3cacba8-cd16-4a4f-bc86-367274cb7cb5",
+				},
 			},
-			Remote: ServerAddress{
-				Port: 8082,
-				Host: "",
-			},
-			Mode:     LocalMode,
-			LogLevel: log.InfoLevel,
 			DB: DBPoolConfig{
 				Master: DBConfig{
 					Host:     "localhost",
@@ -76,33 +90,31 @@ func NewGlobalConfig() *GlobalConfig {
 				},
 				Slaves: []DBConfig{},
 			},
-			Kafka: ServerAddress{
-				Port: 29092,
-				Host: "localhost",
-			},
-			Keycloak: KeycloakClientConfig{
-				Realm:        "default",
-				BaseURL:      "http://localhost:8080",
-				ClientId:     model.GamebackendClientId,
-				ClientSecret: "**********",
-				Id:           "c3cacba8-cd16-4a4f-bc86-367274cb7cb5",
-			},
 		},
-		Chat: SROServer{
-			Local: ServerAddress{
-				Port: 8180,
-				Host: "",
-			},
-			Remote: ServerAddress{
-				Port: 8180,
-				Host: "",
+		Chat: ChatServer{
+			SROServer: SROServer{
+				Local: ServerAddress{
+					Port: 8180,
+					Host: "",
+				},
+				Remote: ServerAddress{
+					Port: 8180,
+					Host: "",
+				},
+				Mode:     LocalMode,
+				LogLevel: log.InfoLevel,
+				Keycloak: KeycloakClientConfig{
+					Realm:        "default",
+					BaseURL:      "http://localhost:8080",
+					ClientId:     model.ChatClientId,
+					ClientSecret: "**********",
+					Id:           "4c79d4a0-a3fd-495f-b56e-eea508bb0862",
+				},
 			},
 			Kafka: ServerAddress{
 				Port: 29092,
 				Host: "localhost",
 			},
-			Mode:     LocalMode,
-			LogLevel: log.InfoLevel,
 			DB: DBPoolConfig{
 				Master: DBConfig{
 					Host:     "localhost",
@@ -112,13 +124,6 @@ func NewGlobalConfig() *GlobalConfig {
 					Password: "password",
 				},
 				Slaves: []DBConfig{},
-			},
-			Keycloak: KeycloakClientConfig{
-				Realm:        "default",
-				BaseURL:      "http://localhost:8080",
-				ClientId:     model.ChatClientId,
-				ClientSecret: "**********",
-				Id:           "4c79d4a0-a3fd-495f-b56e-eea508bb0862",
 			},
 		},
 		Uptrace: UptraceConfig{

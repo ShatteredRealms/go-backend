@@ -60,24 +60,24 @@ report: test
 	go tool cover -func=$(ROOT_DIR)/coverage.out
 	go tool cover -html=$(ROOT_DIR)/coverage.out
 
-build: build-characters build-chat build-gamebackend
+build: build-character build-chat build-gamebackend
 build-%:
 	go build -ldflags="-X 'github.com/ShatteredRealms/go-backend/pkg/config/default.Version=$(BASE_VERSION)'" -o $(ROOT_DIR)/bin/$* $(ROOT_DIR)/cmd/$*  
 
-run: run-characters run-chat run-gamebackend
+run: run-character run-chat run-gamebackend
 run-%:
 	go run $(ROOT_DIR)/cmd/$*
 
 deploy: aws-docker-login push
 
-buildi: buildi-characters buildi-chat buildi-gamebackend
+buildi: buildi-character buildi-chat buildi-gamebackend
 buildi-%:
 	docker build --build-arg APP_VERSION=$(BASE_VERSION) -t sro-$* -f build/$*.Dockerfile .
 
 aws-docker-login:
 	aws ecr get-login-password | docker login --username AWS --password-stdin $(SRO_BASE_REGISTRY)
 
-pushf: pushf-characters pushf-chat pushf-gamebackend
+pushf: pushf-character pushf-chat pushf-gamebackend
 pushf-%:
 	docker tag sro-$* $(SRO_REGISTRY)/$*:latest
 	docker tag sro-$* $(SRO_REGISTRY)/$*:$(BASE_VERSION)
@@ -86,7 +86,7 @@ pushf-%:
 	docker push $(SRO_REGISTRY)/$*:$(BASE_VERSION)
 	docker push $(SRO_REGISTRY)/$*:$(BASE_VERSION)-$(COMMIT_HASH)
 
-push: push-characters push-chat push-gamebackend
+push: push-character push-chat push-gamebackend
 push-%: buildi-%
 	docker tag sro-$* $(SRO_REGISTRY)/$*:latest
 	docker tag sro-$* $(SRO_REGISTRY)/$*:$(BASE_VERSION)

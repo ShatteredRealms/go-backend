@@ -9,17 +9,18 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	log "github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	characters "github.com/ShatteredRealms/go-backend/cmd/characters/app"
+	characters "github.com/ShatteredRealms/go-backend/cmd/character/app"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 type charactersServiceServer struct {
-	pb.UnimplementedCharactersServiceServer
+	pb.UnimplementedCharacterServiceServer
 	server *characters.CharactersServerContext
 }
 
@@ -40,6 +41,11 @@ var (
 		Name:        gocloak.StringP("manage_other"),
 		Description: gocloak.StringP("Allows creating, reading and deleting of any characters"),
 	})
+
+	RoleInventoryManagement = registerCharacterRole(&gocloak.Role{
+		Name:        gocloak.StringP("inventory_manage"),
+		Description: gocloak.StringP("Allows getting and updating character inventories"),
+	})
 )
 
 func registerCharacterRole(role *gocloak.Role) *gocloak.Role {
@@ -47,7 +53,7 @@ func registerCharacterRole(role *gocloak.Role) *gocloak.Role {
 	return role
 }
 
-// AddCharacterPlayTime implements pb.CharactersServiceServer
+// AddCharacterPlayTime implements pb.CharacterServiceServer
 func (s *charactersServiceServer) AddCharacterPlayTime(
 	ctx context.Context,
 	request *pb.AddPlayTimeRequest,
@@ -69,7 +75,7 @@ func (s *charactersServiceServer) AddCharacterPlayTime(
 	}
 
 	// Add playtime
-	time, err := s.server.Service.AddPlayTime(ctx, characterId, request.Time)
+	time, err := s.server.CharacterService.AddPlayTime(ctx, characterId, request.Time)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "could not update playtime")
 	}
@@ -77,7 +83,7 @@ func (s *charactersServiceServer) AddCharacterPlayTime(
 	return &pb.PlayTimeResponse{Time: time}, nil
 }
 
-// CreateCharacter implements pb.CharactersServiceServer
+// CreateCharacter implements pb.CharacterServiceServer
 func (s *charactersServiceServer) CreateCharacter(
 	ctx context.Context,
 	request *pb.CreateCharacterRequest,
@@ -104,7 +110,7 @@ func (s *charactersServiceServer) CreateCharacter(
 	}
 
 	// Create new character
-	char, err := s.server.Service.Create(ctx, ownerId, request.Name, request.Gender, request.Realm)
+	char, err := s.server.CharacterService.Create(ctx, ownerId, request.Name, request.Gender, request.Realm)
 	if err != nil || char == nil {
 		log.WithContext(ctx).Errorf("create char: %v", err)
 		return nil, status.Error(codes.Internal, "unable to create character")
@@ -121,7 +127,7 @@ func (s *charactersServiceServer) CreateCharacter(
 	}, nil
 }
 
-// DeleteCharacter implements pb.CharactersServiceServer
+// DeleteCharacter implements pb.CharacterServiceServer
 func (s *charactersServiceServer) DeleteCharacter(
 	ctx context.Context,
 	request *pb.CharacterTarget,
@@ -147,7 +153,7 @@ func (s *charactersServiceServer) DeleteCharacter(
 		return nil, model.ErrUnauthorized
 	}
 
-	err = s.server.Service.Delete(ctx, character.ID)
+	err = s.server.CharacterService.Delete(ctx, character.ID)
 	if err != nil {
 		log.WithContext(ctx).Errorf("delete character %d: %v", character.ID, err)
 		return nil, status.Error(codes.Internal, "unable to delete character")
@@ -156,7 +162,7 @@ func (s *charactersServiceServer) DeleteCharacter(
 	return &emptypb.Empty{}, nil
 }
 
-// EditCharacter implements pb.CharactersServiceServer
+// EditCharacter implements pb.CharacterServiceServer
 func (s *charactersServiceServer) EditCharacter(
 	ctx context.Context,
 	request *pb.EditCharacterRequest,
@@ -186,7 +192,7 @@ func (s *charactersServiceServer) EditCharacter(
 		request.OptionalPlayTime = nil
 	}
 
-	_, err = s.server.Service.Edit(ctx, request)
+	_, err = s.server.CharacterService.Edit(ctx, request)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "unable to edit user")
 	}
@@ -194,7 +200,7 @@ func (s *charactersServiceServer) EditCharacter(
 	return &emptypb.Empty{}, nil
 }
 
-// GetCharacter implements pb.CharactersServiceServer
+// GetCharacter implements pb.CharacterServiceServer
 func (s *charactersServiceServer) GetCharacter(
 	ctx context.Context,
 	request *pb.CharacterTarget,
@@ -226,7 +232,7 @@ func (s *charactersServiceServer) GetCharacter(
 	return character.ToPb(), nil
 }
 
-// GetAllCharactersForUser implements pb.CharactersServiceServer
+// GetAllCharactersForUser implements pb.CharacterServiceServer
 func (s *charactersServiceServer) GetAllCharactersForUser(
 	ctx context.Context,
 	request *pb.UserTarget,
@@ -249,7 +255,7 @@ func (s *charactersServiceServer) GetAllCharactersForUser(
 		return nil, model.ErrUnauthorized
 	}
 
-	chars, err := s.server.Service.FindAllByOwner(ctx, id)
+	chars, err := s.server.CharacterService.FindAllByOwner(ctx, id)
 	if err != nil {
 		log.WithContext(ctx).Errorf("find by owner %s: %v", claims.Subject, chars)
 		return nil, status.Error(codes.Internal, "unable to find chars")
@@ -258,7 +264,7 @@ func (s *charactersServiceServer) GetAllCharactersForUser(
 	return chars.ToPb(), nil
 }
 
-// GetCharacters implements pb.CharactersServiceServer
+// GetCharacters implements pb.CharacterServiceServer
 func (s *charactersServiceServer) GetCharacters(
 	ctx context.Context,
 	msg *emptypb.Empty,
@@ -274,7 +280,7 @@ func (s *charactersServiceServer) GetCharacters(
 		return nil, model.ErrUnauthorized
 	}
 
-	chars, err := s.server.Service.FindAll(ctx)
+	chars, err := s.server.CharacterService.FindAll(ctx)
 	if err != nil {
 		log.WithContext(ctx).Errorf("find all characters: %v", err)
 		return nil, status.Error(codes.Internal, "unable to find chars")
@@ -283,31 +289,86 @@ func (s *charactersServiceServer) GetCharacters(
 	return chars.ToPb(), nil
 }
 
-// GetGenders implements pb.CharactersServiceServer
-func (s *charactersServiceServer) GetGenders(
-	context.Context,
-	*emptypb.Empty,
-) (*pb.Genders, error) {
-	return &pb.Genders{Genders: model.GetGenders()}, nil
+// GetInventory implements pb.CharacterServiceServer.
+func (s *charactersServiceServer) GetInventory(
+	ctx context.Context,
+	request *pb.CharacterTarget,
+) (*pb.Inventory, error) {
+	claims, err := helpers.ExtractClaims(ctx)
+	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
+		return nil, model.ErrUnauthorized
+	}
+
+	// Validate requester has correct permission
+	if !claims.HasResourceRole(RoleInventoryManagement, model.CharactersClientId) {
+		return nil, model.ErrUnauthorized
+	}
+
+	character, err := s.getCharacterFromTarget(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+
+	inv, err := s.server.InventoryService.GetInventory(ctx, character.ID)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return &pb.Inventory{}, nil
+		}
+
+		return nil, status.Errorf(codes.Internal, "get inventory for %s: %s", character.Name, err.Error())
+	}
+
+	return inv.ToPb(), nil
 }
 
-// GetRealms implements pb.CharactersServiceServer
-func (s *charactersServiceServer) GetRealms(
-	context.Context,
-	*emptypb.Empty,
-) (*pb.Realms, error) {
-	return &pb.Realms{Realms: model.GetRealms()}, nil
+// SetInventory implements pb.CharacterServiceServer.
+func (s *charactersServiceServer) SetInventory(
+	ctx context.Context,
+	request *pb.UpdateInventoryRequest,
+) (*emptypb.Empty, error) {
+	claims, err := helpers.ExtractClaims(ctx)
+	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
+		return nil, model.ErrUnauthorized
+	}
+
+	// Validate requester has correct permission
+	if !claims.HasResourceRole(RoleInventoryManagement, model.CharactersClientId) {
+		return nil, model.ErrUnauthorized
+	}
+
+	character, err := s.getCharacterFromTarget(ctx, request.Target)
+	if err != nil {
+		return nil, err
+	}
+
+	newInv := &model.CharacterInventory{
+		CharacterId: character.ID,
+		Inventory:   model.InventoryItemsFromPb(request.InventoryItems),
+		Bank:        model.InventoryItemsFromPb(request.BankItems),
+	}
+	err = s.server.InventoryService.UpdateInventory(ctx, newInv)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return &emptypb.Empty{}, nil
+		}
+
+		return nil, status.Errorf(codes.Internal, "get inventory for %s: %s", character.Name, err.Error())
+	}
+
+	return &emptypb.Empty{}, nil
 }
 
-func NewCharactersServiceServer(
+func NewCharacterServiceServer(
 	ctx context.Context,
 	server *characters.CharactersServerContext,
-) (pb.CharactersServiceServer, error) {
+) (pb.CharacterServiceServer, error) {
 	token, err := server.KeycloakClient.LoginClient(
 		ctx,
-		server.GlobalConfig.Characters.Keycloak.ClientId,
-		server.GlobalConfig.Characters.Keycloak.ClientSecret,
-		server.GlobalConfig.Characters.Keycloak.Realm,
+		server.GlobalConfig.Character.Keycloak.ClientId,
+		server.GlobalConfig.Character.Keycloak.ClientSecret,
+		server.GlobalConfig.Character.Keycloak.Realm,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("login keycloak: %v", err)
@@ -316,8 +377,8 @@ func NewCharactersServiceServer(
 	err = createRoles(ctx,
 		server.KeycloakClient,
 		token.AccessToken,
-		server.GlobalConfig.Characters.Keycloak.Realm,
-		server.GlobalConfig.Characters.Keycloak.Id,
+		server.GlobalConfig.Character.Keycloak.Realm,
+		server.GlobalConfig.Character.Keycloak.Id,
 		&CharacterRoles,
 	)
 	if err != nil {
@@ -351,11 +412,11 @@ func (s charactersServiceServer) getCharacterTargetId(
 	request *pb.CharacterTarget,
 ) (uint, error) {
 	var characterId uint
-	switch target := request.Target.(type) {
+	switch target := request.Type.(type) {
 	case *pb.CharacterTarget_Id:
 		characterId = uint(target.Id)
 	case *pb.CharacterTarget_Name:
-		char, err := s.server.Service.FindByName(ctx, target.Name)
+		char, err := s.server.CharacterService.FindByName(ctx, target.Name)
 		if err != nil {
 			log.WithContext(ctx).Errorf("find character %s: %v", target.Name, err)
 			return 0, status.Error(codes.Internal, "unable to find character")
@@ -380,12 +441,12 @@ func (s charactersServiceServer) getCharacterFromTarget(
 	var character *model.Character
 	var err error
 
-	switch target := request.Target.(type) {
+	switch target := request.Type.(type) {
 	case *pb.CharacterTarget_Id:
-		character, err = s.server.Service.FindById(ctx, uint(target.Id))
+		character, err = s.server.CharacterService.FindById(ctx, uint(target.Id))
 
 	case *pb.CharacterTarget_Name:
-		character, err = s.server.Service.FindByName(ctx, target.Name)
+		character, err = s.server.CharacterService.FindByName(ctx, target.Name)
 
 	default:
 		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
@@ -411,9 +472,9 @@ func (s charactersServiceServer) getUserIdFromTarget(
 ) (string, error) {
 	token, err := s.server.KeycloakClient.LoginClient(
 		ctx,
-		s.server.GlobalConfig.Characters.Keycloak.ClientId,
-		s.server.GlobalConfig.Characters.Keycloak.ClientSecret,
-		s.server.GlobalConfig.Characters.Keycloak.Realm,
+		s.server.GlobalConfig.Character.Keycloak.ClientId,
+		s.server.GlobalConfig.Character.Keycloak.ClientSecret,
+		s.server.GlobalConfig.Character.Keycloak.Realm,
 	)
 	if err != nil {
 		log.WithContext(ctx).Errorf("login keycloak: %v", err)
@@ -425,7 +486,7 @@ func (s charactersServiceServer) getUserIdFromTarget(
 		resp, err := s.server.KeycloakClient.GetUsers(
 			ctx,
 			token.AccessToken,
-			s.server.GlobalConfig.Characters.Keycloak.Realm,
+			s.server.GlobalConfig.Character.Keycloak.Realm,
 			gocloak.GetUsersParams{
 				Exact:    gocloak.BoolP(true),
 				Username: gocloak.StringP(val.Username),

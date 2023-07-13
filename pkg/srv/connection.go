@@ -63,12 +63,12 @@ func (s connectionServiceServer) ConnectGameServer(
 	}
 
 	// If the current user can't get the character, then deny the request
-	character, err := s.server.CharactersClient.GetCharacter(
+	character, err := s.server.CharacterClient.GetCharacter(
 		helpers.PassAuthContext(ctx),
 		request,
 	)
 	if err != nil || character == nil {
-		log.WithContext(ctx).Errorf("unable to get character %v: %s", request.Target, err)
+		log.WithContext(ctx).Errorf("unable to get character %v: %s", request.Type, err)
 		return nil, err
 	}
 
@@ -193,10 +193,10 @@ func (s connectionServiceServer) VerifyConnect(
 	log.WithContext(ctx).Debugf("passed ctx: %+v", metautils.ExtractIncoming(ctx).Get("authorization"))
 
 	// If the current user can't get the character, then deny the request
-	character, err := s.server.CharactersClient.GetCharacter(
+	character, err := s.server.CharacterClient.GetCharacter(
 		helpers.PassAuthContext(ctx),
 		&pb.CharacterTarget{
-			Target: &pb.CharacterTarget_Name{
+			Type: &pb.CharacterTarget_Name{
 				Name: pc.Character,
 			},
 		},
@@ -224,10 +224,10 @@ func (s connectionServiceServer) TransferPlayer(
 		return nil, model.ErrUnauthorized
 	}
 
-	character, err := s.server.CharactersClient.GetCharacter(
+	character, err := s.server.CharacterClient.GetCharacter(
 		helpers.PassAuthContext(ctx),
 		&pb.CharacterTarget{
-			Target: &pb.CharacterTarget_Name{
+			Type: &pb.CharacterTarget_Name{
 				Name: request.Character,
 			},
 		},
@@ -304,11 +304,11 @@ func (s connectionServiceServer) TransferPlayer(
 	}
 
 	// Update the players location
-	_, err = s.server.CharactersClient.EditCharacter(
+	_, err = s.server.CharacterClient.EditCharacter(
 		helpers.PassAuthContext(ctx),
 		&pb.EditCharacterRequest{
 			Target: &pb.CharacterTarget{
-				Target: &pb.CharacterTarget_Id{Id: character.Id},
+				Type: &pb.CharacterTarget_Id{Id: character.Id},
 			},
 			OptionalLocation: &pb.EditCharacterRequest_Location{
 				Location: request.Location,

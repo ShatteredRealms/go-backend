@@ -1,24 +1,12 @@
 syntax = "proto3";
-package sro.characters;
+package sro.character;
 option go_package = "pkg/pb";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "sro/globals.proto";
 
-service CharactersService {
-  rpc GetGenders(google.protobuf.Empty) returns (Genders) {
-    option (google.api.http) = {
-      get : "/v1/genders"
-    };
-  }
-
-  rpc GetRealms(google.protobuf.Empty) returns (Realms) {
-    option (google.api.http) = {
-      get : "/v1/realms"
-    };
-  }
-
+service CharacterService {
   rpc GetCharacters(google.protobuf.Empty) returns (CharactersDetails) {
     option (google.api.http) = {
       get : "/v1/characters"
@@ -80,6 +68,24 @@ service CharactersService {
       }
     };
   }
+
+  rpc GetInventory(CharacterTarget) returns (Inventory) {
+    option (google.api.http) = {
+      get : "/v1/characters/id/{id}/inventory"
+      additional_bindings : {get : "/v1/characters/name/{name}/inventory"}
+    };
+  }
+
+  rpc SetInventory(UpdateInventoryRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post : "/v1/characters/id/{target.id}/inventory"
+      body : "*"
+      additional_bindings : {
+        post : "/v1/characters/name/{target.name}/inventory"
+        body : "*"
+      }
+    };
+  }
 }
 
 message PlayTimeResponse { uint64 time = 1; }
@@ -97,7 +103,7 @@ message CreateCharacterRequest {
 }
 
 message CharacterTarget {
-  oneof target {
+  oneof type {
     uint64 id = 1;
     string name = 2;
   }
@@ -114,7 +120,7 @@ message EditCharacterRequest {
 
   oneof optional_play_time { uint64 play_time = 7; }
 
-  oneof optional_location { Location location = 8; }
+  oneof optional_location { sro.Location location = 8; }
 }
 
 message CharacterDetails {
@@ -124,22 +130,29 @@ message CharacterDetails {
   string gender = 4;
   string realm = 5;
   uint64 play_time = 6;
-  Location location = 8;
-}
-
-message Location {
-  string world = 1;
-  float x = 2;
-  float y = 3;
-  float z = 4;
+  sro.Location location = 8;
 }
 
 message CharactersDetails { repeated CharacterDetails characters = 1; }
 
-message Gender { string name = 1; }
+message InventoryItem {
+  // Item id
+  string id = 1;
 
-message Realm { string name = 1; }
+  // Slot number to place item
+  uint32 slot = 2;
 
-message Genders { repeated Gender genders = 1; }
+  // Number of the items in the slot
+  uint64 quantity = 3;
+}
 
-message Realms { repeated Realm realms = 1; }
+message Inventory {
+  repeated InventoryItem inventory_items = 1;
+  repeated InventoryItem bank_items = 2;
+}
+
+message UpdateInventoryRequest {
+  CharacterTarget target = 1;
+  repeated InventoryItem inventory_items = 2;
+  repeated InventoryItem bank_items = 3;
+}

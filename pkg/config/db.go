@@ -38,3 +38,13 @@ func (c DBConfig) PostgresDSN() string {
 		c.Name,
 	)
 }
+
+func (c DBConfig) MongoDSN() string {
+	// refer https://www.mongodb.com/docs/drivers/go/current/fundamentals/connection/ for details
+	return fmt.Sprintf("mongodb://%s:%s@%s:%s/",
+		c.Username,
+		c.Password,
+		c.Host,
+		c.Port,
+	)
+}

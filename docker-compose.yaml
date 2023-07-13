@@ -121,6 +121,19 @@ services:
     networks:
       - backend
 
+  mongo:
+    restart: always
+    image: mongo:7
+    volumes:
+      - mongo:/data/db
+    networks:
+      - backend
+    expose:
+      - 27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo 
+      MONGO_INITDB_ROOT_PASSWORD: password
+
   keycloak:
     image: quay.io/keycloak/keycloak
     environment:
@@ -209,6 +222,8 @@ volumes:
   alertmanager_data:
     driver: local
   postgres:
+    driver: local
+  mongo:
     driver: local
 
 networks:

@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/rest"
@@ -268,7 +269,7 @@ func (s *serverManagerServiceServer) EditDimension(
 		// Everything wasn't deleted so we can safely change one-by-one
 		if request.EditMaps {
 			// Create a map of new maps based off of their Id
-			var newMaps map[*uuid.UUID]*model.Map
+			newMaps := make(map[*uuid.UUID]*model.Map, len(request.MapIds))
 			for _, m := range editedDimension.Maps {
 				newMaps[m.Id] = m
 			}
@@ -570,7 +571,8 @@ func (s serverManagerServiceServer) createGameServers(
 			return ErrNoAgonesConnect
 		}
 
-		log.WithContext(ctx).Infof("Local Mode: Not creating game server %s-%s")
+		log.WithContext(ctx).Infof("Local Mode: Not creating game server %s-%s", dimension.Name, m.Name)
+		return nil
 	}
 
 	// Create the fleet
@@ -606,7 +608,8 @@ func (s serverManagerServiceServer) deleteGameServers(
 			return ErrNoAgonesConnect
 		}
 
-		log.WithContext(ctx).Infof("Local Mode: Not creating game server %s-%s")
+		log.WithContext(ctx).Infof("Local Mode: Not creating game server %s-%s", dimension.Name, m.Name)
+		return nil
 	}
 
 	namespace := s.server.GlobalConfig.Agones.Namespace
@@ -617,7 +620,9 @@ func (s serverManagerServiceServer) deleteGameServers(
 		getFleetAutoscalerName(dimension, m),
 		metav1.DeleteOptions{},
 	)
-	if err != nil {
+
+	if err != nil &&
+		!errors.IsNotFound(err) {
 		return fmt.Errorf("deleting fleet autoscaler: %w", err)
 	}
 
@@ -627,7 +632,8 @@ func (s serverManagerServiceServer) deleteGameServers(
 		getFleetName(dimension, m),
 		metav1.DeleteOptions{},
 	)
-	if err != nil {
+	if err != nil &&
+		!errors.IsNotFound(err) {
 		return fmt.Errorf("deleting fleet: %w", err)
 	}
 
@@ -644,7 +650,8 @@ func (s serverManagerServiceServer) updateGameServers(
 			return ErrNoAgonesConnect
 		}
 
-		log.WithContext(ctx).Infof("Local Mode: Not creating game server %s-%s")
+		log.WithContext(ctx).Infof("Local Mode: Not creating game server %s-%s", dimension.Name, m.Name)
+		return nil
 	}
 
 	// Update the fleet
@@ -657,7 +664,7 @@ func (s serverManagerServiceServer) updateGameServers(
 		return fmt.Errorf("creating fleet: %w", err)
 	}
 
-	// Update autoscaler
+	// Update autoscalergones not setup, not connected in local mode
 	_, err = s.agones.AutoscalingV1().FleetAutoscalers(fleet.Namespace).Update(
 		ctx,
 		buildAutoscalingFleet(dimension, m, fleet.Namespace),
@@ -779,7 +786,7 @@ func (s serverManagerServiceServer) setupNewDimension(ctx context.Context, dimen
 		}
 	}
 
-	if s.server.GlobalConfig.GameBackend.Mode != config.LocalMode {
+	if s.server.GlobalConfig.GameBackend.Mode == config.LocalMode {
 		log.WithContext(ctx).Infof("agones not setup, not connected in local mode")
 	}
 

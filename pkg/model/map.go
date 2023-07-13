@@ -10,6 +10,10 @@ type Map struct {
 	Instanced  bool
 }
 
+func (m *Map) Validate() {
+
+}
+
 type Maps []*Map
 
 func (m *Map) ToPb() *pb.Map {

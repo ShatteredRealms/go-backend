@@ -79,7 +79,8 @@ func (c *Character) ValidateName() error {
 }
 
 func (c *Character) ValidateGender() error {
-	if _, ok := Genders[c.Gender]; ok {
+	if c.Gender == "Male" ||
+		c.Gender == "Female" {
 		return nil
 	}
 
@@ -87,7 +88,8 @@ func (c *Character) ValidateGender() error {
 }
 
 func (c *Character) ValidateRealm() error {
-	if _, ok := Realms[c.Realm]; ok {
+	if c.Realm == "Human" ||
+		c.Realm == "Cyborg" {
 		return nil
 	}
 

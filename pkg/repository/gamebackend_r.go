@@ -219,7 +219,13 @@ func (r *gamebackendRepository) SaveDimension(
 	ctx context.Context,
 	dimension *model.Dimension,
 ) (*model.Dimension, error) {
-	err := r.DB.WithContext(ctx).Preload(clause.Associations).Save(&dimension).Error
+	log.WithContext(ctx).Infof("dimension maps: %+v", dimension.Maps)
+	err := r.DB.WithContext(ctx).Save(&dimension).Error
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.DB.WithContext(ctx).Model(&dimension).Association("Maps").Replace(dimension.Maps)
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +318,7 @@ func (r *gamebackendRepository) FindMapByName(ctx context.Context, name string) 
 // FindDimensionsByIds implements GamebackendRepository.
 func (r *gamebackendRepository) FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error) {
 	var found model.Dimensions
-	return found, r.DB.WithContext(ctx).Preload(clause.Associations).Find(&found, ids).Error
+	return found, r.DB.WithContext(ctx).Preload(clause.Associations).Find(&found, "id IN ?", ids).Error
 }
 
 // FindDimensionsByNames implements GamebackendRepository.
@@ -324,7 +330,7 @@ func (r *gamebackendRepository) FindDimensionsByNames(ctx context.Context, names
 // FindMapsByIds implements GamebackendRepository.
 func (r *gamebackendRepository) FindMapsByIds(ctx context.Context, ids []*uuid.UUID) (model.Maps, error) {
 	var found model.Maps
-	return found, r.DB.WithContext(ctx).Find(&found, ids).Error
+	return found, r.DB.WithContext(ctx).Find(&found, "id IN ?", ids).Error
 }
 
 // FindMapsByNames implements GamebackendRepository.

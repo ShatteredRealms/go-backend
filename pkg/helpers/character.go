@@ -12,7 +12,7 @@ import (
 
 func GetCharacterIdFromTarget(
 	ctx context.Context,
-	charactersServiceClient pb.CharactersServiceClient,
+	charactersServiceClient pb.CharacterServiceClient,
 	target *pb.CharacterTarget,
 ) (uint, error) {
 	if target == nil {
@@ -20,7 +20,7 @@ func GetCharacterIdFromTarget(
 	}
 
 	targetCharacterId := uint(0)
-	switch t := target.Target.(type) {
+	switch t := target.Type.(type) {
 	case *pb.CharacterTarget_Name:
 		targetChar, err := charactersServiceClient.GetCharacter(ctx, target)
 		if err != nil {
@@ -41,11 +41,11 @@ func GetCharacterIdFromTarget(
 
 func GetCharacterNameFromTarget(
 	ctx context.Context,
-	charactersServiceClient pb.CharactersServiceClient,
+	charactersServiceClient pb.CharacterServiceClient,
 	target *pb.CharacterTarget,
 ) (string, error) {
 	targetCharacterName := ""
-	switch t := target.Target.(type) {
+	switch t := target.Type.(type) {
 	case *pb.CharacterTarget_Name:
 		targetCharacterName = t.Name
 
@@ -57,7 +57,7 @@ func GetCharacterNameFromTarget(
 		targetCharacterName = targetChar.Name
 
 	default:
-		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target.Target).Name())
+		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target.Type).Name())
 		return "", model.ErrHandleRequest
 	}
 

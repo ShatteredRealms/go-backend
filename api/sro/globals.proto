@@ -8,3 +8,10 @@ message UserTarget {
     string username = 2;
   }
 }
+
+message Location {
+  string world = 1;
+  float x = 2;
+  float y = 3;
+  float z = 4;
+}

@@ -4,7 +4,7 @@ option go_package = "pkg/pb";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
-import "sro/characters/characters.proto";
+import "sro/character/character.proto";
 
 service ChatService {
 
@@ -14,7 +14,7 @@ service ChatService {
     };
   }
 
-  rpc ConnectDirectMessage(sro.characters.CharacterTarget)
+  rpc ConnectDirectMessage(sro.character.CharacterTarget)
       returns (stream ChatMessage) {
     option (google.api.http) = {
       get : "/v1/message/character/name/{name}"
@@ -70,7 +70,7 @@ service ChatService {
     };
   }
 
-  rpc GetAuthorizedChatChannels(sro.characters.CharacterTarget)
+  rpc GetAuthorizedChatChannels(sro.character.CharacterTarget)
       returns (ChatChannels) {
     option (google.api.http) = {
       get : "/v1/channels/character/name/{name}"
@@ -100,12 +100,12 @@ service ChatService {
 }
 
 message RequestSetChannelAuth {
-  sro.characters.CharacterTarget character = 1;
+  sro.character.CharacterTarget character = 1;
   repeated uint64 ids = 2;
 }
 
 message RequestChatChannelAuthChange {
-  sro.characters.CharacterTarget character = 1;
+  sro.character.CharacterTarget character = 1;
   bool add = 2;
   repeated uint64 ids = 3;
 }
@@ -136,7 +136,7 @@ message SendChatMessageRequest {
 }
 
 message SendDirectMessageRequest {
-  sro.characters.CharacterTarget target = 1;
+  sro.character.CharacterTarget target = 1;
   ChatMessage chat_message = 2;
 }
 

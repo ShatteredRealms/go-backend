@@ -26,7 +26,7 @@ var (
 
 type GameBackendServerContext struct {
 	GlobalConfig       *config.GlobalConfig
-	CharactersClient   pb.CharactersServiceClient
+	CharacterClient    pb.CharacterServiceClient
 	ChatClient         pb.ChatServiceClient
 	GamebackendService service.GamebackendService
 	AgonesClient       aapb.AllocationServiceClient
@@ -41,9 +41,9 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *GameBacke
 		KeycloakClient: gocloak.NewClient(conf.GameBackend.Keycloak.BaseURL),
 	}
 
-	charactersService, err := helpers.GrpcClientWithOtel(conf.Characters.Remote.Address())
+	charactersService, err := helpers.GrpcClientWithOtel(conf.Character.Remote.Address())
 	helpers.Check(ctx, err, "connecting to characters")
-	server.CharactersClient = pb.NewCharactersServiceClient(charactersService)
+	server.CharacterClient = pb.NewCharacterServiceClient(charactersService)
 
 	chatService, err := helpers.GrpcClientWithOtel(conf.Chat.Remote.Address())
 	helpers.Check(ctx, err, "connecting to chat")

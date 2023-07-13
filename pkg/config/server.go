@@ -20,9 +20,24 @@ type SROServer struct {
 	Remote   ServerAddress        `yaml:"remote"`
 	Mode     ServerMode           `yaml:"mode"`
 	LogLevel log.Level            `yaml:"logLevel"`
-	DB       DBPoolConfig         `yaml:"db"`
-	Kafka    ServerAddress        `yaml:"kafka"`
 	Keycloak KeycloakClientConfig `yaml:"keycloak"`
+}
+
+type CharacterServer struct {
+	SROServer
+	PostgresConfig DBPoolConfig `yaml:"db"`
+	MongoConfig    DBPoolConfig `yaml:"db"`
+}
+
+type GamebackendServer struct {
+	SROServer
+	DB DBPoolConfig `yaml:"db"`
+}
+
+type ChatServer struct {
+	SROServer
+	DB    DBPoolConfig  `yaml:"db"`
+	Kafka ServerAddress `yaml:"kafka"`
 }
 
 type ServerAddress struct {
