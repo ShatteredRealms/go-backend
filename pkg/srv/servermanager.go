@@ -547,9 +547,9 @@ func (s serverManagerServiceServer) serverContext(ctx context.Context) (context.
 }
 
 func (s serverManagerServiceServer) hasServerManagerRole(ctx context.Context) error {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.GameBackend.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Infof("extract claims failed: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return model.ErrUnauthorized
 	}
 

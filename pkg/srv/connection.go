@@ -51,9 +51,9 @@ func (s connectionServiceServer) ConnectGameServer(
 	ctx context.Context,
 	request *pb.CharacterTarget,
 ) (*pb.ConnectGameServerResponse, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.GameBackend.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Infof("extract claims failed: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -169,9 +169,9 @@ func (s connectionServiceServer) VerifyConnect(
 	ctx context.Context,
 	request *pb.VerifyConnectRequest,
 ) (*pb.CharacterDetails, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.GameBackend.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Infof("extract claims failed: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -213,9 +213,9 @@ func (s connectionServiceServer) TransferPlayer(
 	ctx context.Context,
 	request *pb.TransferPlayerRequest,
 ) (*pb.ConnectGameServerResponse, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.GameBackend.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Infof("extract claims failed: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 

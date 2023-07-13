@@ -46,9 +46,9 @@ func (s chatServiceServer) ConnectChannel(
 	request *pb.ChatChannelTarget,
 	server pb.ChatService_ConnectChannelServer,
 ) error {
-	claims, err := helpers.ExtractClaims(server.Context())
+	_, claims, err := helpers.VerifyClaims(server.Context(), s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(server.Context()).Infof("extract claims failed: %v", err)
+		log.WithContext(server.Context()).Errorf("verify claims: %v", err)
 		return model.ErrUnauthorized
 	}
 
@@ -82,9 +82,9 @@ func (s chatServiceServer) ConnectDirectMessage(
 	request *pb.CharacterTarget,
 	server pb.ChatService_ConnectDirectMessageServer,
 ) error {
-	claims, err := helpers.ExtractClaims(server.Context())
+	_, claims, err := helpers.VerifyClaims(server.Context(), s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(server.Context()).Infof("extract claims failed: %v", err)
+		log.WithContext(server.Context()).Errorf("verify claims: %v", err)
 		return model.ErrUnauthorized
 	}
 
@@ -122,9 +122,9 @@ func (s chatServiceServer) SendChatMessage(
 	ctx context.Context,
 	request *pb.SendChatMessageRequest,
 ) (*emptypb.Empty, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Infof("extract claims failed: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -161,9 +161,9 @@ func (s chatServiceServer) SendDirectMessage(
 	ctx context.Context,
 	request *pb.SendDirectMessageRequest,
 ) (*emptypb.Empty, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Infof("extract claims failed: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -206,9 +206,9 @@ func (s chatServiceServer) GetChannel(
 	ctx context.Context,
 	request *pb.ChatChannelTarget,
 ) (*pb.ChatChannel, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Infof("extract claims failed: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -230,9 +230,9 @@ func (s chatServiceServer) CreateChannel(
 	ctx context.Context,
 	request *pb.CreateChannelMessage,
 ) (*emptypb.Empty, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Infof("extract claims failed: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -265,9 +265,9 @@ func (s chatServiceServer) DeleteChannel(
 	ctx context.Context,
 	request *pb.ChatChannelTarget,
 ) (*emptypb.Empty, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Infof("extract claims failed: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -295,9 +295,9 @@ func (s chatServiceServer) EditChannel(
 	ctx context.Context,
 	request *pb.UpdateChatChannelRequest,
 ) (*emptypb.Empty, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Infof("extract claims failed: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -323,9 +323,9 @@ func (s chatServiceServer) AllChatChannels(
 	ctx context.Context,
 	_ *emptypb.Empty,
 ) (*pb.ChatChannels, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Infof("extract claims failed: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -347,9 +347,9 @@ func (s chatServiceServer) GetAuthorizedChatChannels(
 	ctx context.Context,
 	request *pb.CharacterTarget,
 ) (*pb.ChatChannels, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Infof("extract claims failed: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -381,9 +381,9 @@ func (s chatServiceServer) UpdateUserChatChannelAuthorizations(
 	ctx context.Context,
 	request *pb.RequestChatChannelAuthChange,
 ) (*emptypb.Empty, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Infof("extract claims failed: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -481,9 +481,9 @@ func (s chatServiceServer) serverContext(ctx context.Context) (context.Context, 
 }
 
 func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, request *pb.CharacterTarget) (*pb.CharacterDetails, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Infof("extract claims failed: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
