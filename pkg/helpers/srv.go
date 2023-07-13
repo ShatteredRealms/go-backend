@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
@@ -104,4 +105,30 @@ func ExtractClaims(ctx context.Context) (*model.SROClaims, error) {
 
 	claims := jwtToken.Claims.(*model.SROClaims)
 	return claims, nil
+}
+
+func VerifyClaims(ctx context.Context, client *gocloak.GoCloak, realm string) (*jwt.Token, *model.SROClaims, error) {
+	tokenString, err := ExtractToken(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var claims *model.SROClaims
+	token, err := client.DecodeAccessTokenCustomClaims(
+		ctx,
+		tokenString,
+		realm,
+		claims,
+	)
+
+	if err != nil {
+		log.WithContext(ctx).Errorf("extract claims: %v", err)
+		return nil, nil, model.ErrUnauthorized
+	}
+
+	if !token.Valid {
+		return nil, nil, model.ErrUnauthorized
+	}
+
+	return token, claims, nil
 }

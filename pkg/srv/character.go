@@ -7,7 +7,6 @@ import (
 
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc/codes"
@@ -58,9 +57,9 @@ func (s *charactersServiceServer) AddCharacterPlayTime(
 	ctx context.Context,
 	request *pb.AddPlayTimeRequest,
 ) (*pb.PlayTimeResponse, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("extract claims: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -88,9 +87,9 @@ func (s *charactersServiceServer) CreateCharacter(
 	ctx context.Context,
 	request *pb.CreateCharacterRequest,
 ) (*pb.CharacterDetails, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("extract claims: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -132,9 +131,9 @@ func (s *charactersServiceServer) DeleteCharacter(
 	ctx context.Context,
 	request *pb.CharacterTarget,
 ) (*emptypb.Empty, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("extract claims: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -167,9 +166,9 @@ func (s *charactersServiceServer) EditCharacter(
 	ctx context.Context,
 	request *pb.EditCharacterRequest,
 ) (*emptypb.Empty, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("extract claims: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -205,10 +204,9 @@ func (s *charactersServiceServer) GetCharacter(
 	ctx context.Context,
 	request *pb.CharacterTarget,
 ) (*pb.CharacterDetails, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Debugf("ctx auth: %v", metautils.ExtractIncoming(ctx).Get("authorization"))
-		log.WithContext(ctx).Errorf("extract claims: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -237,9 +235,9 @@ func (s *charactersServiceServer) GetAllCharactersForUser(
 	ctx context.Context,
 	request *pb.UserTarget,
 ) (*pb.CharactersDetails, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("extract claims: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -269,9 +267,9 @@ func (s *charactersServiceServer) GetCharacters(
 	ctx context.Context,
 	msg *emptypb.Empty,
 ) (*pb.CharactersDetails, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("extract claims: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -294,9 +292,9 @@ func (s *charactersServiceServer) GetInventory(
 	ctx context.Context,
 	request *pb.CharacterTarget,
 ) (*pb.Inventory, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("extract claims: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -327,9 +325,9 @@ func (s *charactersServiceServer) SetInventory(
 	ctx context.Context,
 	request *pb.UpdateInventoryRequest,
 ) (*emptypb.Empty, error) {
-	claims, err := helpers.ExtractClaims(ctx)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("extract claims: %v", err)
+		log.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
