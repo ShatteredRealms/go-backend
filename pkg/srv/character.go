@@ -177,6 +177,7 @@ func (s *charactersServiceServer) EditCharacter(
 		return nil, model.ErrUnauthorized
 	}
 
+	log.WithContext(ctx).Infof("request: %+v", request)
 	character, err := s.getCharacterFromTarget(ctx, request.Target)
 	if err != nil {
 		return nil, err
@@ -438,6 +439,10 @@ func (s charactersServiceServer) getCharacterFromTarget(
 ) (*model.Character, error) {
 	var character *model.Character
 	var err error
+
+	if request == nil || request.Type == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "target is empty")
+	}
 
 	switch target := request.Type.(type) {
 	case *pb.CharacterTarget_Id:

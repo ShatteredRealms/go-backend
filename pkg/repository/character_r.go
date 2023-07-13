@@ -84,16 +84,13 @@ func (r characterRepository) FindById(ctx context.Context, id uint) (*model.Char
 	var character *model.Character
 	result := r.DB.WithContext(ctx).Where("id = ?", id).Find(&character)
 	if result.Error != nil {
-		log.WithContext(ctx).Debugf("find by id err: %v", result.Error)
 		return nil, result.Error
 	}
 
 	if result.RowsAffected == 0 {
-		log.WithContext(ctx).Debugf("find by id: no rows affected. character: %+v", character)
 		return nil, nil
 	}
 
-	log.WithContext(ctx).Debugf("character id %d found", id)
 	return character, nil
 }
 

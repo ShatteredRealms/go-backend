@@ -123,7 +123,7 @@ services:
 
   mongo:
     restart: always
-    image: mongo:7
+    image: mongo:7.0-rc
     volumes:
       - mongo:/data/db
     networks:

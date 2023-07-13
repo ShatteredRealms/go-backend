@@ -57,6 +57,7 @@ func NewGlobalConfig() *GlobalConfig {
 					Port:     "27017",
 					Username: "mongo",
 					Password: "password",
+					Name:     "sro",
 				},
 			},
 		},

@@ -113,12 +113,12 @@ func VerifyClaims(ctx context.Context, client *gocloak.GoCloak, realm string) (*
 		return nil, nil, err
 	}
 
-	var claims *model.SROClaims
+	var claims model.SROClaims
 	token, err := client.DecodeAccessTokenCustomClaims(
 		ctx,
 		tokenString,
 		realm,
-		claims,
+		&claims,
 	)
 
 	if err != nil {
@@ -130,5 +130,5 @@ func VerifyClaims(ctx context.Context, client *gocloak.GoCloak, realm string) (*
 		return nil, nil, model.ErrUnauthorized
 	}
 
-	return token, claims, nil
+	return token, &claims, nil
 }
