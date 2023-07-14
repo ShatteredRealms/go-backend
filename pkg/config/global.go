@@ -12,7 +12,7 @@ var (
 )
 
 type GlobalConfig struct {
-	Character   CharacterServer   `yaml:"characters"`
+	Character   CharacterServer   `yaml:"character"`
 	GameBackend GamebackendServer `yaml:"gamebackend"`
 	Chat        ChatServer        `yaml:"chat"`
 	Uptrace     UptraceConfig     `yaml:"uptrace"`
@@ -42,7 +42,7 @@ func NewGlobalConfig() *GlobalConfig {
 					Id:           "738a426a-da91-4b16-b5fc-92d63a22eb76",
 				},
 			},
-			PostgresConfig: DBPoolConfig{
+			Postgres: DBPoolConfig{
 				Master: DBConfig{
 					Host:     "localhost",
 					Port:     "5432",
@@ -51,7 +51,7 @@ func NewGlobalConfig() *GlobalConfig {
 					Password: "password",
 				},
 			},
-			MongoConfig: DBPoolConfig{
+			Mongo: DBPoolConfig{
 				Master: DBConfig{
 					Host:     "localhost",
 					Port:     "27017",
@@ -81,7 +81,7 @@ func NewGlobalConfig() *GlobalConfig {
 					Id:           "c3cacba8-cd16-4a4f-bc86-367274cb7cb5",
 				},
 			},
-			DB: DBPoolConfig{
+			Postgres: DBPoolConfig{
 				Master: DBConfig{
 					Host:     "localhost",
 					Port:     "5432",
@@ -116,7 +116,7 @@ func NewGlobalConfig() *GlobalConfig {
 				Port: 29092,
 				Host: "localhost",
 			},
-			DB: DBPoolConfig{
+			Postgres: DBPoolConfig{
 				Master: DBConfig{
 					Host:     "localhost",
 					Port:     "5432",

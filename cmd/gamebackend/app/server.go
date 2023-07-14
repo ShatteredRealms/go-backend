@@ -55,7 +55,7 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *GameBacke
 		server.AgonesClient = aapb.NewAllocationServiceClient(ac)
 	}
 
-	db, err := repository.ConnectDB(conf.GameBackend.DB)
+	db, err := repository.ConnectDB(conf.GameBackend.Postgres)
 	helpers.Check(ctx, err, "connecting to database")
 
 	repo := repository.NewGamebackendRepository(db)

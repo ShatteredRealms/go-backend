@@ -24,20 +24,20 @@ type SROServer struct {
 }
 
 type CharacterServer struct {
-	SROServer
-	PostgresConfig DBPoolConfig `yaml:"db"`
-	MongoConfig    DBPoolConfig `yaml:"db"`
+	SROServer `yaml:"server"`
+	Postgres  DBPoolConfig `yaml:"postgres"`
+	Mongo     DBPoolConfig `yaml:"mongo"`
 }
 
 type GamebackendServer struct {
-	SROServer
-	DB DBPoolConfig `yaml:"db"`
+	SROServer `yaml:"server"`
+	Postgres  DBPoolConfig `yaml:"postgres"`
 }
 
 type ChatServer struct {
-	SROServer
-	DB    DBPoolConfig  `yaml:"db"`
-	Kafka ServerAddress `yaml:"kafka"`
+	SROServer `yaml:"server"`
+	Postgres  DBPoolConfig  `yaml:"postgres"`
+	Kafka     ServerAddress `yaml:"kafka"`
 }
 
 type ServerAddress struct {

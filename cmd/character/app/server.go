@@ -33,7 +33,7 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *Character
 		KeycloakClient: gocloak.NewClient(conf.GameBackend.Keycloak.BaseURL),
 	}
 
-	postgres, err := repository.ConnectDB(server.GlobalConfig.Character.PostgresConfig)
+	postgres, err := repository.ConnectDB(server.GlobalConfig.Character.Postgres)
 	helpers.Check(ctx, err, "connecting to postgres database")
 
 	characterRepo := repository.NewCharacterRepository(postgres)
@@ -41,9 +41,9 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *Character
 	helpers.Check(ctx, err, "character serivce")
 	server.CharacterService = characterService
 
-	mongoDb, err := mongo.Connect(ctx, options.Client().ApplyURI(server.GlobalConfig.Character.MongoConfig.Master.MongoDSN()))
+	mongoDb, err := mongo.Connect(ctx, options.Client().ApplyURI(server.GlobalConfig.Character.Mongo.Master.MongoDSN()))
 	helpers.Check(ctx, err, "connecting to mongo database")
-	invRepo := repository.NewInventoryRepository(mongoDb.Database(server.GlobalConfig.Character.MongoConfig.Master.Name))
+	invRepo := repository.NewInventoryRepository(mongoDb.Database(server.GlobalConfig.Character.Mongo.Master.Name))
 	server.InventoryService = service.NewInventoryService(invRepo)
 
 	return server

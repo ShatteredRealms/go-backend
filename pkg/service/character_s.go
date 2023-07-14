@@ -90,7 +90,6 @@ func (s characterService) Edit(ctx context.Context, character *pb.EditCharacterR
 	if character.OptionalNewName != nil {
 		currentCharacter.Name = character.OptionalNewName.(*pb.EditCharacterRequest_NewName).NewName
 	}
-
 	if character.OptionalOwnerId != nil {
 		currentCharacter.OwnerId = character.OptionalOwnerId.(*pb.EditCharacterRequest_OwnerId).OwnerId
 	}

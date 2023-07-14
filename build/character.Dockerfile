@@ -7,11 +7,11 @@ RUN go mod download
 ARG APP_VERSION=v0.0.1
 RUN go build \
 	-ldflags="-X 'github.com/ShatteredRealms/go-backend/pkg/config/default.Version=${APP_VERSION}'" \
-	-o /out/characters ./cmd/characters
+	-o /out/character ./cmd/character
 
 # Run server
 FROM alpine:3.15.0
 WORKDIR /app
-COPY --from=build /out/characters ./
+COPY --from=build /out/character ./
 EXPOSE 8081
-ENTRYPOINT [ "./characters" ]
+ENTRYPOINT [ "./character" ]

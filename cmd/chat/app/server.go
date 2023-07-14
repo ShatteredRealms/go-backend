@@ -31,7 +31,7 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *ChatServe
 		KeycloakClient: gocloak.NewClient(conf.GameBackend.Keycloak.BaseURL),
 	}
 
-	db, err := repository.ConnectDB(conf.Chat.DB)
+	db, err := repository.ConnectDB(conf.Chat.Postgres)
 	helpers.Check(ctx, err, "connecting to database")
 
 	repo := repository.NewChatRepository(db)

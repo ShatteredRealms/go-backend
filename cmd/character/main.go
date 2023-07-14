@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/srv"

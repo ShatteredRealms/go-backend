@@ -4,7 +4,7 @@ import "fmt"
 
 // DBConfig Information on how to connect to the database
 type DBConfig struct {
-	Host     string `yaml:"hoster"`
+	Host     string `yaml:"host"`
 	Port     string `yaml:"port"`
 	Name     string `yaml:"name"`
 	Username string `yaml:"username"`

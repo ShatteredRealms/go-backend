@@ -1,22 +1,21 @@
-characters:
+character:
+  remote:
+    host: 'characters'
+    port: 8081
+  mode: 'production'
+  logLevel: 4
   keycloak:
     baseUrl: 'http://localhost:8080'
     clientSecret: '**********'
     Id: '738a426a-da91-4b16-b5fc-92d63a22eb76'
-  remote:
-    host: 'characters'
-    port: 8081
-chat:
-  kafka:
-    host: localhost
-    port: 29092
-  keycloak:
-    baseUrl: 'http://localhost:8080'
-    clientSecret: '**********'
-    Id: '4c79d4a0-a3fd-495f-b56e-eea508bb0862'
-  remote:
-    host: 'chat'
-    port: 8180
+  postgres:
+    master:
+      host: 'localhost'
+  mongo:
+    master:
+      host: 'mongodb'
+      password: 'indCcnNoeR'
+      user: 'root'
 gamebackend:
   keycloak:
     baseUrl: 'http://localhost:8080'
@@ -25,5 +24,28 @@ gamebackend:
   remote:
     host: 'gamebackend'
     port: 8082
+  postgres:
+    master:
+      host: 'localhost'
+chat:
+  keycloak:
+    baseUrl: 'http://localhost:8080'
+    clientSecret: '**********'
+    Id: '4c79d4a0-a3fd-495f-b56e-eea508bb0862'
+  remote:
+    host: 'chat'
+    port: 8180
+  mode: 'production'
+  kafka:
+    host: localhost
+    port: 29092
+  postgres:
+    master:
+      host: 'localhost'
+agones:
+  namespace: 'sro'
+  allocator:
+    port: 443
+    host: '75.61.95.171'
 uptrace:
   dsn: http://project2_secret_token@localhost:14317/2
