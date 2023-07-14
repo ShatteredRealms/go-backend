@@ -177,13 +177,12 @@ func (s *charactersServiceServer) EditCharacter(
 		return nil, model.ErrUnauthorized
 	}
 
-	log.WithContext(ctx).Infof("request: %+v", request)
 	character, err := s.getCharacterFromTarget(ctx, request.Target)
 	if err != nil {
 		return nil, err
 	}
 
-	if character.OwnerId != claims.Subject && claims.HasResourceRole(RoleCharacterManagementOther, model.CharactersClientId) {
+	if character.OwnerId != claims.Subject && !claims.HasResourceRole(RoleCharacterManagementOther, model.CharactersClientId) {
 		return nil, model.ErrUnauthorized
 	}
 

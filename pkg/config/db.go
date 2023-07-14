@@ -41,7 +41,7 @@ func (c DBConfig) PostgresDSN() string {
 
 func (c DBConfig) MongoDSN() string {
 	// refer https://www.mongodb.com/docs/drivers/go/current/fundamentals/connection/ for details
-	return fmt.Sprintf("mongodb://%s:%s@%s:%s/",
+	return fmt.Sprintf("mongodb://%s:%s@%s:%s/?timeoutMS=5000",
 		c.Username,
 		c.Password,
 		c.Host,

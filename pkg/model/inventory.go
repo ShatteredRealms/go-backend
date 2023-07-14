@@ -11,9 +11,9 @@ type InventoryItem struct {
 type InventoryItems []*InventoryItem
 
 type CharacterInventory struct {
-	CharacterId uint
-	Inventory   InventoryItems
-	Bank        InventoryItems
+	CharacterId uint           `json:"_id" bson:"_id"`
+	Inventory   InventoryItems `json:"inventory"`
+	Bank        InventoryItems `json:"bank"`
 }
 
 func (item *InventoryItem) ToPb() *pb.InventoryItem {
