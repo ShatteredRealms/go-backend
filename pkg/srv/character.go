@@ -193,7 +193,8 @@ func (s *charactersServiceServer) EditCharacter(
 
 	_, err = s.server.CharacterService.Edit(ctx, request)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "unable to edit user")
+		log.WithContext(ctx).Errorf("edit character: %v", err)
+		return nil, status.Error(codes.Internal, "unable to character user")
 	}
 
 	return &emptypb.Empty{}, nil

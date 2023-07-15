@@ -14,4 +14,7 @@ message Location {
   float x = 2;
   float y = 3;
   float z = 4;
+  float roll = 5;
+  float pitch = 6;
+  float yaw = 7;
 }

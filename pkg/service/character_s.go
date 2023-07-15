@@ -87,10 +87,12 @@ func (s characterService) Edit(ctx context.Context, character *pb.EditCharacterR
 		return nil, err
 	}
 
-	if character.OptionalNewName != nil {
+	if character.OptionalNewName != nil &&
+		character.OptionalNewName.(*pb.EditCharacterRequest_NewName).NewName != "" {
 		currentCharacter.Name = character.OptionalNewName.(*pb.EditCharacterRequest_NewName).NewName
 	}
-	if character.OptionalOwnerId != nil {
+	if character.OptionalOwnerId != nil &&
+		character.OptionalOwnerId.(*pb.EditCharacterRequest_OwnerId).OwnerId != "" {
 		currentCharacter.OwnerId = character.OptionalOwnerId.(*pb.EditCharacterRequest_OwnerId).OwnerId
 	}
 
@@ -98,12 +100,27 @@ func (s characterService) Edit(ctx context.Context, character *pb.EditCharacterR
 		currentCharacter.PlayTime = character.OptionalPlayTime.(*pb.EditCharacterRequest_PlayTime).PlayTime
 	}
 
-	if character.OptionalGender != nil {
+	log.Printf("gender: %+v", character.OptionalGender)
+	if character.OptionalGender != nil &&
+		character.OptionalGender.(*pb.EditCharacterRequest_Gender).Gender != "" {
 		currentCharacter.Gender = character.OptionalGender.(*pb.EditCharacterRequest_Gender).Gender
 	}
 
-	if character.OptionalRealm != nil {
+	if character.OptionalRealm != nil &&
+		character.OptionalRealm.(*pb.EditCharacterRequest_Realm).Realm != "" {
 		currentCharacter.Realm = character.OptionalRealm.(*pb.EditCharacterRequest_Realm).Realm
+	}
+
+	log.Printf("location: %+v", character.OptionalLocation)
+	if character.OptionalLocation != nil &&
+		character.OptionalLocation.(*pb.EditCharacterRequest_Location).Location.World != "" {
+		location := character.OptionalLocation.(*pb.EditCharacterRequest_Location).Location
+		currentCharacter.Location = model.Location{
+			World: location.World,
+			X:     location.X,
+			Y:     location.Y,
+			Z:     location.Z,
+		}
 	}
 
 	err = currentCharacter.Validate()

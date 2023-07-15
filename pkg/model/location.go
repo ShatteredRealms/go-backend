@@ -7,6 +7,9 @@ type Location struct {
 	X     float32 `json:"x"`
 	Y     float32 `json:"y"`
 	Z     float32 `json:"z"`
+	Roll  float32 `json:"roll"`
+	Pitch float32 `json:"pitch"`
+	Yaw   float32 `json:"yaw"`
 }
 
 func (l Location) ToPb() *pb.Location {
@@ -15,5 +18,8 @@ func (l Location) ToPb() *pb.Location {
 		X:     l.X,
 		Y:     l.Y,
 		Z:     l.Z,
+		Roll:  l.Roll,
+		Pitch: l.Pitch,
+		Yaw:   l.Yaw,
 	}
 }

@@ -14,7 +14,6 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/google/uuid"
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -189,8 +188,6 @@ func (s connectionServiceServer) VerifyConnect(
 	if err != nil {
 		return nil, status.Error(codes.OK, err.Error())
 	}
-
-	log.WithContext(ctx).Debugf("passed ctx: %+v", metautils.ExtractIncoming(ctx).Get("authorization"))
 
 	// If the current user can't get the character, then deny the request
 	character, err := s.server.CharacterClient.GetCharacter(
