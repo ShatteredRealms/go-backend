@@ -23,3 +23,15 @@ func (l Location) ToPb() *pb.Location {
 		Yaw:   l.Yaw,
 	}
 }
+
+func LocationFromPb(location *pb.Location) *Location {
+	return &Location{
+		World: location.World,
+		X:     location.X,
+		Y:     location.Y,
+		Z:     location.Z,
+		Roll:  location.Roll,
+		Pitch: location.Pitch,
+		Yaw:   location.Yaw,
+	}
+}
