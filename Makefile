@@ -5,12 +5,6 @@
 #  \___ \| '_ \ / _` | __| __/ _ \ '__/ _ \/ _` | |  _  // _ \/ _` | | '_ ` _ \/ __|#
 #  ____) | | | | (_| | |_| ||  __/ | |  __/ (_| | | | \ \  __/ (_| | | | | | | \__ \#
 # |_____/|_| |_|\__,_|\__|\__\___|_|  \___|\__,_| |_|  \_\___|\__,_|_|_| |_| |_|___/#
-#                                                    _                              #
-#                     /\                            | |                             #
-#                    /  \   ___ ___ ___  _   _ _ __ | |_ ___                        #
-#                   / /\ \ / __/ __/ _ \| | | | '_ \| __/ __|                       #
-#                  / ____ \ (_| (_| (_) | |_| | | | | |_\__ \                       #
-#                 /_/    \_\___\___\___/ \__,_|_| |_|\__|___/                       #
 #####################################################################################
 
 #
@@ -44,6 +38,8 @@ PROTO_THIRD_PARTY_DIR=$(ROOT_DIR)/third_party
 
 PROTO_FILES = $(shell find $(PROTO_DIR) -name '*.proto')
 
+MOCK_INTERFACES = $(shell egrep -rl --include="*.go" "type (\w*) interface {" /home/wil/sro/git/go-backend/pkg | sed "s/.go$$//")
+
 #   _____                    _
 #  |_   _|                  | |
 #    | | __ _ _ __ __ _  ___| |_ ___
@@ -53,12 +49,22 @@ PROTO_FILES = $(shell find $(PROTO_DIR) -name '*.proto')
 #                  __/ |
 #                 |___/
 
+.PHONY: test report mocks clean-mocks
 test:
-	ginkgo $(ROOT_DIR)/... -covermode atomic
+	ginkgo --race --cover -covermode atomic -coverprofile=coverage.out --output-dir $(ROOT_DIR)/ $(ROOT_DIR)/...
 
 report: test
 	go tool cover -func=$(ROOT_DIR)/coverage.out
 	go tool cover -html=$(ROOT_DIR)/coverage.out
+
+mocks: clean-mocks
+	mkdir -p $(ROOT_DIR)/pkg/mocks
+	@for file in $(MOCK_INTERFACES); do \
+		mockgen -package=mocks -source=$${file}.go -destination="$(ROOT_DIR)/pkg/mocks/$${file##*/}_mock.go"; \
+	done
+
+clean-mocks:
+	rm -rf $(ROOT_DIR)/pkg/mocks
 
 build: build-character build-chat build-gamebackend
 build-%:

@@ -152,69 +152,79 @@ services:
       - 8080:8080
     depends_on:
       - postgres
+      - keycloak-fix
     networks:
       - backend
-
-  sro-characters:
-    build:
-      context: .
-      dockerfile: build/characters.Dockerfile
-    ports:
-      - 8081:8081
-    depends_on:
-      - uptrace
-      - postgres
     volumes:
-      - ./test/docker_config.yaml:/etc/sro/config.yaml
-    networks:
-      - envoymesh
-      - backend
+      - keycloak:/opt/keycloak/data/h2
 
-  sro-chat:
-    build:
-      context: .
-      dockerfile: build/chat.Dockerfile
-    ports:
-      - 8180:8180
-    depends_on:
-      - sro-characters
-      - kafka
-      - uptrace
-      - postgres
+  keycloak-fix:
+    image: ubuntu
+    user: root
+    command: chmod 777 /opt/keycloak/data/h2
     volumes:
-      - ./test/docker_config.yaml:/etc/sro/config.yaml
-    networks:
-      - envoymesh
-      - backend
+      - keycloak:/opt/keycloak/data/h2
 
-  sro-gamebackend:
-    build:
-      context: .
-      dockerfile: build/gamebackend.Dockerfile
-    ports:
-      - 8082:8082
-    depends_on:
-      - sro-characters
-      - uptrace
-    volumes:
-      - ./test/docker_config.yaml:/etc/sro/config.yaml
-    networks:
-      - envoymesh
-      - backend
-  
-  service-envoy:
-    build:
-      context: ./build/envoy
-      dockerfile: Dockerfile
-    ports:
-      - "9090:9090"
-      - "9901:9901"
-    expose:
-      - "80"
-      - "8081"
-    networks:
-      - envoymesh
-      - backend
+  # sro-characters:
+  #   build:
+  #     context: .
+  #     dockerfile: build/characters.Dockerfile
+  #   ports:
+  #     - 8081:8081
+  #   depends_on:
+  #     - uptrace
+  #     - postgres
+  #   volumes:
+  #     - ./test/docker_config.yaml:/etc/sro/config.yaml
+  #   networks:
+  #     - envoymesh
+  #     - backend
+  #
+  # sro-chat:
+  #   build:
+  #     context: .
+  #     dockerfile: build/chat.Dockerfile
+  #   ports:
+  #     - 8180:8180
+  #   depends_on:
+  #     - sro-characters
+  #     - kafka
+  #     - uptrace
+  #     - postgres
+  #   volumes:
+  #     - ./test/docker_config.yaml:/etc/sro/config.yaml
+  #   networks:
+  #     - envoymesh
+  #     - backend
+  #
+  # sro-gamebackend:
+  #   build:
+  #     context: .
+  #     dockerfile: build/gamebackend.Dockerfile
+  #   ports:
+  #     - 8082:8082
+  #   depends_on:
+  #     - sro-characters
+  #     - uptrace
+  #   volumes:
+  #     - ./test/docker_config.yaml:/etc/sro/config.yaml
+  #   networks:
+  #     - envoymesh
+  #     - backend
+  # 
+  # service-envoy:
+  #   build:
+  #     context: ./build/envoy
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "9090:9090"
+  #     - "9901:9901"
+  #   expose:
+  #     - "80"
+  #     - "8081"
+  #   networks:
+  #     - envoymesh
+  #     - backend
 
 volumes:
   uptrace_data:
@@ -224,6 +234,8 @@ volumes:
   alertmanager_data:
     driver: local
   postgres:
+    driver: local
+  keycloak:
     driver: local
   mongo:
     driver: local
