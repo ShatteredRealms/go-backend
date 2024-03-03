@@ -20,7 +20,7 @@ var _ = Describe("Conversion helpers", func() {
 			out := *helpers.ArrayOfUint64ToUint(&in)
 
 			for idx := range out {
-				Expect(out[idx]).To(Equal(in[idx]), "each index should match")
+				Expect(out[idx]).To(Equal(uint(in[idx])), "each index should match")
 			}
 		})
 	})
