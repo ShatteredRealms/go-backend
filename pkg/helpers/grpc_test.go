@@ -1,6 +1,7 @@
 package helpers_test
 
 import (
+	"context"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -68,24 +69,15 @@ var _ = Describe("Grpc helpers", func() {
 	})
 
 	// @TODO: Find way to test without race conditions
-	// Describe("StartServer", func() {
-	// 	var (
-	// 		ctx      context.Context
-	// 		listener net.Listener
-	// 	)
-	// 	BeforeEach(func() {
-	// 		ctx = context.Background()
-	// 	})
-	// 	It("should start a server", func() {
-	// 		listener = helpers.StartServer(ctx, grpcServer, httpServer, "127.0.0.1:9999")
-	// 		Expect(listener).NotTo(BeNil())
-	// 		Expect(listener.Addr().String()).To(Equal("127.0.0.1:9999"))
-	// 	})
-	//
-	// 	AfterEach(func() {
-	// 		listener.Close()
-	// 	})
-	// })
+	Describe("StartServer", func() {
+		It("should start a server", func() {
+			ctx := context.Background()
+			listener := helpers.StartServer(ctx, grpcServer, httpServer, "127.0.0.1:9999")
+			Expect(listener).NotTo(BeNil())
+			Expect(listener.Addr().String()).To(Equal("127.0.0.1:9999"))
+			listener.Close()
+		})
+	})
 })
 
 type fakeHttpHandler struct {

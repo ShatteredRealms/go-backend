@@ -45,7 +45,8 @@ func StartServer(
 	}
 
 	go func() {
-		Check(ctx, httpSrv.Serve(listen), "server stopped")
+		err := httpSrv.Serve(listen)
+		Check(context.Background(), err, "server stopped")
 	}()
 
 	return listen
