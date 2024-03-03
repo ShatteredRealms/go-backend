@@ -19,7 +19,7 @@ var (
 
 func init() {
 	helpers.SetupLogger()
-	conf = config.NewGlobalConfig()
+	conf = config.NewGlobalConfig(context.Background())
 }
 
 func main() {
