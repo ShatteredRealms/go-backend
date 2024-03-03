@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -19,7 +19,7 @@ type SROServer struct {
 	Local    ServerAddress        `yaml:"local"`
 	Remote   ServerAddress        `yaml:"remote"`
 	Mode     ServerMode           `yaml:"mode"`
-	LogLevel log.Level            `yaml:"logLevel"`
+	LogLevel logrus.Level         `yaml:"logLevel"`
 	Keycloak KeycloakClientConfig `yaml:"keycloak"`
 }
 

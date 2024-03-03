@@ -10,43 +10,45 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/mocks"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 )
 
 var _ = Describe("Srv helpers", func() {
 	var (
-		wasFatal bool
+		hook *test.Hook
 	)
 
 	BeforeEach(func() {
-		wasFatal = false
-		log.StandardLogger().ExitFunc = func(int) { wasFatal = true }
+		log.Logger, hook = test.NewNullLogger()
 	})
 
 	Describe("UnaryLogRequest", func() {
 		It("should handle requests", func() {
+			method := faker.Username()
 			fakeHandler := &mockHandler{}
 			testFunc := helpers.UnaryLogRequest()
-			Expect(wasFatal).To(BeFalse())
-			testFunc(nil, nil, &grpc.UnaryServerInfo{FullMethod: faker.Username()}, fakeHandler.UnaryHandler)
+			testFunc(nil, nil, &grpc.UnaryServerInfo{FullMethod: method}, fakeHandler.UnaryHandler)
 			Expect(fakeHandler.WasCalled).To(BeTrue())
+			Expect(hook.LastEntry().Message).To(ContainSubstring(method))
 		})
 	})
 
 	Describe("StreamLogRequest", func() {
 		It("should handle requests", func() {
+			method := faker.Username()
 			fakeHandler := &mockHandler{}
 			testFunc := helpers.StreamLogRequest()
-			Expect(wasFatal).To(BeFalse())
-			testFunc(nil, mockServerStream{}, &grpc.StreamServerInfo{FullMethod: faker.Username()}, fakeHandler.StreamHandler)
+			testFunc(nil, mockServerStream{}, &grpc.StreamServerInfo{FullMethod: method}, fakeHandler.StreamHandler)
 			Expect(fakeHandler.WasCalled).To(BeTrue())
+			Expect(hook.LastEntry().Message).To(ContainSubstring(method))
 		})
 	})
 

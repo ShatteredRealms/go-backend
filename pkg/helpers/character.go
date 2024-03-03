@@ -6,7 +6,7 @@ import (
 
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
-	log "github.com/sirupsen/logrus"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 )
 
 func GetCharacterIdFromTarget(
@@ -31,7 +31,7 @@ func GetCharacterIdFromTarget(
 		targetCharacterId = uint(t.Id)
 
 	default:
-		log.WithContext(ctx).Errorf("target type unknown: %+v", target)
+		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
 		return 0, model.ErrHandleRequest
 	}
 
@@ -60,7 +60,7 @@ func GetCharacterNameFromTarget(
 		targetCharacterName = targetChar.Name
 
 	default:
-		log.WithContext(ctx).Errorf("target type unknown: %+v", target)
+		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
 		return "", model.ErrHandleRequest
 	}
 

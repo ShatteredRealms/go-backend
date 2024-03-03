@@ -7,7 +7,7 @@ import (
 
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -108,16 +108,16 @@ func (r *gamebackendRepository) FindPendingConnection(ctx context.Context, id *u
 	var pendingConnection *model.PendingConnection
 	result := r.DB.WithContext(ctx).Where("id = ?", id).Find(&pendingConnection)
 	if result.Error != nil {
-		log.WithContext(ctx).Errorf("find by id err: %v", result.Error)
+		log.Logger.WithContext(ctx).Errorf("find by id err: %v", result.Error)
 		return nil
 	}
 
 	if result.RowsAffected == 0 {
-		log.WithContext(ctx).Debugf("find by id not found: %s", pendingConnection.Id.String())
+		log.Logger.WithContext(ctx).Debugf("find by id not found: %s", pendingConnection.Id.String())
 		return nil
 	}
 
-	log.WithContext(ctx).Debugf("found pending connection id %s", id.String())
+	log.Logger.WithContext(ctx).Debugf("found pending connection id %s", id.String())
 	return pendingConnection
 }
 
@@ -219,7 +219,7 @@ func (r *gamebackendRepository) SaveDimension(
 	ctx context.Context,
 	dimension *model.Dimension,
 ) (*model.Dimension, error) {
-	log.WithContext(ctx).Infof("dimension maps: %+v", dimension.Maps)
+	log.Logger.WithContext(ctx).Infof("dimension maps: %+v", dimension.Maps)
 	err := r.DB.WithContext(ctx).Save(&dimension).Error
 	if err != nil {
 		return nil, err

@@ -2,7 +2,7 @@ package helpers
 
 import (
 	"context"
-	log "github.com/sirupsen/logrus"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"net"
@@ -35,7 +35,7 @@ func StartServer(
 	gwmux http.Handler,
 	address string,
 ) net.Listener {
-	log.WithContext(ctx).Info("Starting server")
+	log.Logger.WithContext(ctx).Info("Starting server")
 	listen, err := net.Listen("tcp", address)
 	Check(ctx, err, "listen server")
 

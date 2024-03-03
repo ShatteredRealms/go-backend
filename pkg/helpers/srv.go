@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	log "github.com/sirupsen/logrus"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -36,7 +36,7 @@ func UnaryLogRequest() grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
-		log.WithContext(ctx).Info(info.FullMethod)
+		log.Logger.WithContext(ctx).Info(info.FullMethod)
 		return handler(ctx, req)
 	}
 }
@@ -47,7 +47,7 @@ func StreamLogRequest() grpc.StreamServerInterceptor {
 		info *grpc.StreamServerInfo,
 		handler grpc.StreamHandler,
 	) error {
-		log.WithContext(stream.Context()).Info(info.FullMethod)
+		log.Logger.WithContext(stream.Context()).Info(info.FullMethod)
 		return handler(srv, stream)
 	}
 }
@@ -106,7 +106,7 @@ func ExtractClaims(ctx context.Context) (*model.SROClaims, error) {
 
 	jwtToken, _, err := jwtParser.ParseUnverified(token, &model.SROClaims{})
 	if err != nil {
-		log.WithContext(ctx).Infof("invalid token: %s", token)
+		log.Logger.WithContext(ctx).Infof("invalid token: %s", token)
 		return nil, err
 	}
 
@@ -137,7 +137,7 @@ func VerifyClaims(ctx context.Context, client model.KeycloakClient, realm string
 	)
 
 	if err != nil {
-		log.WithContext(ctx).Errorf("extract claims: %v", err)
+		log.Logger.WithContext(ctx).Errorf("extract claims: %v", err)
 		return nil, nil, model.ErrUnauthorized
 	}
 

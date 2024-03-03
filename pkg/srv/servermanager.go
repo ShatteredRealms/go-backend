@@ -16,7 +16,7 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -205,7 +205,7 @@ func (s *serverManagerServiceServer) DuplicateDimension(
 		newDimension, err = s.server.GamebackendService.DuplicateDimension(ctx, dimension.Id, request.Name)
 
 	default:
-		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
+		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
 		return nil, model.ErrHandleRequest
 	}
 
@@ -428,7 +428,7 @@ func (s *serverManagerServiceServer) GetDimension(
 		out, err = s.server.GamebackendService.FindDimensionByName(ctx, target.Name)
 
 	default:
-		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
+		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
 		return nil, model.ErrHandleRequest
 	}
 
@@ -466,7 +466,7 @@ func (s *serverManagerServiceServer) GetMap(
 		out, err = s.server.GamebackendService.FindMapByName(ctx, target.Name)
 
 	default:
-		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
+		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
 		return nil, model.ErrHandleRequest
 	}
 
@@ -508,13 +508,13 @@ func NewServerManagerServiceServer(
 	if server.GlobalConfig.GameBackend.Mode != config.LocalMode {
 		conf, err := rest.InClusterConfig()
 		if err != nil {
-			log.WithContext(ctx).Errorf("creating config: %v", err)
+			log.Logger.WithContext(ctx).Errorf("creating config: %v", err)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
 		agones, err := versioned.NewForConfig(conf)
 		if err != nil {
-			log.WithContext(ctx).Errorf("creating agones connection: %v", err)
+			log.Logger.WithContext(ctx).Errorf("creating agones connection: %v", err)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
@@ -549,7 +549,7 @@ func (s serverManagerServiceServer) serverContext(ctx context.Context) (context.
 func (s serverManagerServiceServer) hasServerManagerRole(ctx context.Context) error {
 	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.GameBackend.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
 		return model.ErrUnauthorized
 	}
 
@@ -571,7 +571,7 @@ func (s serverManagerServiceServer) createGameServers(
 			return ErrNoAgonesConnect
 		}
 
-		log.WithContext(ctx).Infof("Local Mode: Not creating game server %s-%s", dimension.Name, m.Name)
+		log.Logger.WithContext(ctx).Infof("Local Mode: Not creating game server %s-%s", dimension.Name, m.Name)
 		return nil
 	}
 
@@ -608,7 +608,7 @@ func (s serverManagerServiceServer) deleteGameServers(
 			return ErrNoAgonesConnect
 		}
 
-		log.WithContext(ctx).Infof("Local Mode: Not creating game server %s-%s", dimension.Name, m.Name)
+		log.Logger.WithContext(ctx).Infof("Local Mode: Not creating game server %s-%s", dimension.Name, m.Name)
 		return nil
 	}
 
@@ -650,7 +650,7 @@ func (s serverManagerServiceServer) updateGameServers(
 			return ErrNoAgonesConnect
 		}
 
-		log.WithContext(ctx).Infof("Local Mode: Not creating game server %s-%s", dimension.Name, m.Name)
+		log.Logger.WithContext(ctx).Infof("Local Mode: Not creating game server %s-%s", dimension.Name, m.Name)
 		return nil
 	}
 
@@ -787,7 +787,7 @@ func (s serverManagerServiceServer) setupNewDimension(ctx context.Context, dimen
 	}
 
 	if s.server.GlobalConfig.GameBackend.Mode == config.LocalMode {
-		log.WithContext(ctx).Infof("agones not setup, not connected in local mode")
+		log.Logger.WithContext(ctx).Infof("agones not setup, not connected in local mode")
 	}
 
 	return nil
@@ -809,7 +809,7 @@ func (s serverManagerServiceServer) findMapByNameOrId(
 		out, err = s.server.GamebackendService.FindMapByName(ctx, target.Name)
 
 	default:
-		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
+		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
 		return nil, model.ErrHandleRequest
 	}
 
@@ -839,7 +839,7 @@ func (s serverManagerServiceServer) findDimensionByNameOrId(
 		out, err = s.server.GamebackendService.FindDimensionByName(ctx, target.Name)
 
 	default:
-		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
+		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
 		return nil, model.ErrHandleRequest
 	}
 

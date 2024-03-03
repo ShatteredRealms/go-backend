@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ShatteredRealms/go-backend/pkg/model"
-	log "github.com/sirupsen/logrus"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"gorm.io/gorm"
 )
 
@@ -33,16 +33,16 @@ func (r characterRepository) FindByName(ctx context.Context, name string) (*mode
 	var character *model.Character = nil
 	result := r.DB.WithContext(ctx).Where("name = ?", name).Find(&character)
 	if result.Error != nil {
-		log.WithContext(ctx).Debugf("find by name err: %v", result.Error)
+		log.Logger.WithContext(ctx).Debugf("find by name err: %v", result.Error)
 		return nil, result.Error
 	}
 
 	if result.RowsAffected == 0 {
-		log.WithContext(ctx).Debugf("find by name: no rows affected. character: %+v", character)
+		log.Logger.WithContext(ctx).Debugf("find by name: no rows affected. character: %+v", character)
 		return nil, nil
 	}
 
-	log.WithContext(ctx).Debugf("character name %s found", name)
+	log.Logger.WithContext(ctx).Debugf("character name %s found", name)
 	return character, nil
 }
 

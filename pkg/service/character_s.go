@@ -8,7 +8,7 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
-	log "github.com/sirupsen/logrus"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 )
 
 type CharacterService interface {
@@ -79,7 +79,7 @@ func (s characterService) Edit(ctx context.Context, character *pb.EditCharacterR
 	case *pb.CharacterTarget_Name:
 		currentCharacter, err = s.FindByName(ctx, target.Name)
 	default:
-		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
+		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
 		return nil, model.ErrHandleRequest
 	}
 

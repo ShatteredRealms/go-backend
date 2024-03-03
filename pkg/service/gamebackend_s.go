@@ -12,7 +12,7 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-	log "github.com/sirupsen/logrus"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"go.opentelemetry.io/otel"
 )
 
@@ -170,7 +170,7 @@ func (s *gamebackendService) EditDimension(ctx context.Context, request *pb.Edit
 	case *pb.DimensionTarget_Name:
 		currentDimension, err = s.FindDimensionByName(ctx, target.Name)
 	default:
-		log.WithContext(ctx).Errorf("dimension target type unknown: %s", reflect.TypeOf(target).Name())
+		log.Logger.WithContext(ctx).Errorf("dimension target type unknown: %s", reflect.TypeOf(target).Name())
 		return nil, model.ErrHandleRequest
 	}
 
@@ -222,7 +222,7 @@ func (s *gamebackendService) EditMap(ctx context.Context, request *pb.EditMapReq
 	case *pb.MapTarget_Name:
 		currentMap, err = s.FindMapByName(ctx, target.Name)
 	default:
-		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
+		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
 		return nil, model.ErrHandleRequest
 	}
 

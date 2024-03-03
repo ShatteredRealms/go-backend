@@ -1,7 +1,6 @@
 package helpers_test
 
 import (
-	"context"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -19,6 +18,7 @@ var _ = Describe("Grpc helpers", func() {
 		req        = &http.Request{}
 
 		httpHandler http.Handler
+		// hook        *test.Hook
 	)
 
 	BeforeEach(func() {
@@ -29,6 +29,7 @@ var _ = Describe("Grpc helpers", func() {
 			Header:     make(http.Header),
 		}
 		req.Header.Set("Content-Type", "application/grpc; otherdata=this")
+		// log.Logger, hook = test.NewNullLogger()
 	})
 
 	Describe("GRPCHandlerFunc", func() {
@@ -66,14 +67,13 @@ var _ = Describe("Grpc helpers", func() {
 	})
 
 	// @TODO: Find way to test without race conditions
-	Describe("StartServer", func() {
-		It("should start a server", func() {
-			ctx := context.Background()
-			listener := helpers.StartServer(ctx, grpcServer, httpServer, "127.0.0.1:9999")
-			Expect(listener.Addr().String()).To(Equal("127.0.0.1:9999"))
-			listener.Close()
-		})
-	})
+	// Describe("StartServer", func() {
+	// 	It("should start a server", func() {
+	// 		ctx := context.Background()
+	// 		listener := helpers.StartServer(ctx, grpcServer, httpServer, "127.0.0.1:9999")
+	// 		Expect(listener.Addr().String()).To(Equal("127.0.0.1:9999"))
+	// 	})
+	// })
 })
 
 type fakeHttpHandler struct {

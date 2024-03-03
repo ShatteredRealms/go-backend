@@ -11,7 +11,7 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
-	log "github.com/sirupsen/logrus"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -48,7 +48,7 @@ func (s chatServiceServer) ConnectChannel(
 ) error {
 	_, claims, err := helpers.VerifyClaims(server.Context(), s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(server.Context()).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(server.Context()).Errorf("verify claims: %v", err)
 		return model.ErrUnauthorized
 	}
 
@@ -84,7 +84,7 @@ func (s chatServiceServer) ConnectDirectMessage(
 ) error {
 	_, claims, err := helpers.VerifyClaims(server.Context(), s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(server.Context()).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(server.Context()).Errorf("verify claims: %v", err)
 		return model.ErrUnauthorized
 	}
 
@@ -124,13 +124,13 @@ func (s chatServiceServer) SendChatMessage(
 ) (*emptypb.Empty, error) {
 	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleChat, model.ChatClientId) {
-		log.WithContext(ctx).Infof("unauthorized request")
+		log.Logger.WithContext(ctx).Infof("unauthorized request")
 		return nil, model.ErrUnauthorized
 	}
 
@@ -138,7 +138,7 @@ func (s chatServiceServer) SendChatMessage(
 		ctx,
 		&pb.CharacterTarget{Type: &pb.CharacterTarget_Name{Name: request.ChatMessage.CharacterName}},
 	); err != nil {
-		log.WithContext(ctx).Infof("verify owns character failed: %v", err)
+		log.Logger.WithContext(ctx).Infof("verify owns character failed: %v", err)
 		return nil, err
 	}
 
@@ -150,7 +150,7 @@ func (s chatServiceServer) SendChatMessage(
 		request.ChatMessage.Message,
 		uint(request.ChannelId),
 	); err != nil {
-		log.WithContext(ctx).Errorf("send channel chat message: %v", err)
+		log.Logger.WithContext(ctx).Errorf("send channel chat message: %v", err)
 		return nil, status.Errorf(codes.Internal, "unable to send message")
 	}
 
@@ -163,7 +163,7 @@ func (s chatServiceServer) SendDirectMessage(
 ) (*emptypb.Empty, error) {
 	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -181,7 +181,7 @@ func (s chatServiceServer) SendDirectMessage(
 
 	srvCtx, err := s.serverContext(ctx)
 	if err != nil {
-		log.WithContext(ctx).Errorf("create server context: %v", err)
+		log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
 		return nil, model.ErrHandleRequest
 	}
 	targetCharacterName, err := helpers.GetCharacterNameFromTarget(srvCtx, s.server.CharacterService, request.Target)
@@ -195,7 +195,7 @@ func (s chatServiceServer) SendDirectMessage(
 		request.ChatMessage.Message,
 		targetCharacterName,
 	); err != nil {
-		log.WithContext(ctx).Errorf("send direct chat message: %v", err)
+		log.Logger.WithContext(ctx).Errorf("send direct chat message: %v", err)
 		return nil, status.Errorf(codes.Internal, "unable to send message")
 	}
 
@@ -208,7 +208,7 @@ func (s chatServiceServer) GetChannel(
 ) (*pb.ChatChannel, error) {
 	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -219,7 +219,7 @@ func (s chatServiceServer) GetChannel(
 
 	c, err := s.server.ChatService.GetChannel(ctx, uint(request.Id))
 	if err != nil {
-		log.WithContext(ctx).Errorf("get chat channel: %v", err)
+		log.Logger.WithContext(ctx).Errorf("get chat channel: %v", err)
 		return nil, status.Error(codes.Internal, "unable to get chat channel")
 	}
 
@@ -232,7 +232,7 @@ func (s chatServiceServer) CreateChannel(
 ) (*emptypb.Empty, error) {
 	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -254,7 +254,7 @@ func (s chatServiceServer) CreateChannel(
 			return nil, status.Error(codes.InvalidArgument, "name is already taken in this dimension")
 		}
 
-		log.WithContext(ctx).Errorf("create chat channel: %v", err)
+		log.Logger.WithContext(ctx).Errorf("create chat channel: %v", err)
 		return nil, status.Error(codes.Internal, "unable to create chat channel")
 	}
 
@@ -267,7 +267,7 @@ func (s chatServiceServer) DeleteChannel(
 ) (*emptypb.Empty, error) {
 	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -284,7 +284,7 @@ func (s chatServiceServer) DeleteChannel(
 			return nil, model.ErrDoesNotExist
 		}
 
-		log.WithContext(ctx).Errorf("delete channel: %v", err)
+		log.Logger.WithContext(ctx).Errorf("delete channel: %v", err)
 		return nil, status.Error(codes.Internal, "unable to delete channel")
 	}
 
@@ -297,7 +297,7 @@ func (s chatServiceServer) EditChannel(
 ) (*emptypb.Empty, error) {
 	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -312,7 +312,7 @@ func (s chatServiceServer) EditChannel(
 			return nil, model.ErrDoesNotExist
 		}
 
-		log.WithContext(ctx).Errorf("edit channel: %v", err)
+		log.Logger.WithContext(ctx).Errorf("edit channel: %v", err)
 		return nil, status.Error(codes.Internal, "unable to edit channel")
 	}
 
@@ -325,7 +325,7 @@ func (s chatServiceServer) AllChatChannels(
 ) (*pb.ChatChannels, error) {
 	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -336,7 +336,7 @@ func (s chatServiceServer) AllChatChannels(
 
 	channels, err := s.server.ChatService.AllChannels(ctx)
 	if err != nil {
-		log.WithContext(ctx).Errorf("edit channel: %v", err)
+		log.Logger.WithContext(ctx).Errorf("edit channel: %v", err)
 		return nil, status.Error(codes.Internal, "unable to get channels")
 	}
 
@@ -349,7 +349,7 @@ func (s chatServiceServer) GetAuthorizedChatChannels(
 ) (*pb.ChatChannels, error) {
 	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -360,7 +360,7 @@ func (s chatServiceServer) GetAuthorizedChatChannels(
 
 	srvCtx, err := s.serverContext(ctx)
 	if err != nil {
-		log.WithContext(ctx).Errorf("create server context: %v", err)
+		log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
 		return nil, model.ErrHandleRequest
 	}
 	targetCharacterId, err := helpers.GetCharacterIdFromTarget(srvCtx, s.server.CharacterService, request)
@@ -370,7 +370,7 @@ func (s chatServiceServer) GetAuthorizedChatChannels(
 
 	channels, err := s.server.ChatService.AuthorizedChannelsForCharacter(ctx, targetCharacterId)
 	if err != nil {
-		log.WithContext(ctx).Errorf("get authorized channels: %v", err)
+		log.Logger.WithContext(ctx).Errorf("get authorized channels: %v", err)
 		return nil, status.Error(codes.Internal, "unable to get channels")
 	}
 
@@ -383,7 +383,7 @@ func (s chatServiceServer) UpdateUserChatChannelAuthorizations(
 ) (*emptypb.Empty, error) {
 	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -397,7 +397,7 @@ func (s chatServiceServer) UpdateUserChatChannelAuthorizations(
 	case *pb.CharacterTarget_Name:
 		srvCtx, err := s.serverContext(ctx)
 		if err != nil {
-			log.WithContext(ctx).Errorf("create server context: %v", err)
+			log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
 			return nil, model.ErrHandleRequest
 		}
 		targetChar, err := s.server.CharacterService.GetCharacter(srvCtx, request.Character)
@@ -410,7 +410,7 @@ func (s chatServiceServer) UpdateUserChatChannelAuthorizations(
 		targetCharacterId = uint(target.Id)
 
 	default:
-		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(request.Character).Name())
+		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(request.Character).Name())
 		return nil, model.ErrHandleRequest
 	}
 
@@ -425,7 +425,7 @@ func (s chatServiceServer) UpdateUserChatChannelAuthorizations(
 			return nil, status.Error(codes.InvalidArgument, "existing chat authorization conflict")
 		}
 
-		log.WithContext(ctx).Errorf("get authorized channels: %v", err)
+		log.Logger.WithContext(ctx).Errorf("get authorized channels: %v", err)
 		return nil, status.Error(codes.Internal, "unable to change authorization")
 	}
 
@@ -470,7 +470,7 @@ func (s chatServiceServer) serverContext(ctx context.Context) (context.Context, 
 		s.server.GlobalConfig.Chat.Keycloak.Realm,
 	)
 	if err != nil {
-		log.WithContext(ctx).Errorf("keycloak login failure: %v", err)
+		log.Logger.WithContext(ctx).Errorf("keycloak login failure: %v", err)
 		return nil, err
 	}
 
@@ -483,13 +483,13 @@ func (s chatServiceServer) serverContext(ctx context.Context) (context.Context, 
 func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, request *pb.CharacterTarget) (*pb.CharacterDetails, error) {
 	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
 	srvCtx, err := s.serverContext(ctx)
 	if err != nil {
-		log.WithContext(ctx).Errorf("create server context: %v", err)
+		log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
 		return nil, model.ErrHandleRequest
 	}
 
@@ -497,7 +497,7 @@ func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, request 
 		Target: &pb.UserTarget_Id{Id: claims.Subject},
 	})
 	if err != nil {
-		log.WithContext(ctx).Errorf("chat character service get for user: %v", err)
+		log.Logger.WithContext(ctx).Errorf("chat character service get for user: %v", err)
 		return nil, status.Errorf(codes.Internal, "unable to verify character")
 	}
 
@@ -517,7 +517,7 @@ func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, request 
 		}
 
 	default:
-		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(request.Type).Name())
+		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(request.Type).Name())
 		return nil, model.ErrHandleRequest
 	}
 

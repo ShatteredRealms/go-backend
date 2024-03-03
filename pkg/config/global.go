@@ -1,9 +1,12 @@
 package config
 
 import (
+	"context"
+
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -20,7 +23,7 @@ type GlobalConfig struct {
 	Version     string
 }
 
-func NewGlobalConfig() *GlobalConfig {
+func NewGlobalConfig(ctx context.Context) *GlobalConfig {
 	config := &GlobalConfig{
 		Character: CharacterServer{
 			SROServer: SROServer{
@@ -33,7 +36,7 @@ func NewGlobalConfig() *GlobalConfig {
 					Host: "",
 				},
 				Mode:     LocalMode,
-				LogLevel: log.InfoLevel,
+				LogLevel: logrus.InfoLevel,
 				Keycloak: KeycloakClientConfig{
 					Realm:        "default",
 					BaseURL:      "http://localhost:8080",
@@ -72,7 +75,7 @@ func NewGlobalConfig() *GlobalConfig {
 					Host: "",
 				},
 				Mode:     LocalMode,
-				LogLevel: log.InfoLevel,
+				LogLevel: logrus.InfoLevel,
 				Keycloak: KeycloakClientConfig{
 					Realm:        "default",
 					BaseURL:      "http://localhost:8080",
@@ -103,7 +106,7 @@ func NewGlobalConfig() *GlobalConfig {
 					Host: "",
 				},
 				Mode:     LocalMode,
-				LogLevel: log.InfoLevel,
+				LogLevel: logrus.InfoLevel,
 				Keycloak: KeycloakClientConfig{
 					Realm:        "default",
 					BaseURL:      "http://localhost:8080",
@@ -150,7 +153,7 @@ func NewGlobalConfig() *GlobalConfig {
 	viper.AddConfigPath("/etc/sro/")
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigParseError); ok {
-			log.Fatalf("read appConfig: %v", err)
+			log.Logger.WithContext(ctx).Fatalf("read appConfig: %v", err)
 		}
 	}
 
@@ -160,7 +163,7 @@ func NewGlobalConfig() *GlobalConfig {
 
 	// Save to struct
 	if err := viper.Unmarshal(&config); err != nil {
-		log.Fatalf("unmarshal appConfig: %v", err)
+		log.Logger.WithContext(ctx).Fatalf("unmarshal appConfig: %v", err)
 	}
 
 	return config

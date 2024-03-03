@@ -2,11 +2,11 @@ package helpers
 
 import (
 	"context"
-	log "github.com/sirupsen/logrus"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 )
 
 func Check(ctx context.Context, err error, errContext string) {
 	if err != nil {
-		log.WithContext(ctx).Fatalf("%s: %v", errContext, err)
+		log.Logger.WithContext(ctx).Fatalf("%s: %v", errContext, err)
 	}
 }

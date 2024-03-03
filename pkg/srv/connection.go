@@ -14,7 +14,7 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,7 +52,7 @@ func (s connectionServiceServer) ConnectGameServer(
 ) (*pb.ConnectGameServerResponse, error) {
 	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.GameBackend.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -67,7 +67,7 @@ func (s connectionServiceServer) ConnectGameServer(
 		request,
 	)
 	if err != nil || character == nil {
-		log.WithContext(ctx).Errorf("unable to get character %v: %s", request.Type, err)
+		log.Logger.WithContext(ctx).Errorf("unable to get character %v: %s", request.Type, err)
 		return nil, err
 	}
 
@@ -77,7 +77,7 @@ func (s connectionServiceServer) ConnectGameServer(
 			return nil, fmt.Errorf("create pending connection: %w", err)
 		}
 
-		log.WithContext(ctx).Debugf("%s using local game server", character.Name)
+		log.Logger.WithContext(ctx).Debugf("%s using local game server", character.Name)
 		return &pb.ConnectGameServerResponse{
 			Address:      "127.0.0.1",
 			Port:         7777,
@@ -100,12 +100,12 @@ func (s connectionServiceServer) ConnectGameServer(
 		world = character.Location.World
 	}
 
-	log.WithContext(ctx).Debugf("%s requesting connection to gameserver with world %s", character.Name, world)
+	log.Logger.WithContext(ctx).Debugf("%s requesting connection to gameserver with world %s", character.Name, world)
 
 	// Request allocation
 	srvCtx, err := s.serverContext(ctx)
 	if err != nil {
-		log.WithContext(ctx).Errorf("create server context: %v", err)
+		log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
 		return nil, model.ErrHandleRequest
 	}
 
@@ -148,7 +148,7 @@ func (s connectionServiceServer) ConnectGameServer(
 		metav1.CreateOptions{},
 	)
 	if err != nil {
-		log.WithContext(ctx).Errorf("allocation request: %v", err)
+		log.Logger.WithContext(ctx).Errorf("allocation request: %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -170,7 +170,7 @@ func (s connectionServiceServer) VerifyConnect(
 ) (*pb.CharacterDetails, error) {
 	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.GameBackend.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -199,7 +199,7 @@ func (s connectionServiceServer) VerifyConnect(
 		},
 	)
 	if err != nil || character == nil {
-		log.WithContext(ctx).Errorf("unable to get character %v: %s", pc.Character, err)
+		log.Logger.WithContext(ctx).Errorf("unable to get character %v: %s", pc.Character, err)
 		return nil, status.Errorf(codes.Internal, "unable to find character")
 	}
 
@@ -212,7 +212,7 @@ func (s connectionServiceServer) TransferPlayer(
 ) (*pb.ConnectGameServerResponse, error) {
 	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.GameBackend.Keycloak.Realm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("verify claims: %v", err)
+		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
 		return nil, model.ErrUnauthorized
 	}
 
@@ -230,7 +230,7 @@ func (s connectionServiceServer) TransferPlayer(
 		},
 	)
 	if err != nil || character == nil {
-		log.WithContext(ctx).Errorf("unable to get character %v: %s", request.Character, err)
+		log.Logger.WithContext(ctx).Errorf("unable to get character %v: %s", request.Character, err)
 		return nil, status.Errorf(codes.Internal, "unable to find character")
 	}
 
@@ -240,7 +240,7 @@ func (s connectionServiceServer) TransferPlayer(
 			return nil, fmt.Errorf("create pending connection: %w", err)
 		}
 
-		log.WithContext(ctx).Debugf("%s using local game server", character.Name)
+		log.Logger.WithContext(ctx).Debugf("%s using local game server", character.Name)
 		return &pb.ConnectGameServerResponse{
 			Address:      "127.0.0.1",
 			Port:         7777,
@@ -248,12 +248,12 @@ func (s connectionServiceServer) TransferPlayer(
 		}, nil
 	}
 
-	log.WithContext(ctx).Debugf("%s requesting connection to gameserver with world %s", character.Name, request.Location.World)
+	log.Logger.WithContext(ctx).Debugf("%s requesting connection to gameserver with world %s", character.Name, request.Location.World)
 
 	// Request allocation
 	srvCtx, err := s.serverContext(ctx)
 	if err != nil {
-		log.WithContext(ctx).Errorf("create server context: %v", err)
+		log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
 		return nil, model.ErrHandleRequest
 	}
 
@@ -296,7 +296,7 @@ func (s connectionServiceServer) TransferPlayer(
 		metav1.CreateOptions{},
 	)
 	if err != nil {
-		log.WithContext(ctx).Errorf("allocation request: %v", err)
+		log.Logger.WithContext(ctx).Errorf("allocation request: %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -313,7 +313,7 @@ func (s connectionServiceServer) TransferPlayer(
 		},
 	)
 	if err != nil {
-		log.WithContext(ctx).Errorf("updating character location: %s", err.Error())
+		log.Logger.WithContext(ctx).Errorf("updating character location: %s", err.Error())
 		return nil, fmt.Errorf("updating character location: %w", err)
 	}
 
@@ -360,13 +360,13 @@ func NewConnectionServiceServer(
 	if server.GlobalConfig.GameBackend.Mode != config.LocalMode {
 		conf, err := rest.InClusterConfig()
 		if err != nil {
-			log.WithContext(ctx).Errorf("creating config: %v", err)
+			log.Logger.WithContext(ctx).Errorf("creating config: %v", err)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
 		agones, err := versioned.NewForConfig(conf)
 		if err != nil {
-			log.WithContext(ctx).Errorf("creating agones connection: %v", err)
+			log.Logger.WithContext(ctx).Errorf("creating agones connection: %v", err)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 

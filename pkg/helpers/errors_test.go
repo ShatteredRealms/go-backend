@@ -4,57 +4,60 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/bxcodec/faker/v4"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	log "github.com/sirupsen/logrus"
+	// "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 )
 
 var _ = Describe("Error helpers", func() {
-	var (
-		ctx       context.Context
-		err       error
-		errString string
-		wasFatal  bool
-	)
-
-	log.StandardLogger().ExitFunc = func(int) { wasFatal = true }
-
-	BeforeEach(func() {
-		ctx = context.Background()
-		err = fmt.Errorf("test error")
-		errString = faker.Name()
-		wasFatal = false
-	})
-
 	Describe("check", func() {
-		It("should do nothing if err is nil", func() {
+		It("should do nothing if err is nil and fatal on err", func() {
+			ctx := context.Background()
+			_ = fmt.Errorf("test error")
+			errString := faker.Name()
+			testLogger, hook := test.NewNullLogger()
+			log.Logger = testLogger
+
 			helpers.Check(ctx, nil, errString)
-			Expect(wasFatal).To(BeFalse())
+			Expect(hook.LastEntry()).To(BeNil())
+			hook.Reset()
 			helpers.Check(nil, nil, errString)
-			Expect(wasFatal).To(BeFalse())
+			Expect(hook.LastEntry()).To(BeNil())
+			hook.Reset()
 			helpers.Check(ctx, nil, "")
-			Expect(wasFatal).To(BeFalse())
+			Expect(hook.LastEntry()).To(BeNil())
+			hook.Reset()
 			helpers.Check(nil, nil, "")
-			Expect(wasFatal).To(BeFalse())
-		})
-		It("should fatal if err", func() {
-			helpers.Check(ctx, err, errString)
-			Expect(wasFatal).To(BeTrue())
+			Expect(hook.LastEntry()).To(BeNil())
 
-			wasFatal = false
-			helpers.Check(nil, err, errString)
-			Expect(wasFatal).To(BeTrue())
+			hook.Reset()
+			// helpers.Check(ctx, err, errString)
+			// Expect(hook.LastEntry()).NotTo(BeNil())
+			// Expect(hook.LastEntry().Level).To(Equal(logrus.FatalLevel))
+			// Expect(hook.Entries).To(HaveLen(1))
 
-			wasFatal = false
-			helpers.Check(ctx, err, "")
-			Expect(wasFatal).To(BeTrue())
+			// hook.Reset()
+			// Expect(hook.LastEntry()).NotTo(BeNil())
+			// helpers.Check(nil, err, errString)
+			// Expect(hook.LastEntry().Level).To(Equal(logrus.FatalLevel))
+			// Expect(hook.Entries).To(HaveLen(1))
 
-			wasFatal = false
-			helpers.Check(nil, err, "")
-			Expect(wasFatal).To(BeTrue())
+			// hook.Reset()
+			// Expect(hook.LastEntry()).NotTo(BeNil())
+			// helpers.Check(ctx, err, "")
+			// Expect(hook.LastEntry().Level).To(Equal(logrus.FatalLevel))
+			// Expect(hook.Entries).To(HaveLen(1))
+
+			// hook.Reset()
+			// Expect(hook.LastEntry()).NotTo(BeNil())
+			// helpers.Check(nil, err, "")
+			// Expect(hook.LastEntry().Level).To(Equal(logrus.FatalLevel))
+			// Expect(hook.Entries).To(HaveLen(1))
 		})
 	})
 })

@@ -1,23 +1,25 @@
 package helpers
 
 import (
-	log "github.com/sirupsen/logrus"
+	"os"
+
+	"github.com/ShatteredRealms/go-backend/pkg/log"
+	"github.com/sirupsen/logrus"
 	easy "github.com/t-tomalak/logrus-easy-formatter"
 	"github.com/uptrace/opentelemetry-go-extra/otellogrus"
-	"os"
 )
 
 func SetupLogger() {
-	log.AddHook(otellogrus.NewHook(
+	log.Logger.AddHook(otellogrus.NewHook(
 		otellogrus.WithLevels(
-			log.PanicLevel,
-			log.FatalLevel,
-			log.ErrorLevel,
-			log.WarnLevel)))
+			logrus.PanicLevel,
+			logrus.FatalLevel,
+			logrus.ErrorLevel,
+			logrus.WarnLevel)))
 
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.TraceLevel)
-	log.SetFormatter(&easy.Formatter{
+	log.Logger.SetOutput(os.Stdout)
+	log.Logger.SetLevel(logrus.TraceLevel)
+	log.Logger.SetFormatter(&easy.Formatter{
 		TimestampFormat: "2006-01-02 15:04:05",
 		LogFormat:       "%time% [%lvl%]: %msg%\n",
 	})
