@@ -23,19 +23,19 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.17
+        go-version: 1.22
 
     - name: Build
       run: go build -v ./...
 
     - name: Test
       run: go test ./... -v -race -covermode=atomic -coverprofile=coverage.out
-      
-    - uses: codecov/codecov-action@v2
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4.0.1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        flags: unittests
-        verbose: true
+        slug: ShatteredRealms/go-backend
   
   deploy:
     needs: test
