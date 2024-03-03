@@ -7,10 +7,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var (
-	wasFatal bool
-)
-
 func TestHelpers(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Helpers Suite")

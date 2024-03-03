@@ -17,6 +17,7 @@ var _ = Describe("Error helpers", func() {
 		ctx       context.Context
 		err       error
 		errString string
+		wasFatal  bool
 	)
 
 	log.StandardLogger().ExitFunc = func(int) { wasFatal = true }

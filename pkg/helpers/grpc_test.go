@@ -6,7 +6,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 )
@@ -21,8 +20,6 @@ var _ = Describe("Grpc helpers", func() {
 
 		httpHandler http.Handler
 	)
-
-	log.StandardLogger().ExitFunc = func(int) { wasFatal = true }
 
 	BeforeEach(func() {
 		grpcServer.HandledRequest = false

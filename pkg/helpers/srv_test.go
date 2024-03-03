@@ -21,11 +21,13 @@ import (
 )
 
 var _ = Describe("Srv helpers", func() {
-
-	log.StandardLogger().ExitFunc = func(int) { wasFatal = true }
+	var (
+		wasFatal bool
+	)
 
 	BeforeEach(func() {
 		wasFatal = false
+		log.StandardLogger().ExitFunc = func(int) { wasFatal = true }
 	})
 
 	Describe("UnaryLogRequest", func() {
