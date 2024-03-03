@@ -1,0 +1,42 @@
+name: Build Image
+
+on:
+  workflow_run:
+    workflows: ["Run Test"]
+    types:
+      - completed
+
+env:
+  BASE_REGISTRY: ${{ secrets.BASE_REGISTRY }}
+  REGISTRY: '${{ secrets.BASE_REGISTRY }}/sro'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    if: | 
+      github.event.workflow_run.conclusion == 'success' && contains('
+        refs/heads/main
+      ', github.ref)
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: configure aws credentials
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        role-to-assume: arn:aws:iam::779965382548:role/SRO_GitHub_Go-Backend_Production
+        role-session-name: sroawsdeploy
+        aws-region: us-east-1
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to registry
+      id: build-image
+      run: make push

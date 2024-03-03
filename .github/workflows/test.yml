@@ -1,4 +1,4 @@
-name: Build CI
+name: Run Tests
 
 on:
   push:
@@ -18,10 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     name: Test
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v3
       with:
         go-version: 1.22
 
@@ -84,22 +84,3 @@ jobs:
       run: |
         cd ./build
         make push-dev
-
-#     - name: Deploy dev to cluster
-#       uses: kodermax/kubectl-aws-eks@master
-#       if: github.ref == 'refs/heads/dev'
-#       with:
-#         args: rollout restart deployment/frontend -n sro-dev      
-    
-#     - name: Deploy qa to cluster
-#       uses: kodermax/kubectl-aws-eks@master
-#       if: github.ref == 'refs/heads/qa'
-#       with:
-#         args: rollout restart deployment/frontend -n sro-qa
-        
-    
-#     - name: Deploy prod to cluster
-#       uses: kodermax/kubectl-aws-eks@master
-#       if: github.ref == 'refs/heads/main'
-#       with:
-#         args: rollout restart deployment/frontend -n sro
