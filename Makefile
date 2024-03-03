@@ -40,6 +40,8 @@ PROTO_FILES = $(shell find $(PROTO_DIR) -name '*.proto')
 
 MOCK_INTERFACES = $(shell egrep -rl --include="*.go" "type (\w*) interface {" /home/wil/sro/git/go-backend/pkg | sed "s/.go$$//")
 
+
+
 #   _____                    _
 #  |_   _|                  | |
 #    | | __ _ _ __ __ _  ___| |_ ___
@@ -53,7 +55,7 @@ MOCK_INTERFACES = $(shell egrep -rl --include="*.go" "type (\w*) interface {" /h
 test:
 	ginkgo --race --cover -covermode atomic -coverprofile=coverage.out --output-dir $(ROOT_DIR)/ $(ROOT_DIR)/...
 
-watch-testing:
+test-watch:
 	ginkgo watch -p --race --cover -covermode atomic -output-dir=$(ROOT_DIR) $(ROOT_DIR)/...
 
 report: test

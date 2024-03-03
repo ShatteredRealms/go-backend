@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
@@ -115,7 +114,7 @@ func ExtractClaims(ctx context.Context) (*model.SROClaims, error) {
 	return claims, nil
 }
 
-func VerifyClaims(ctx context.Context, client *gocloak.GoCloak, realm string) (*jwt.Token, *model.SROClaims, error) {
+func VerifyClaims(ctx context.Context, client model.KeycloakClient, realm string) (*jwt.Token, *model.SROClaims, error) {
 	if ctx == nil {
 		return nil, nil, status.Errorf(codes.Internal, "context is missing")
 	}

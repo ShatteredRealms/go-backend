@@ -3,15 +3,20 @@ package helpers_test
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 
+	"github.com/Nerzal/gocloak/v13"
 	"github.com/bxcodec/faker/v4"
 	"github.com/golang-jwt/jwt/v4"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	log "github.com/sirupsen/logrus"
+	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/mocks"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 )
 
@@ -25,15 +30,21 @@ var _ = Describe("Srv helpers", func() {
 
 	Describe("UnaryLogRequest", func() {
 		It("should handle requests", func() {
-			helpers.UnaryLogRequest()
+			fakeHandler := &mockHandler{}
+			testFunc := helpers.UnaryLogRequest()
 			Expect(wasFatal).To(BeFalse())
+			testFunc(nil, nil, &grpc.UnaryServerInfo{FullMethod: faker.Username()}, fakeHandler.UnaryHandler)
+			Expect(fakeHandler.WasCalled).To(BeTrue())
 		})
 	})
 
 	Describe("StreamLogRequest", func() {
 		It("should handle requests", func() {
-			helpers.StreamLogRequest()
+			fakeHandler := &mockHandler{}
+			testFunc := helpers.StreamLogRequest()
 			Expect(wasFatal).To(BeFalse())
+			testFunc(nil, mockServerStream{}, &grpc.StreamServerInfo{FullMethod: faker.Username()}, fakeHandler.StreamHandler)
+			Expect(fakeHandler.WasCalled).To(BeTrue())
 		})
 	})
 
@@ -140,10 +151,122 @@ var _ = Describe("Srv helpers", func() {
 	})
 
 	Describe("VerifyClaims", func() {
+		var (
+			mockCtrl     *gomock.Controller
+			mockKeycloak *mocks.MockKeycloakClient
+		)
+		BeforeEach(func() {
+			mockCtrl = gomock.NewController(GinkgoT())
+			mockKeycloak = mocks.NewMockKeycloakClient(mockCtrl)
+		})
 		Context("invalid input", func() {
+			It("should error on nil inputs", func() {
+				jwtToken, outClaims, err := helpers.VerifyClaims(nil, nil, faker.Name())
+				Expect(jwtToken).To(BeNil())
+				Expect(outClaims).To(BeNil())
+				Expect(err).NotTo(BeNil())
+
+				jwtToken, outClaims, err = helpers.VerifyClaims(context.Background(), nil, faker.Name())
+				Expect(jwtToken).To(BeNil())
+				Expect(outClaims).To(BeNil())
+				Expect(err).NotTo(BeNil())
+
+				jwtToken, outClaims, err = helpers.VerifyClaims(nil, &gocloak.GoCloak{}, faker.Name())
+				Expect(jwtToken).To(BeNil())
+				Expect(outClaims).To(BeNil())
+				Expect(err).NotTo(BeNil())
+			})
+
+			It("should require ctx with valid incoming token", func() {
+				jwtToken, outClaims, err := helpers.VerifyClaims(context.Background(), &gocloak.GoCloak{}, "")
+				Expect(jwtToken).To(BeNil())
+				Expect(outClaims).To(BeNil())
+				Expect(err).NotTo(BeNil())
+			})
+
+			It("should error on keycloak error", func() {
+				claims := model.SROClaims{
+					Username: faker.Username(),
+				}
+				bytes, err := base64.StdEncoding.DecodeString("gEQCe2i8oOWWmyerVdL3KZik4FdyGUGGls/dIewSkVo=")
+				Expect(err).To(BeNil())
+
+				token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(bytes)
+				Expect(err).To(BeNil())
+
+				ctx := createIncomingAuthToken(token)
+				realm := faker.Name()
+				err = fmt.Errorf(faker.Username())
+
+				mockKeycloak.EXPECT().DecodeAccessTokenCustomClaims(gomock.Eq(ctx), gomock.Any(), gomock.Eq(realm), gomock.Any()).Return(nil, err)
+
+				jwtToken, outClaims, err := helpers.VerifyClaims(ctx, mockKeycloak, realm)
+				Expect(jwtToken).To(BeNil())
+				Expect(outClaims).To(BeNil())
+				Expect(err).To(MatchError(err))
+			})
+
+			It("should error on invalid token", func() {
+				claims := model.SROClaims{
+					Username: faker.Username(),
+				}
+				bytes, err := base64.StdEncoding.DecodeString("gEQCe2i8oOWWmyerVdL3KZik4FdyGUGGls/dIewSkVo=")
+				Expect(err).To(BeNil())
+
+				originalToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+				token, err := originalToken.SignedString(bytes)
+				Expect(err).To(BeNil())
+
+				ctx := createIncomingAuthToken(token)
+				realm := faker.Name()
+				err = fmt.Errorf(faker.Username())
+
+				mockKeycloak.EXPECT().
+					DecodeAccessTokenCustomClaims(
+						gomock.Eq(ctx),
+						gomock.Eq(token),
+						gomock.Eq(realm),
+						gomock.Any(),
+					).Return(originalToken, nil)
+
+				jwtToken, outClaims, err := helpers.VerifyClaims(ctx, mockKeycloak, realm)
+				Expect(jwtToken).To(BeNil())
+				Expect(outClaims).To(BeNil())
+				Expect(err).To(MatchError(model.ErrUnauthorized))
+			})
 		})
 
 		Context("valid input", func() {
+			It("should work", func() {
+				claims := model.SROClaims{
+					Username: faker.Username(),
+				}
+				bytes, err := base64.StdEncoding.DecodeString("gEQCe2i8oOWWmyerVdL3KZik4FdyGUGGls/dIewSkVo=")
+				Expect(err).To(BeNil())
+
+				originalToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+				originalToken.Valid = true
+				token, err := originalToken.SignedString(bytes)
+				Expect(err).To(BeNil())
+
+				ctx := createIncomingAuthToken(token)
+				realm := faker.Name()
+				err = fmt.Errorf(faker.Username())
+
+				mockKeycloak.EXPECT().
+					DecodeAccessTokenCustomClaims(
+						gomock.Eq(ctx),
+						gomock.Eq(token),
+						gomock.Eq(realm),
+						gomock.Any(),
+					).Return(originalToken, nil)
+
+				// Note: claims are set by pointer pass to DecodeAccessTokenCustomClaims so testing is irrelevant
+				jwtToken, _, err := helpers.VerifyClaims(ctx, mockKeycloak, realm)
+				Expect(jwtToken).NotTo(BeNil(), "valid token")
+				Expect(*jwtToken).To(Equal(*originalToken), "token should resolve correctly")
+				Expect(err).To(BeNil(), "should not error")
+			})
 		})
 	})
 })
@@ -155,4 +278,44 @@ func createIncomingAuthToken(jwt string) context.Context {
 		},
 	)
 	return metadata.NewIncomingContext(context.Background(), md)
+}
+
+type mockHandler struct {
+	WasCalled bool
+}
+
+func (m *mockHandler) StreamHandler(srv interface{}, stream grpc.ServerStream) error {
+	m.WasCalled = true
+	return nil
+}
+
+func (m *mockHandler) UnaryHandler(ctx context.Context, req interface{}) (interface{}, error) {
+	m.WasCalled = true
+	return nil, nil
+}
+
+type mockServerStream struct{}
+
+func (m mockServerStream) Context() context.Context {
+	return context.Background()
+}
+
+func (m mockServerStream) SetHeader(metadata.MD) error {
+	return nil
+}
+
+func (m mockServerStream) SendHeader(metadata.MD) error {
+	return nil
+}
+
+func (m mockServerStream) SetTrailer(metadata.MD) {
+
+}
+
+func (m mockServerStream) SendMsg(i interface{}) error {
+	return nil
+}
+
+func (m mockServerStream) RecvMsg(i interface{}) error {
+	return nil
 }
