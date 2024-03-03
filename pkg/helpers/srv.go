@@ -79,6 +79,10 @@ func InitServerDefaults() (*grpc.Server, *runtime.ServeMux) {
 }
 
 func ExtractToken(ctx context.Context) (string, error) {
+	if ctx == nil {
+		return "", status.Errorf(codes.Internal, "context is missing")
+	}
+
 	val := metautils.ExtractIncoming(ctx).Get(AuthorizationHeader)
 	if val == "" {
 		return "", status.Errorf(codes.Unauthenticated, "request missing authorization")
@@ -88,10 +92,14 @@ func ExtractToken(ctx context.Context) (string, error) {
 		return "", status.Errorf(codes.Unauthenticated, "invalid authorization scheme. Expected %s.", AuthorizationScheme)
 	}
 
-	return strings.TrimPrefix(val, AuthorizationScheme), nil
+	return val[len(AuthorizationScheme):], nil
 }
 
 func ExtractClaims(ctx context.Context) (*model.SROClaims, error) {
+	if ctx == nil {
+		return nil, status.Errorf(codes.Internal, "context is missing")
+	}
+
 	token, err := ExtractToken(ctx)
 	if err != nil {
 		return nil, err
@@ -108,6 +116,14 @@ func ExtractClaims(ctx context.Context) (*model.SROClaims, error) {
 }
 
 func VerifyClaims(ctx context.Context, client *gocloak.GoCloak, realm string) (*jwt.Token, *model.SROClaims, error) {
+	if ctx == nil {
+		return nil, nil, status.Errorf(codes.Internal, "context is missing")
+	}
+
+	if client == nil {
+		return nil, nil, status.Errorf(codes.Internal, "gocloak is missing")
+	}
+
 	tokenString, err := ExtractToken(ctx)
 	if err != nil {
 		return nil, nil, err
