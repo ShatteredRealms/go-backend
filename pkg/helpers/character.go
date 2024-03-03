@@ -3,7 +3,6 @@ package helpers
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
@@ -44,6 +43,10 @@ func GetCharacterNameFromTarget(
 	charactersServiceClient pb.CharacterServiceClient,
 	target *pb.CharacterTarget,
 ) (string, error) {
+	if target == nil {
+		return "", fmt.Errorf("target cannot be nil")
+	}
+
 	targetCharacterName := ""
 	switch t := target.Type.(type) {
 	case *pb.CharacterTarget_Name:
@@ -57,7 +60,7 @@ func GetCharacterNameFromTarget(
 		targetCharacterName = targetChar.Name
 
 	default:
-		log.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target.Type).Name())
+		log.WithContext(ctx).Errorf("target type unknown: %+v", target)
 		return "", model.ErrHandleRequest
 	}
 

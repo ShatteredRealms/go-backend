@@ -2,17 +2,15 @@ package helpers
 
 import (
 	"context"
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
-	"google.golang.org/grpc"
 	"net"
 	"net/http"
 	"strings"
 )
 
-func GRPCHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
+func GRPCHandlerFunc(grpcServer http.Handler, otherHandler http.Handler) http.Handler {
 	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
@@ -33,10 +31,10 @@ func GRPCHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Ha
 
 func StartServer(
 	ctx context.Context,
-	grpcServer *grpc.Server,
-	gwmux *runtime.ServeMux,
+	grpcServer http.Handler,
+	gwmux http.Handler,
 	address string,
-) {
+) net.Listener {
 	log.WithContext(ctx).Info("Starting server")
 	listen, err := net.Listen("tcp", address)
 	Check(ctx, err, "listen server")
@@ -46,9 +44,9 @@ func StartServer(
 		Handler: GRPCHandlerFunc(grpcServer, gwmux),
 	}
 
-	err = httpSrv.Serve(listen)
-	if err != nil {
-		log.WithContext(ctx).Errorf("server stopped: %v", err)
-	}
-}
+	go func() {
+		Check(ctx, httpSrv.Serve(listen), "server stopped")
+	}()
 
+	return listen
+}

@@ -21,7 +21,7 @@ func BindEnvsToStruct(obj interface{}) {
 
 func bindRecursive(name string, val reflect.Value) {
 	if val.Kind() != reflect.Struct {
-		_ = viper.BindEnv(name, strings.ReplaceAll(name, ".", "_"))
+		_ = viper.BindEnv(name, "SRO_"+strings.ToUpper(strings.ReplaceAll(name, ".", "_")))
 		return
 	}
 
