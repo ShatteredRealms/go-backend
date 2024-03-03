@@ -73,7 +73,6 @@ var _ = Describe("Grpc helpers", func() {
 		It("should start a server", func() {
 			ctx := context.Background()
 			listener := helpers.StartServer(ctx, grpcServer, httpServer, "127.0.0.1:9999")
-			Expect(listener).NotTo(BeNil())
 			Expect(listener.Addr().String()).To(Equal("127.0.0.1:9999"))
 			listener.Close()
 		})
