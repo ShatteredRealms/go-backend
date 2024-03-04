@@ -4,11 +4,11 @@ import (
 	"context"
 	"strings"
 
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
