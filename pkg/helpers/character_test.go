@@ -7,9 +7,11 @@ import (
 	"github.com/bxcodec/faker/v4"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus/hooks/test"
 	"go.uber.org/mock/gomock"
 
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/mocks"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
@@ -22,6 +24,7 @@ var _ = Describe("Character helpers", func() {
 		ctx              context.Context
 		target           *pb.CharacterTarget
 		characterDetails *pb.CharacterDetails
+		hook             *test.Hook
 	)
 
 	BeforeEach(func() {
@@ -38,6 +41,8 @@ var _ = Describe("Character helpers", func() {
 			Id:   uint64(randIds[0]),
 			Name: faker.Name(),
 		}
+
+		log.Logger, hook = test.NewNullLogger()
 	})
 
 	Context("GetCharacterIdFromTarget", func() {
@@ -52,6 +57,8 @@ var _ = Describe("Character helpers", func() {
 				id, err := helpers.GetCharacterIdFromTarget(ctx, mockCSC, target)
 				Expect(err).Should(MatchError(model.ErrHandleRequest))
 				Expect(id).NotTo(Equal(uint(characterDetails.Id)))
+				Expect(hook.AllEntries()).To(HaveLen(1))
+				Expect(hook.LastEntry().String()).To(ContainSubstring("target type unknown"))
 			})
 		})
 
@@ -102,6 +109,8 @@ var _ = Describe("Character helpers", func() {
 				name, err := helpers.GetCharacterNameFromTarget(ctx, mockCSC, target)
 				Expect(err).Should(MatchError(model.ErrHandleRequest))
 				Expect(name).NotTo(Equal(characterDetails.Name))
+				Expect(hook.AllEntries()).To(HaveLen(1))
+				Expect(hook.LastEntry().String()).To(ContainSubstring("target type unknown"))
 			})
 		})
 

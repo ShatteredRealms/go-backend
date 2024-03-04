@@ -13,10 +13,10 @@ import (
 	gamebackend "github.com/ShatteredRealms/go-backend/cmd/gamebackend/app"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/google/uuid"
-	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -384,7 +384,7 @@ func (s *serverManagerServiceServer) GetAllDimension(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &pb.Dimensions{Dimensions: out.ToPb()}, nil
+	return out.ToPb(), nil
 }
 
 // GetAllMaps implements pb.ServerManagerServiceServer.

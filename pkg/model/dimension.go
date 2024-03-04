@@ -68,13 +68,15 @@ func (dimension *Dimension) ToPb() *pb.Dimension {
 	}
 }
 
-func (dimensions Dimensions) ToPb() []*pb.Dimension {
+func (dimensions Dimensions) ToPb() *pb.Dimensions {
 	out := make([]*pb.Dimension, len(dimensions))
 	for idx, c := range dimensions {
 		out[idx] = c.ToPb()
 	}
 
-	return out
+	return &pb.Dimensions{
+		Dimensions: out,
+	}
 }
 
 func (dimension *Dimension) GetImageName() string {
