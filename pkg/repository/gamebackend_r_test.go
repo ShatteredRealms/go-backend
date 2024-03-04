@@ -157,6 +157,86 @@ var _ = Describe("Gamebackend repository", func() {
 		})
 	})
 
+	Describe("DeleteDimensionById", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				Expect(repo.DeleteDimensionById(nil, dimension.Id)).To(Succeed())
+				Expect(repo.DeleteDimensionById(nil, dimension.Id)).To(Succeed())
+			})
+		})
+	})
+
+	Describe("DeleteDimensionByName", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				Expect(repo.DeleteDimensionByName(nil, dimension.Name)).To(Succeed())
+				Expect(repo.DeleteDimensionByName(nil, dimension.Name)).To(Succeed())
+			})
+		})
+	})
+
+	Describe("DeleteMapById", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				Expect(repo.DeleteMapById(nil, m.Id)).To(Succeed())
+				Expect(repo.DeleteMapById(nil, m.Id)).To(Succeed())
+			})
+		})
+	})
+
+	Describe("DeleteMapByName", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				Expect(repo.DeleteMapByName(nil, m.Name)).To(Succeed())
+				Expect(repo.DeleteMapByName(nil, m.Name)).To(Succeed())
+			})
+		})
+	})
+
+	Describe("DuplicateDimesnion", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				out, err := repo.DuplicateDimension(nil, dimension.Id, dimension.Name+"a")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out.Id).NotTo(BeNil())
+				Expect(out.Name).To(Equal(dimension.Name + "a"))
+				Expect(repo.FindAllDimensions(nil)).To(HaveLen(2))
+			})
+		})
+
+		Context("invalid input", func() {
+			It("should error when given dimension doesn't exist", func() {
+				id, err := uuid.NewRandom()
+				Expect(err).NotTo(HaveOccurred())
+
+				out, err := repo.DuplicateDimension(nil, &id, dimension.Name+"a")
+				Expect(err).To(MatchError(model.ErrDoesNotExist))
+				Expect(out).To(BeNil())
+				Expect(repo.FindAllDimensions(nil)).To(HaveLen(1))
+			})
+		})
+	})
+
+	Describe("SaveDimension", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				Expect(dimension.Maps).To(HaveLen(1))
+				dimension.Name += "a"
+				out, err := repo.SaveDimension(nil, dimension)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out.Id).To(Equal(dimension.Id))
+				Expect(out.Maps).To(HaveLen(1))
+			})
+		})
+
+		Context("invalid input", func() {
+			It("", func() {
+			})
+		})
+	})
+
 	AfterEach(func() {
 		dbCloseFunc()
 	})
