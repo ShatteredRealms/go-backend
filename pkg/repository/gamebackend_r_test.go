@@ -125,6 +125,24 @@ var _ = Describe("Gamebackend repository", func() {
 		})
 	})
 
+	Describe("DeletePendingConnection", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				Expect(repo.FindPendingConnection(nil, pendingCon.Id)).NotTo(BeNil())
+				Expect(repo.DeletePendingConnection(nil, pendingCon.Id)).To(Succeed())
+				Expect(repo.FindPendingConnection(nil, pendingCon.Id)).To(BeNil())
+			})
+		})
+
+		Context("invalid input", func() {
+			It("should error on nil id", func() {
+				Expect(repo.FindPendingConnection(nil, pendingCon.Id)).NotTo(BeNil())
+				Expect(repo.DeletePendingConnection(nil, nil)).NotTo(Succeed())
+				Expect(repo.FindPendingConnection(nil, pendingCon.Id)).NotTo(BeNil())
+			})
+		})
+	})
+
 	AfterEach(func() {
 		dbCloseFunc()
 	})
