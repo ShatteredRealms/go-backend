@@ -1,11 +1,14 @@
-package db
+package testdb
 
 import (
 	"fmt"
+
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 const (
@@ -45,7 +48,18 @@ func SetupGormWithDocker() (*gorm.DB, func()) {
 	var gdb *gorm.DB
 	// retry until db server is ready
 	err = pool.Retry(func() error {
-		gdb, err = gorm.Open(postgres.Open(conStr), &gorm.Config{})
+		gdb, err = gorm.Open(postgres.Open(conStr), &gorm.Config{
+			Logger: logger.New(
+				log.Logger,
+				logger.Config{
+					SlowThreshold:             0,
+					Colorful:                  true,
+					IgnoreRecordNotFoundError: true,
+					ParameterizedQueries:      true,
+					LogLevel:                  logger.Info,
+				},
+			),
+		})
 		if err != nil {
 			return err
 		}

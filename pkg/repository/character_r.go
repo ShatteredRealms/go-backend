@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
+	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"gorm.io/gorm"
 )
 
@@ -29,6 +29,12 @@ type characterRepository struct {
 	DB *gorm.DB
 }
 
+func NewCharacterRepository(db *gorm.DB) CharacterRepository {
+	return characterRepository{
+		DB: db,
+	}
+}
+
 func (r characterRepository) FindByName(ctx context.Context, name string) (*model.Character, error) {
 	var character *model.Character = nil
 	result := r.DB.WithContext(ctx).Where("name = ?", name).Find(&character)
@@ -46,18 +52,13 @@ func (r characterRepository) FindByName(ctx context.Context, name string) (*mode
 	return character, nil
 }
 
-func NewCharacterRepository(db *gorm.DB) CharacterRepository {
-	return characterRepository{
-		DB: db,
-	}
-}
-
 func (r characterRepository) Create(ctx context.Context, character *model.Character) (*model.Character, error) {
 	// Set the ID to zero so the database can generate the value
 	character.ID = 0
 
 	err := r.DB.WithContext(ctx).Create(&character).Error
 	if err != nil {
+		log.Logger.WithContext(ctx).Debugf("create error: %+v", character)
 		return nil, err
 	}
 
