@@ -8,7 +8,7 @@ import (
 
 type PendingConnection struct {
 	// Id secret used by a server to lookup a pending connection
-	Id uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
+	Id *uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
 
 	// Character name of the character that owns it
 	Character string

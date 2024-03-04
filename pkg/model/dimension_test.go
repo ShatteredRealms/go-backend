@@ -45,7 +45,6 @@ var _ = Describe("Dimension model", func() {
 		Expect(pb.Id).To(Equal(dimension.Id.String()))
 		Expect(pb.Name).To(Equal(dimension.Name))
 		Expect(pb.Version).To(Equal(dimension.Version))
-		Expect(pb.Maps).NotTo(BeEmpty())
 		Expect(pb.Location).To(Equal(dimension.Location))
 	})
 

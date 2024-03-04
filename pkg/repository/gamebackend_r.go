@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/google/uuid"
-	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -105,6 +105,10 @@ func (r *gamebackendRepository) DeletePendingConnection(ctx context.Context, id 
 
 // FindPendingConnection implements GamebackendRepository.
 func (r *gamebackendRepository) FindPendingConnection(ctx context.Context, id *uuid.UUID) *model.PendingConnection {
+	if id == nil {
+		return nil
+	}
+
 	var pendingConnection *model.PendingConnection
 	result := r.DB.WithContext(ctx).Where("id = ?", id).Find(&pendingConnection)
 	if result.Error != nil {
@@ -113,7 +117,7 @@ func (r *gamebackendRepository) FindPendingConnection(ctx context.Context, id *u
 	}
 
 	if result.RowsAffected == 0 {
-		log.Logger.WithContext(ctx).Debugf("find by id not found: %s", pendingConnection.Id.String())
+		log.Logger.WithContext(ctx).Debugf("find by id not found: %s", id.String())
 		return nil
 	}
 
