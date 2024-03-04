@@ -2,8 +2,8 @@ character:
   remote:
     host: 'characters'
     port: 8081
-  mode: 'production'
-  logLevel: 4
+  mode: 'local'
+  logLevel: Debug
   keycloak:
     baseUrl: 'http://localhost:8080'
     clientSecret: '**********'
@@ -17,31 +17,34 @@ character:
       password: 'indCcnNoeR'
       user: 'root'
 gamebackend:
+  remote:
+    host: 'gamebackend'
+    port: 8082
+  mode: 'local'
+  logLevel: Debug
   keycloak:
     baseUrl: 'http://localhost:8080'
     clientSecret: '**********'
     Id: 'c3cacba8-cd16-4a4f-bc86-367274cb7cb5'
-  remote:
-    host: 'gamebackend'
-    port: 8082
   postgres:
     master:
       host: 'localhost'
 chat:
+  remote:
+    host: 'chat'
+    port: 8180
+  mode: 'local'
+  logLevel: Debug
   keycloak:
     baseUrl: 'http://localhost:8080'
     clientSecret: '**********'
     Id: '4c79d4a0-a3fd-495f-b56e-eea508bb0862'
-  remote:
-    host: 'chat'
-    port: 8180
-  mode: 'production'
-  kafka:
-    host: localhost
-    port: 29092
   postgres:
     master:
       host: 'localhost'
+  kafka:
+    host: localhost
+    port: 29092
 agones:
   namespace: 'sro'
   allocator:

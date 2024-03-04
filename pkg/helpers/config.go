@@ -1,9 +1,11 @@
 package helpers
 
 import (
-	"github.com/spf13/viper"
 	"reflect"
 	"strings"
+
+	"github.com/ShatteredRealms/go-backend/pkg/log"
+	"github.com/spf13/viper"
 )
 
 func BindEnvsToStruct(obj interface{}) {
@@ -15,17 +17,37 @@ func BindEnvsToStruct(obj interface{}) {
 	}
 
 	for i := 0; i < val.NumField(); i++ {
-		bindRecursive(val.Type().Field(i).Name, val.Field(i))
+		field := val.Type().Field(i)
+		key := field.Name
+		env := field.Name
+		if field.Anonymous {
+			env = ""
+		}
+		bindRecursive(key, env, val.Field(i))
 	}
 }
 
-func bindRecursive(name string, val reflect.Value) {
+func bindRecursive(key, env string, val reflect.Value) {
 	if val.Kind() != reflect.Struct {
-		_ = viper.BindEnv(name, "SRO_"+strings.ToUpper(strings.ReplaceAll(name, ".", "_")))
+		env = "SRO_" + strings.ToUpper(env)
+		log.Logger.Infof("name: %s, env: %s", key, env)
+		_ = viper.BindEnv(key, env)
 		return
 	}
 
 	for i := 0; i < val.NumField(); i++ {
-		bindRecursive(name+"."+val.Type().Field(i).Name, val.Field(i))
+		field := val.Type().Field(i)
+		newKey := field.Name
+		newEnv := field.Name
+		if key != "" {
+			newKey = "." + newKey
+		}
+		if field.Anonymous {
+			newEnv = ""
+		} else if env != "" {
+			newEnv = "_" + newEnv
+		}
+
+		bindRecursive(key+newKey, env+newEnv, val.Field(i))
 	}
 }

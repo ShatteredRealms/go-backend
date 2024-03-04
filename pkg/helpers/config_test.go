@@ -11,13 +11,19 @@ import (
 )
 
 const (
-	envKey       = "SRO_FOO"
-	nestedEnvKey = "SRO_BAR_BAZ"
+	envKey         = "SRO_FOO"
+	nestedEnvKey   = "SRO_BAR_BAZ"
+	embeddedEnvKey = "SRO_BUZ"
 )
 
 type TestStruct struct {
+	EmbeddedStruct
 	Foo string
 	Bar TestInnerStruct
+}
+
+type EmbeddedStruct struct {
+	Buz string
 }
 
 type TestInnerStruct struct {
@@ -27,12 +33,11 @@ type TestInnerStruct struct {
 var _ = Describe("Config helpers", func() {
 	var (
 		testStruct  *TestStruct
-		originalBaz string
+		originalVal string
 		envVal      string
 	)
 
 	BeforeEach(func() {
-		viper.SetEnvPrefix("SRO")
 		testStruct = &TestStruct{
 			Foo: faker.Name(),
 			Bar: TestInnerStruct{
@@ -44,8 +49,8 @@ var _ = Describe("Config helpers", func() {
 	Describe("BindEnvsToStruct", func() {
 		Context("nested structs", func() {
 			BeforeEach(func() {
-				originalBaz = testStruct.Bar.Baz
-				envVal = faker.Name()
+				originalVal = testStruct.Bar.Baz
+				envVal = originalVal + faker.Username()
 				GinkgoT().Setenv(nestedEnvKey, envVal)
 				Expect(os.Getenv(nestedEnvKey)).To(Equal(envVal))
 			})
@@ -59,7 +64,7 @@ var _ = Describe("Config helpers", func() {
 			})
 
 			AfterEach(func() {
-				Expect(originalBaz).To(Equal(testStruct.Bar.Baz))
+				Expect(originalVal).To(Equal(testStruct.Bar.Baz))
 				Expect(viper.Unmarshal(&testStruct)).Should(Succeed())
 				Expect(testStruct.Bar.Baz).To(Equal(envVal))
 			})
@@ -67,7 +72,7 @@ var _ = Describe("Config helpers", func() {
 
 		Context("non-nested structs", func() {
 			BeforeEach(func() {
-				originalBaz = testStruct.Foo
+				originalVal = testStruct.Foo
 				envVal = faker.Name()
 				GinkgoT().Setenv(envKey, envVal)
 				Expect(os.Getenv(envKey)).To(Equal(envVal))
@@ -82,9 +87,32 @@ var _ = Describe("Config helpers", func() {
 			})
 
 			AfterEach(func() {
-				Expect(originalBaz).To(Equal(testStruct.Foo))
+				Expect(originalVal).To(Equal(testStruct.Foo))
 				Expect(viper.Unmarshal(&testStruct)).Should(Succeed())
 				Expect(testStruct.Foo).To(Equal(envVal))
+			})
+		})
+
+		Context("embedded structs", func() {
+			BeforeEach(func() {
+				originalVal = testStruct.Buz
+				envVal = faker.Name()
+				GinkgoT().Setenv(embeddedEnvKey, envVal)
+				Expect(os.Getenv(embeddedEnvKey)).To(Equal(envVal))
+			})
+
+			It("should bind to pointers to structs", func() {
+				helpers.BindEnvsToStruct(testStruct)
+			})
+
+			It("should bind to structs", func() {
+				helpers.BindEnvsToStruct(*testStruct)
+			})
+
+			AfterEach(func() {
+				Expect(testStruct.Buz).To(Equal(originalVal))
+				Expect(viper.Unmarshal(&testStruct)).Should(Succeed())
+				Expect(testStruct.Buz).To(Equal(envVal))
 			})
 		})
 	})

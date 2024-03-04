@@ -17,8 +17,8 @@ var (
 type GlobalConfig struct {
 	Character   CharacterServer   `yaml:"character"`
 	GameBackend GamebackendServer `yaml:"gamebackend"`
-	Chat        ChatServer        `yaml:"chat"`
-	Uptrace     UptraceConfig     `yaml:"uptrace"`
+	Chat        ChatServer        `json:"chat" yaml:"chat"`
+	Uptrace     UptraceConfig     `json:"uptrace" yaml:"uptrace"`
 	Agones      AgonesConfig      `json:"agones"`
 	Version     string
 }
@@ -158,7 +158,6 @@ func NewGlobalConfig(ctx context.Context) *GlobalConfig {
 	}
 
 	// Read from environment variables
-	viper.SetEnvPrefix("SRO")
 	helpers.BindEnvsToStruct(config)
 
 	// Save to struct

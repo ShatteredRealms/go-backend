@@ -9,4 +9,3 @@ var Logger *logrus.Logger
 func init() {
 	Logger = logrus.New()
 }
-
