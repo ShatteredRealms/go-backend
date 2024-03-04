@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/spf13/viper"
 )
 
@@ -30,7 +29,6 @@ func BindEnvsToStruct(obj interface{}) {
 func bindRecursive(key, env string, val reflect.Value) {
 	if val.Kind() != reflect.Struct {
 		env = "SRO_" + strings.ToUpper(env)
-		log.Logger.Infof("name: %s, env: %s", key, env)
 		_ = viper.BindEnv(key, env)
 		return
 	}
