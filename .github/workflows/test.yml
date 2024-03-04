@@ -22,12 +22,10 @@ jobs:
         go-version: 1.22
 
     - name: Build
-      run: make build -j
+      run: go build -v ./...
 
     - name: Test
-      run: | 
-        make install-tools
-        make test
+      run: make test
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4.0.1
