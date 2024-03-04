@@ -69,4 +69,12 @@ var _ = Describe("Dimension model", func() {
 			}
 		})
 	})
+
+	Describe("GetImageName", func() {
+		It("should work", func() {
+			Expect(dimension.GetImageName()).To(HaveSuffix(":" + dimension.Version))
+			dimension.Version = ""
+			Expect(dimension.GetImageName()).To(HaveSuffix(":latest"))
+		})
+	})
 })
