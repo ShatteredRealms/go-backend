@@ -143,6 +143,20 @@ var _ = Describe("Gamebackend repository", func() {
 		})
 	})
 
+	Describe("FindPendingConnection", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				Expect(repo.FindPendingConnection(nil, pendingCon.Id)).NotTo(BeNil())
+			})
+		})
+
+		Context("invalid input", func() {
+			It("should return no match", func() {
+				Expect(repo.FindPendingConnection(nil, nil)).To(BeNil())
+			})
+		})
+	})
+
 	AfterEach(func() {
 		dbCloseFunc()
 	})
