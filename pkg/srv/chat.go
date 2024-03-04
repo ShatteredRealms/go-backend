@@ -9,9 +9,9 @@ import (
 	"github.com/Nerzal/gocloak/v13"
 	chat "github.com/ShatteredRealms/go-backend/cmd/chat/app"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
-	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -306,7 +306,7 @@ func (s chatServiceServer) EditChannel(
 		return nil, model.ErrUnauthorized
 	}
 
-	err = s.server.ChatService.UpdateChannel(ctx, request)
+	_, err = s.server.ChatService.UpdateChannel(ctx, request)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, model.ErrDoesNotExist

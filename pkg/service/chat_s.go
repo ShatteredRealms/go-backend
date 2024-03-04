@@ -23,7 +23,7 @@ var (
 type ChatService interface {
 	AllChannels(ctx context.Context) (model.ChatChannels, error)
 	GetChannel(ctx context.Context, id uint) (*model.ChatChannel, error)
-	UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) error
+	UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) (*model.ChatChannel, error)
 	CreateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error)
 	DeleteChannel(ctx context.Context, channel *model.ChatChannel) error
 
@@ -54,13 +54,13 @@ func (s chatService) AuthorizedChannelsForCharacter(ctx context.Context, charact
 	return s.chatRepo.AuthorizedChannelsForCharacter(ctx, characterId)
 }
 
-func (s chatService) UpdateChannel(ctx context.Context, request *pb.UpdateChatChannelRequest) error {
+func (s chatService) UpdateChannel(ctx context.Context, request *pb.UpdateChatChannelRequest) (*model.ChatChannel, error) {
 	ctx, span := tracer.Start(ctx, "UpdateChannel")
 	defer span.End()
 
 	channel, err := s.GetChannel(ctx, uint(request.ChannelId))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if request.OptionalName != nil {
@@ -75,7 +75,7 @@ func (s chatService) UpdateChannel(ctx context.Context, request *pb.UpdateChatCh
 }
 
 func (s chatService) GetChannel(ctx context.Context, id uint) (*model.ChatChannel, error) {
-	return s.chatRepo.GetChannel(ctx, id)
+	return s.chatRepo.FindChannelById(ctx, id)
 }
 
 func (s chatService) ChannelMessagesReader(ctx context.Context, channelId uint) *kafka.Reader {

@@ -8,10 +8,11 @@ import (
 
 type ChatRepository interface {
 	AllChannels(ctx context.Context) (model.ChatChannels, error)
-	GetChannel(ctx context.Context, id uint) (*model.ChatChannel, error)
+	FindChannelById(ctx context.Context, id uint) (*model.ChatChannel, error)
 	CreateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error)
 	DeleteChannel(ctx context.Context, channel *model.ChatChannel) error
-	UpdateChannel(ctx context.Context, channel *model.ChatChannel) error
+	FullDeleteChannel(ctx context.Context, channel *model.ChatChannel) error
+	UpdateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error)
 
 	FindDeletedWithName(ctx context.Context, name string) (*model.ChatChannel, error)
 
@@ -55,8 +56,8 @@ func (r chatRepository) AuthorizedChannelsForCharacter(ctx context.Context, char
 	return channels, r.DB.Error
 }
 
-func (r chatRepository) UpdateChannel(ctx context.Context, channel *model.ChatChannel) error {
-	return r.DB.WithContext(ctx).Save(&channel).Error
+func (r chatRepository) UpdateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error) {
+	return channel, r.DB.WithContext(ctx).Save(&channel).Error
 }
 
 func (r chatRepository) AllChannels(ctx context.Context) (model.ChatChannels, error) {
@@ -70,6 +71,10 @@ func (r chatRepository) CreateChannel(ctx context.Context, channel *model.ChatCh
 }
 
 func (r chatRepository) DeleteChannel(ctx context.Context, channel *model.ChatChannel) error {
+	return r.DB.WithContext(ctx).Delete(channel).Error
+}
+
+func (r chatRepository) FullDeleteChannel(ctx context.Context, channel *model.ChatChannel) error {
 	return r.DB.WithContext(ctx).Unscoped().Delete(channel).Error
 }
 
@@ -82,7 +87,7 @@ func (r chatRepository) Migrate(ctx context.Context) error {
 	return r.DB.WithContext(ctx).AutoMigrate(&model.ChatChannelPermission{})
 }
 
-func (r chatRepository) GetChannel(ctx context.Context, id uint) (*model.ChatChannel, error) {
+func (r chatRepository) FindChannelById(ctx context.Context, id uint) (*model.ChatChannel, error) {
 	var channel *model.ChatChannel
 	result := r.DB.WithContext(ctx).Where("id = ?", id).Find(&channel)
 	if result.Error != nil {
