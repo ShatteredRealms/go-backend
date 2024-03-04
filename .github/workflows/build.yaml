@@ -39,4 +39,4 @@ jobs:
 
     - name: Build, tag, and push image to registry
       id: build-image
-      run: make push
+      run: make push -j
