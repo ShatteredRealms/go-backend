@@ -1,8 +1,8 @@
 module github.com/ShatteredRealms/go-backend
 
-go 1.21.0
+go 1.21
 
-toolchain go1.22.0
+toolchain go1.22
 
 require (
 	github.com/TwiN/go-away v1.6.10
