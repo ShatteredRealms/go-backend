@@ -1,77 +1,50 @@
 package repository_test
 
 import (
-	"context"
-
 	"github.com/bxcodec/faker/v4"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/sirupsen/logrus/hooks/test"
 	"gorm.io/gorm"
 
-	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
-	"github.com/ShatteredRealms/go-backend/pkg/repository"
-	testdb "github.com/ShatteredRealms/go-backend/test/db"
 )
 
 var _ = Describe("Gamebackend repository", func() {
 	var (
-		hook *test.Hook
+		createModels = func() (*model.Map, *model.Dimension, *model.PendingConnection) {
+			m, err := gamebackendRepo.CreateMap(nil, faker.Username(), faker.Username(), 4, false)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(m).NotTo(BeNil())
+			Expect(m.Id).NotTo(BeNil())
 
-		db          *gorm.DB
-		dbCloseFunc func()
+			dimension, err := gamebackendRepo.CreateDimension(nil, faker.Username(), faker.Username(), faker.Username(), []*uuid.UUID{m.Id})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dimension).NotTo(BeNil())
+			Expect(dimension.Id).NotTo(BeNil())
 
-		repo repository.GamebackendRepository
+			pendingCon, err := gamebackendRepo.CreatePendingConnection(nil, faker.Username(), faker.Username())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(pendingCon).NotTo(BeNil())
+			Expect(pendingCon.Id).NotTo(BeNil())
 
-		m          *model.Map
-		dimension  *model.Dimension
-		pendingCon *model.PendingConnection
-		err        error
+			return m, dimension, pendingCon
+		}
 	)
 
-	BeforeEach(func() {
-		log.Logger, hook = test.NewNullLogger()
-
-		db, dbCloseFunc = testdb.SetupGormWithDocker()
-		Expect(db).NotTo(BeNil())
-
-		repo = repository.NewGamebackendRepository(db)
-		Expect(repo).NotTo(BeNil())
-		Expect(repo.Migrate(context.Background())).To(Succeed())
-
-		m, err = repo.CreateMap(nil, faker.Username(), faker.Username(), 4, false)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(m).NotTo(BeNil())
-		Expect(m.Id).NotTo(BeNil())
-
-		dimension, err = repo.CreateDimension(nil, faker.Username(), faker.Username(), faker.Username(), []*uuid.UUID{m.Id})
-		Expect(err).NotTo(HaveOccurred())
-		Expect(dimension).NotTo(BeNil())
-		Expect(dimension.Id).NotTo(BeNil())
-
-		pendingCon, err = repo.CreatePendingConnection(nil, faker.Username(), faker.Username())
-		Expect(err).NotTo(HaveOccurred())
-		Expect(pendingCon).NotTo(BeNil())
-		Expect(pendingCon.Id).NotTo(BeNil())
-
-		hook.Reset()
-	})
-
 	Describe("CreatePendingConnection", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				out, err := repo.CreatePendingConnection(nil, faker.Username(), faker.Username())
+				out, err := gamebackendRepo.CreatePendingConnection(nil, faker.Username(), faker.Username())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out.Id).NotTo(BeNil())
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 			It("should require valid character", func() {
-				out, err := repo.CreatePendingConnection(nil, "", faker.Username())
+				out, err := gamebackendRepo.CreatePendingConnection(nil, "", faker.Username())
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -79,24 +52,26 @@ var _ = Describe("Gamebackend repository", func() {
 	})
 
 	Describe("CreateDimension", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				out, err := repo.CreateDimension(nil, dimension.Name+"a", faker.Username(), faker.Username(), []*uuid.UUID{})
+				_, dimension, _ := createModels()
+				out, err := gamebackendRepo.CreateDimension(nil, dimension.Name+"a", faker.Username(), faker.Username(), []*uuid.UUID{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out.Id).NotTo(BeNil())
 			})
 
 			It("should allow duplicate if name was deleted", func() {
-				Expect(repo.DeleteDimensionById(nil, dimension.Id)).To(Succeed())
-				out, err := repo.CreateDimension(nil, dimension.Name, faker.Username(), faker.Username(), []*uuid.UUID{})
+				_, dimension, _ := createModels()
+				Expect(gamebackendRepo.DeleteDimensionById(nil, dimension.Id)).To(Succeed())
+				out, err := gamebackendRepo.CreateDimension(nil, dimension.Name, faker.Username(), faker.Username(), []*uuid.UUID{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out.Id).NotTo(BeNil())
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 			// @TODO: Figure unique composite index with name and deleted
 			// It("should not allow duplicate names", func() {
 			// 	out, err := repo.CreateDimension(nil, dimension.Name, faker.Username(), faker.Username(), []*uuid.UUID{})
@@ -107,18 +82,20 @@ var _ = Describe("Gamebackend repository", func() {
 	})
 
 	Describe("CreateMap", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				out, err := repo.CreateMap(nil, m.Name+"a", faker.Username(), 4, false)
+				m, _, _ := createModels()
+				out, err := gamebackendRepo.CreateMap(nil, m.Name+"a", faker.Username(), 4, false)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out.Id).NotTo(BeNil())
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 			It("should error on duplicate name", func() {
-				out, err := repo.CreateMap(nil, m.Name, faker.Username(), 4, false)
+				m, _, _ := createModels()
+				out, err := gamebackendRepo.CreateMap(nil, m.Name, faker.Username(), 4, false)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -126,104 +103,126 @@ var _ = Describe("Gamebackend repository", func() {
 	})
 
 	Describe("DeletePendingConnection", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				Expect(repo.FindPendingConnection(nil, pendingCon.Id)).NotTo(BeNil())
-				Expect(repo.DeletePendingConnection(nil, pendingCon.Id)).To(Succeed())
-				Expect(repo.FindPendingConnection(nil, pendingCon.Id)).To(BeNil())
+				_, _, pendingCon := createModels()
+				Expect(gamebackendRepo.FindPendingConnection(nil, pendingCon.Id)).NotTo(BeNil())
+				Expect(gamebackendRepo.DeletePendingConnection(nil, pendingCon.Id)).To(Succeed())
+				Expect(gamebackendRepo.FindPendingConnection(nil, pendingCon.Id)).To(BeNil())
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 			It("should error on nil id", func() {
-				Expect(repo.FindPendingConnection(nil, pendingCon.Id)).NotTo(BeNil())
-				Expect(repo.DeletePendingConnection(nil, nil)).NotTo(Succeed())
-				Expect(repo.FindPendingConnection(nil, pendingCon.Id)).NotTo(BeNil())
+				_, _, pendingCon := createModels()
+				Expect(gamebackendRepo.FindPendingConnection(nil, pendingCon.Id)).NotTo(BeNil())
+				Expect(gamebackendRepo.DeletePendingConnection(nil, nil)).NotTo(Succeed())
+				Expect(gamebackendRepo.FindPendingConnection(nil, pendingCon.Id)).NotTo(BeNil())
 			})
 		})
 	})
 
 	Describe("FindPendingConnection", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				Expect(repo.FindPendingConnection(nil, pendingCon.Id)).NotTo(BeNil())
+				_, _, pendingCon := createModels()
+				Expect(gamebackendRepo.FindPendingConnection(nil, pendingCon.Id)).NotTo(BeNil())
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 			It("should return no match", func() {
-				Expect(repo.FindPendingConnection(nil, nil)).To(BeNil())
+				Expect(gamebackendRepo.FindPendingConnection(nil, nil)).To(BeNil())
 			})
 		})
 	})
 
 	Describe("DeleteDimensionById", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				Expect(repo.DeleteDimensionById(nil, dimension.Id)).To(Succeed())
-				Expect(repo.DeleteDimensionById(nil, dimension.Id)).To(Succeed())
+				_, dimension, _ := createModels()
+				Expect(gamebackendRepo.DeleteDimensionById(nil, dimension.Id)).To(Succeed())
+				Expect(gamebackendRepo.DeleteDimensionById(nil, dimension.Id)).To(Succeed())
 			})
 		})
 	})
 
 	Describe("DeleteDimensionByName", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				Expect(repo.DeleteDimensionByName(nil, dimension.Name)).To(Succeed())
-				Expect(repo.DeleteDimensionByName(nil, dimension.Name)).To(Succeed())
+				_, dimension, _ := createModels()
+				Expect(gamebackendRepo.DeleteDimensionByName(nil, dimension.Name)).To(Succeed())
+				Expect(gamebackendRepo.DeleteDimensionByName(nil, dimension.Name)).To(Succeed())
 			})
 		})
 	})
 
 	Describe("DeleteMapById", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				Expect(repo.DeleteMapById(nil, m.Id)).To(Succeed())
-				Expect(repo.DeleteMapById(nil, m.Id)).To(Succeed())
+				m, _, _ := createModels()
+				Expect(gamebackendRepo.DeleteMapById(nil, m.Id)).To(Succeed())
+				Expect(gamebackendRepo.DeleteMapById(nil, m.Id)).To(Succeed())
 			})
 		})
 	})
 
 	Describe("DeleteMapByName", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				Expect(repo.DeleteMapByName(nil, m.Name)).To(Succeed())
-				Expect(repo.DeleteMapByName(nil, m.Name)).To(Succeed())
+				m, _, _ := createModels()
+				Expect(gamebackendRepo.DeleteMapByName(nil, m.Name)).To(Succeed())
+				Expect(gamebackendRepo.DeleteMapByName(nil, m.Name)).To(Succeed())
 			})
 		})
 	})
 
 	Describe("DuplicateDimesnion", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				out, err := repo.DuplicateDimension(nil, dimension.Id, dimension.Name+"a")
+				_, dimension, _ := createModels()
+				out, err := gamebackendRepo.DuplicateDimension(nil, dimension.Id, dimension.Name+"a")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out.Id).NotTo(BeNil())
 				Expect(out.Name).To(Equal(dimension.Name + "a"))
-				Expect(repo.FindAllDimensions(nil)).To(HaveLen(2))
+
+				out, err = gamebackendRepo.FindDimensionByName(nil, dimension.Name+"a")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+
+				out2, err := gamebackendRepo.FindDimensionByName(nil, dimension.Name)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+
+				Expect(out.Id).NotTo(BeEquivalentTo(out2.Id))
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 			It("should error when given dimension doesn't exist", func() {
 				id, err := uuid.NewRandom()
 				Expect(err).NotTo(HaveOccurred())
 
-				out, err := repo.DuplicateDimension(nil, &id, dimension.Name+"a")
+				_, dimension, _ := createModels()
+				out, err := gamebackendRepo.DuplicateDimension(nil, &id, dimension.Name+"a")
 				Expect(err).To(MatchError(model.ErrDoesNotExist))
 				Expect(out).To(BeNil())
-				Expect(repo.FindAllDimensions(nil)).To(HaveLen(1))
+
+				out, err = gamebackendRepo.FindDimensionByName(nil, dimension.Name+"a")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).To(BeNil())
 			})
 		})
 	})
 
 	Describe("SaveDimension", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
+				_, dimension, _ := createModels()
 				Expect(dimension.Maps).To(HaveLen(1))
 				dimension.Name += "a"
-				out, err := repo.SaveDimension(nil, dimension)
+				out, err := gamebackendRepo.SaveDimension(nil, dimension)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out.Id).To(Equal(dimension.Id))
@@ -231,9 +230,9 @@ var _ = Describe("Gamebackend repository", func() {
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 			It("should error with nil dimension", func() {
-				out, err := repo.SaveDimension(nil, nil)
+				out, err := gamebackendRepo.SaveDimension(nil, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -241,10 +240,12 @@ var _ = Describe("Gamebackend repository", func() {
 	})
 
 	Describe("SaveMap", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
+				m, _, _ := createModels()
+
 				m.Name += "a"
-				out, err := repo.SaveMap(nil, m)
+				out, err := gamebackendRepo.SaveMap(nil, m)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out.Id).To(Equal(m.Id))
@@ -252,9 +253,9 @@ var _ = Describe("Gamebackend repository", func() {
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 			It("should error with nil m", func() {
-				out, err := repo.SaveMap(nil, nil)
+				out, err := gamebackendRepo.SaveMap(nil, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -262,31 +263,32 @@ var _ = Describe("Gamebackend repository", func() {
 	})
 
 	Describe("FindAllDimensions", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				out, err := repo.FindAllDimensions(nil)
+				out, err := gamebackendRepo.FindAllDimensions(nil)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
-				Expect(out).To(HaveLen(1))
+				Expect(len(out) >= 1).To(BeTrue())
 			})
 		})
 	})
 
 	Describe("FindAllMaps", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				out, err := repo.FindAllMaps(nil)
+				out, err := gamebackendRepo.FindAllMaps(nil)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
-				Expect(out).To(HaveLen(1))
+				Expect(len(out) >= 1).To(BeTrue())
 			})
 		})
 	})
 
 	Describe("FindDimensionByName", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				out, err := repo.FindDimensionByName(nil, dimension.Name)
+				_, dimension, _ := createModels()
+				out, err := gamebackendRepo.FindDimensionByName(nil, dimension.Name)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out.Id).To(Equal(dimension.Id))
@@ -294,13 +296,14 @@ var _ = Describe("Gamebackend repository", func() {
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 			It("should return nil for no match", func() {
-				out, err := repo.FindDimensionByName(nil, dimension.Name+"a")
+				_, dimension, _ := createModels()
+				out, err := gamebackendRepo.FindDimensionByName(nil, dimension.Name+"a")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).To(BeNil())
 
-				out, err = repo.FindDimensionByName(nil, "")
+				out, err = gamebackendRepo.FindDimensionByName(nil, "")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -308,9 +311,10 @@ var _ = Describe("Gamebackend repository", func() {
 	})
 
 	Describe("FindMapByName", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				out, err := repo.FindMapByName(nil, m.Name)
+				m, _, _ := createModels()
+				out, err := gamebackendRepo.FindMapByName(nil, m.Name)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out.Id).To(Equal(m.Id))
@@ -318,13 +322,14 @@ var _ = Describe("Gamebackend repository", func() {
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 			It("should return nil for no match", func() {
-				out, err := repo.FindMapByName(nil, m.Name+"a")
+				m, _, _ := createModels()
+				out, err := gamebackendRepo.FindMapByName(nil, m.Name+"a")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).To(BeNil())
 
-				out, err = repo.FindMapByName(nil, "")
+				out, err = gamebackendRepo.FindMapByName(nil, "")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -332,26 +337,27 @@ var _ = Describe("Gamebackend repository", func() {
 	})
 
 	Describe("FindMapById", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				out, err := repo.FindMapById(nil, m.Id)
+				m, _, _ := createModels()
+				out, err := gamebackendRepo.FindMapById(nil, m.Id)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out.Id).To(Equal(m.Id))
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 			It("should return nil for no match", func() {
 				id, err := uuid.NewRandom()
 				Expect(err).NotTo(HaveOccurred())
-				out, err := repo.FindMapById(nil, &id)
+				out, err := gamebackendRepo.FindMapById(nil, &id)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
 
 			It("should return err for nil id", func() {
-				out, err := repo.FindMapById(nil, nil)
+				out, err := gamebackendRepo.FindMapById(nil, nil)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -359,128 +365,129 @@ var _ = Describe("Gamebackend repository", func() {
 	})
 
 	Describe("FindDimensionsByIds", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
+				_, dimension, _ := createModels()
+
 				id, err := uuid.NewRandom()
 				Expect(err).NotTo(HaveOccurred())
-				out, err := repo.FindDimensionsByIds(nil, []*uuid.UUID{dimension.Id, &id})
+				out, err := gamebackendRepo.FindDimensionsByIds(nil, []*uuid.UUID{dimension.Id, &id})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out).To(HaveLen(1))
 
-				out, err = repo.FindDimensionsByIds(nil, []*uuid.UUID{&id})
+				out, err = gamebackendRepo.FindDimensionsByIds(nil, []*uuid.UUID{&id})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out).To(HaveLen(0))
 
-				out, err = repo.FindDimensionsByIds(nil, []*uuid.UUID{})
+				out, err = gamebackendRepo.FindDimensionsByIds(nil, []*uuid.UUID{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out).To(HaveLen(0))
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 
 		})
 	})
 
 	Describe("FindDimensionsByNames", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
+				_, dimension, _ := createModels()
+
 				name := faker.Username() + "a"
-				Expect(err).NotTo(HaveOccurred())
-				out, err := repo.FindDimensionsByNames(nil, []string{dimension.Name, name})
+				out, err := gamebackendRepo.FindDimensionsByNames(nil, []string{dimension.Name, name})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out).To(HaveLen(1))
 
-				out, err = repo.FindDimensionsByNames(nil, []string{name})
+				out, err = gamebackendRepo.FindDimensionsByNames(nil, []string{name})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out).To(HaveLen(0))
 
-				out, err = repo.FindDimensionsByNames(nil, []string{})
+				out, err = gamebackendRepo.FindDimensionsByNames(nil, []string{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out).To(HaveLen(0))
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 
 		})
 	})
 
 	Describe("FindMapsByNames", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
+				m, _, _ := createModels()
 				name := faker.Username() + "a"
-				Expect(err).NotTo(HaveOccurred())
-				out, err := repo.FindMapsByNames(nil, []string{m.Name, name})
+				out, err := gamebackendRepo.FindMapsByNames(nil, []string{m.Name, name})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out).To(HaveLen(1))
 
-				out, err = repo.FindMapsByNames(nil, []string{name})
+				out, err = gamebackendRepo.FindMapsByNames(nil, []string{name})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out).To(HaveLen(0))
 
-				out, err = repo.FindMapsByNames(nil, []string{})
+				out, err = gamebackendRepo.FindMapsByNames(nil, []string{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out).To(HaveLen(0))
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 
 		})
 	})
 
 	Describe("FindDimensionsWithMapIds", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
+				m, _, _ := createModels()
+
 				id, err := uuid.NewRandom()
 				Expect(err).NotTo(HaveOccurred())
-				out, err := repo.FindDimensionsWithMapIds(nil, []*uuid.UUID{m.Id, &id})
+				out, err := gamebackendRepo.FindDimensionsWithMapIds(nil, []*uuid.UUID{m.Id, &id})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out).To(HaveLen(1))
 
-				out, err = repo.FindDimensionsWithMapIds(nil, []*uuid.UUID{&id})
+				out, err = gamebackendRepo.FindDimensionsWithMapIds(nil, []*uuid.UUID{&id})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out).To(HaveLen(0))
 
-				out, err = repo.FindDimensionsWithMapIds(nil, []*uuid.UUID{})
+				out, err = gamebackendRepo.FindDimensionsWithMapIds(nil, []*uuid.UUID{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out).To(HaveLen(0))
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 
 		})
 	})
 
 	Describe("WithTrx", func() {
-		Context("valid input", func() {
+		When("given valid input", func() {
 			It("should work", func() {
-				Expect(repo.WithTrx(&gorm.DB{})).NotTo(BeNil())
+				Expect(gamebackendRepo.WithTrx(&gorm.DB{})).NotTo(BeNil())
 			})
 		})
 
-		Context("invalid input", func() {
+		When("given invalid input", func() {
 			It("should use original trx", func() {
-				Expect(repo.WithTrx(nil)).NotTo(BeNil())
+				Expect(gamebackendRepo.WithTrx(nil)).NotTo(BeNil())
 			})
 		})
-	})
-
-	AfterEach(func() {
-		dbCloseFunc()
 	})
 })

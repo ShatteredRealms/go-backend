@@ -12,8 +12,6 @@ import (
 type InventoryRepository interface {
 	GetInventory(ctx context.Context, characterId uint) (*model.CharacterInventory, error)
 	UpdateInventory(ctx context.Context, inventory *model.CharacterInventory) error
-
-	Migrate(ctx context.Context) error
 }
 
 type inventoryRepository struct {
@@ -44,9 +42,4 @@ func (r *inventoryRepository) UpdateInventory(ctx context.Context, inventory *mo
 
 func (r *inventoryRepository) inventoryCollection() *mongo.Collection {
 	return r.db.Collection("inventories")
-}
-
-// Migrate implements InventoryRepository.
-func (*inventoryRepository) Migrate(ctx context.Context) error {
-	return nil
 }

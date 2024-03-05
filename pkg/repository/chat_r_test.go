@@ -7,38 +7,15 @@ import (
 	"github.com/bxcodec/faker/v4"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/sirupsen/logrus/hooks/test"
 	"gorm.io/gorm"
 
-	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
-	"github.com/ShatteredRealms/go-backend/pkg/repository"
-	testdb "github.com/ShatteredRealms/go-backend/test/db"
 )
 
 var _ = Describe("Chat repository", func() {
-	var (
-		hook *test.Hook
 
-		db          *gorm.DB
-		dbCloseFunc func()
-
-		repo repository.ChatRepository
-
-		channel *model.ChatChannel
-	)
-
-	BeforeEach(func() {
-		log.Logger, hook = test.NewNullLogger()
-
-		db, dbCloseFunc = testdb.SetupGormWithDocker()
-		Expect(db).NotTo(BeNil())
-
-		repo = repository.NewChatRepository(db)
-		Expect(repo).NotTo(BeNil())
-		Expect(repo.Migrate(context.Background())).To(Succeed())
-
-		channel = &model.ChatChannel{
+	createChannel := func() *model.ChatChannel {
+		channel := &model.ChatChannel{
 			Model: gorm.Model{
 				ID:        0,
 				CreatedAt: time.Now(),
@@ -49,19 +26,20 @@ var _ = Describe("Chat repository", func() {
 			Dimension: faker.Username(),
 		}
 
-		outChannel, err := repo.CreateChannel(nil, channel)
+		out, err := chatRepo.CreateChannel(nil, channel)
 		Expect(err).To(BeNil())
-		Expect(outChannel).NotTo(BeNil())
-		Expect(outChannel.ID).To(BeEquivalentTo(1))
+		Expect(out).NotTo(BeNil())
+		Expect(out.ID).To(BeEquivalentTo(channel.ID))
 
-		hook.Reset()
-	})
+		return out
+	}
 
 	Describe("AllChannels", func() {
 		allChannels := (func(ctx context.Context) {
-			out, err := repo.AllChannels(ctx)
+			Expect(createChannel()).NotTo(BeNil())
+			out, err := chatRepo.AllChannels(ctx)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(out).To(HaveLen(1))
+			Expect(len(out) >= 1).To(BeTrue())
 		})
 
 		It("should not error with invalid input", func() {
@@ -76,13 +54,13 @@ var _ = Describe("Chat repository", func() {
 	Describe("FindChanelById", func() {
 		Context("invalid input", func() {
 			It("should not error with invalid context", func() {
-				out, err := repo.FindChannelById(nil, 0)
+				out, err := chatRepo.FindChannelById(nil, 0)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
 
 			It("should error on invalid id", func() {
-				out, err := repo.FindChannelById(context.Background(), 1e19)
+				out, err := chatRepo.FindChannelById(context.Background(), 1e19)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -90,7 +68,8 @@ var _ = Describe("Chat repository", func() {
 
 		Context("valid input", func() {
 			It("should return matching chat channel", func() {
-				out, err := repo.FindChannelById(context.Background(), channel.ID)
+				channel := createChannel()
+				out, err := chatRepo.FindChannelById(context.Background(), channel.ID)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out.ID).To(Equal(channel.ID))
@@ -101,22 +80,24 @@ var _ = Describe("Chat repository", func() {
 
 	Describe("CreateChannel", func() {
 		It("should work", func() {
+			channel := createChannel()
 			channel.Name += "a"
-			outChannel, err := repo.CreateChannel(nil, channel)
+			outChannel, err := chatRepo.CreateChannel(nil, channel)
 			Expect(err).To(HaveOccurred())
 
 			channel.ID = 0
-			outChannel, err = repo.CreateChannel(nil, channel)
+			outChannel, err = chatRepo.CreateChannel(nil, channel)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(outChannel).NotTo(BeNil())
-			Expect(outChannel.ID).To(BeEquivalentTo(2))
+			Expect(outChannel.ID).NotTo(BeEquivalentTo(0))
 		})
 	})
 
 	Describe("UpdateChannel", func() {
 		It("should work", func() {
+			channel := createChannel()
 			channel.Name += "a"
-			outChannel, err := repo.UpdateChannel(nil, channel)
+			outChannel, err := chatRepo.UpdateChannel(nil, channel)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(outChannel).NotTo(BeNil())
 			Expect(outChannel.ID).To(BeEquivalentTo(channel.ID))
@@ -126,65 +107,67 @@ var _ = Describe("Chat repository", func() {
 
 	Describe("Delete", func() {
 		It("should work with valid channel", func() {
-			Expect(repo.DeleteChannel(nil, channel)).To(Succeed())
-			out, err := repo.AllChannels(context.Background())
+			channel := createChannel()
+			Expect(chatRepo.DeleteChannel(nil, channel)).To(Succeed())
+			out, err := chatRepo.FindChannelById(context.Background(), channel.ID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(out).To(BeEmpty())
+			Expect(out).To(BeNil())
 		})
 
 		It("should not error with non-existant channel", func() {
-			channel.ID += 1
-			Expect(repo.DeleteChannel(nil, channel)).To(Succeed())
-			out, err := repo.AllChannels(context.Background())
+			channel := createChannel()
+			channel.ID += 1000
+			Expect(chatRepo.DeleteChannel(nil, channel)).To(Succeed())
+			out, err := chatRepo.FindChannelById(context.Background(), channel.ID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(out).To(HaveLen(1))
+			Expect(out).To(BeNil())
 		})
 
 		It("should not error with invalid channel id", func() {
+			channel := createChannel()
 			channel.ID = 1e19
-			Expect(repo.DeleteChannel(nil, channel)).NotTo(Succeed())
-			out, err := repo.AllChannels(context.Background())
-			Expect(err).NotTo(HaveOccurred())
-			Expect(out).To(HaveLen(1))
+			Expect(chatRepo.DeleteChannel(nil, channel)).NotTo(Succeed())
 		})
 	})
 
 	Describe("FullDelete", func() {
 		It("should work with valid channel", func() {
-			Expect(repo.FullDeleteChannel(nil, channel)).To(Succeed())
-			out, err := repo.AllChannels(context.Background())
+			channel := createChannel()
+			Expect(chatRepo.FullDeleteChannel(nil, channel)).To(Succeed())
+			out, err := chatRepo.FindChannelById(context.Background(), channel.ID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(out).To(BeEmpty())
+			Expect(out).To(BeNil())
 		})
 
 		It("should not error with non-existant channel", func() {
-			channel.ID += 1
-			Expect(repo.FullDeleteChannel(nil, channel)).To(Succeed())
-			out, err := repo.AllChannels(context.Background())
+			channel := createChannel()
+			channel.ID += 2000
+			Expect(chatRepo.FullDeleteChannel(nil, channel)).To(Succeed())
+			out, err := chatRepo.FindChannelById(context.Background(), channel.ID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(out).To(HaveLen(1))
+			Expect(out).To(BeNil())
 		})
 
 		It("should not error with invalid channel id", func() {
+			channel := createChannel()
 			channel.ID = 1e19
-			Expect(repo.FullDeleteChannel(nil, channel)).NotTo(Succeed())
-			out, err := repo.AllChannels(context.Background())
-			Expect(err).NotTo(HaveOccurred())
-			Expect(out).To(HaveLen(1))
+			Expect(chatRepo.FullDeleteChannel(nil, channel)).NotTo(Succeed())
 		})
 	})
 
 	Describe("FindDeleteWithName", func() {
+		var channel *model.ChatChannel
 		BeforeEach(func() {
-			Expect(repo.DeleteChannel(nil, channel)).To(Succeed())
-			out, err := repo.AllChannels(context.Background())
+			channel = createChannel()
+			Expect(chatRepo.DeleteChannel(nil, channel)).To(Succeed())
+			out, err := chatRepo.FindChannelById(context.Background(), channel.ID)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(out).To(BeEmpty())
+			Expect(out).To(BeNil())
 		})
 
 		Context("invalid input", func() {
 			It("should work with invalid ctx", func() {
-				out, err := repo.FindDeletedWithName(nil, channel.Name)
+				out, err := chatRepo.FindDeletedWithName(nil, channel.Name)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out.ID).To(Equal(channel.ID))
@@ -192,7 +175,7 @@ var _ = Describe("Chat repository", func() {
 
 			It("should not error with non-existant channel", func() {
 				channel.Name += "a"
-				out, err := repo.FindDeletedWithName(context.Background(), channel.Name)
+				out, err := chatRepo.FindDeletedWithName(context.Background(), channel.Name)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -200,7 +183,7 @@ var _ = Describe("Chat repository", func() {
 
 		Context("valid input", func() {
 			It("should work with valid channel", func() {
-				out, err := repo.FindDeletedWithName(context.Background(), channel.Name)
+				out, err := chatRepo.FindDeletedWithName(context.Background(), channel.Name)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 				Expect(out.ID).To(Equal(channel.ID))
@@ -210,20 +193,21 @@ var _ = Describe("Chat repository", func() {
 
 	Describe("Authorization", func() {
 		It("should allow adding and removing authorization", func() {
+			channel := createChannel()
 			exampleId := uint(1)
 			exampleChannelIds := []uint{channel.ID}
 
-			channels, err := repo.AuthorizedChannelsForCharacter(nil, uint(exampleId))
+			channels, err := chatRepo.AuthorizedChannelsForCharacter(nil, uint(exampleId))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(channels).To(BeEmpty())
 
-			Expect(repo.ChangeAuthorizationForCharacter(nil, exampleId, exampleChannelIds, true)).To(Succeed())
-			channels, err = repo.AuthorizedChannelsForCharacter(nil, uint(exampleId))
+			Expect(chatRepo.ChangeAuthorizationForCharacter(nil, exampleId, exampleChannelIds, true)).To(Succeed())
+			channels, err = chatRepo.AuthorizedChannelsForCharacter(nil, uint(exampleId))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(channels).To(HaveLen(len(exampleChannelIds)))
 
-			Expect(repo.ChangeAuthorizationForCharacter(nil, exampleId, exampleChannelIds, false)).To(Succeed())
-			channels, err = repo.AuthorizedChannelsForCharacter(nil, uint(exampleId))
+			Expect(chatRepo.ChangeAuthorizationForCharacter(nil, exampleId, exampleChannelIds, false)).To(Succeed())
+			channels, err = chatRepo.AuthorizedChannelsForCharacter(nil, uint(exampleId))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(channels).To(HaveLen(0))
 		})
@@ -231,19 +215,15 @@ var _ = Describe("Chat repository", func() {
 		It("should not commit changes on error", func() {
 			exampleId := uint(1)
 			exampleChannelIds := []uint{1, 2, 1e19}
-			Expect(repo.ChangeAuthorizationForCharacter(nil, exampleId, exampleChannelIds, true)).NotTo(Succeed())
+			Expect(chatRepo.ChangeAuthorizationForCharacter(nil, exampleId, exampleChannelIds, true)).NotTo(Succeed())
 
-			channels, err := repo.AuthorizedChannelsForCharacter(nil, uint(exampleId))
+			channels, err := chatRepo.AuthorizedChannelsForCharacter(nil, uint(exampleId))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(channels).To(BeEmpty())
 		})
 
 		It("should not error on deleting non-existing", func() {
-			Expect(repo.ChangeAuthorizationForCharacter(nil, 1, []uint{1, 2}, false)).To(Succeed())
+			Expect(chatRepo.ChangeAuthorizationForCharacter(nil, 1, []uint{1, 2}, false)).To(Succeed())
 		})
-	})
-
-	AfterEach(func() {
-		dbCloseFunc()
 	})
 })
