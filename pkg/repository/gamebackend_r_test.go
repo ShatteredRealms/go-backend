@@ -232,7 +232,53 @@ var _ = Describe("Gamebackend repository", func() {
 		})
 
 		Context("invalid input", func() {
-			It("", func() {
+			It("should error with nil dimension", func() {
+				out, err := repo.SaveDimension(nil, nil)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+		})
+	})
+
+	Describe("SaveMap", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				m.Name += "a"
+				out, err := repo.SaveMap(nil, m)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out.Id).To(Equal(m.Id))
+				Expect(out.Name).To(Equal(m.Name))
+			})
+		})
+
+		Context("invalid input", func() {
+			It("should error with nil m", func() {
+				out, err := repo.SaveMap(nil, nil)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+		})
+	})
+
+	Describe("FindAllDimensions", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				out, err := repo.FindAllDimensions(nil)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out).To(HaveLen(1))
+			})
+		})
+	})
+
+	Describe("FindAllMaps", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				out, err := repo.FindAllMaps(nil)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out).To(HaveLen(1))
 			})
 		})
 	})

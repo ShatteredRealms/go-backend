@@ -223,6 +223,9 @@ func (r *gamebackendRepository) SaveDimension(
 	ctx context.Context,
 	dimension *model.Dimension,
 ) (*model.Dimension, error) {
+	if dimension == nil {
+		return nil, fmt.Errorf("dimension nil")
+	}
 	log.Logger.WithContext(ctx).Infof("dimension maps: %+v", dimension.Maps)
 	err := r.DB.WithContext(ctx).Save(&dimension).Error
 	if err != nil {
