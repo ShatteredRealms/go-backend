@@ -85,6 +85,10 @@ run: run-character run-chat run-gamebackend
 run-%:
 	go run $(ROOT_DIR)/cmd/$*
 
+run-watch: run-watch-character run-watch-chat run-watch-gamebackend
+run-watch-%:
+	gow run $(ROOT_DIR)/cmd/$*
+
 deploy: aws-docker-login push
 
 buildi: buildi-character buildi-chat buildi-gamebackend

@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/ShatteredRealms/go-backend/pkg/log"
@@ -9,7 +10,7 @@ import (
 	"github.com/uptrace/opentelemetry-go-extra/otellogrus"
 )
 
-func SetupLogger() {
+func SetupLogger(serviceName string) {
 	log.Logger.AddHook(otellogrus.NewHook(
 		otellogrus.WithLevels(
 			logrus.PanicLevel,
@@ -21,6 +22,6 @@ func SetupLogger() {
 	log.Logger.SetLevel(logrus.TraceLevel)
 	log.Logger.SetFormatter(&easy.Formatter{
 		TimestampFormat: "2006-01-02 15:04:05",
-		LogFormat:       "%time% [%lvl%]: %msg%\n",
+		LogFormat:       fmt.Sprintf("%%time%% %s [%%lvl%%]: %%msg%%\n", serviceName),
 	})
 }

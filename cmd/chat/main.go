@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	helpers.SetupLogger()
+	helpers.SetupLogger(chat.ServiceName)
 	conf = config.NewGlobalConfig(context.Background())
 }
 
@@ -46,4 +46,8 @@ func main() {
 	helpers.Check(ctx, err, "register chat service handler endpoint")
 
 	helpers.StartServer(ctx, grpcServer, gwmux, server.GlobalConfig.Chat.Local.Address())
+
+	for {
+
+	}
 }

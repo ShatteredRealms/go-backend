@@ -19,7 +19,7 @@ var (
 )
 
 func init() {
-	helpers.SetupLogger()
+	helpers.SetupLogger(character.ServiceName)
 	conf = config.NewGlobalConfig(context.Background())
 }
 
@@ -47,4 +47,8 @@ func main() {
 	helpers.Check(ctx, err, "registering characters service handler endpoint")
 
 	helpers.StartServer(ctx, grpcServer, gwmux, server.GlobalConfig.Character.Local.Address())
+
+	for {
+
+	}
 }

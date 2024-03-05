@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	helpers.SetupLogger()
+	helpers.SetupLogger(gamebackend.ServiceName)
 	conf = config.NewGlobalConfig(context.Background())
 }
 
@@ -52,4 +52,8 @@ func main() {
 	helpers.Check(ctx, err, "register server manager service handler endpoint")
 
 	helpers.StartServer(ctx, grpcServer, gwmux, server.GlobalConfig.GameBackend.Local.Address())
+
+	for {
+
+	}
 }

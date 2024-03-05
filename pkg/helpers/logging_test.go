@@ -12,7 +12,7 @@ import (
 var _ = Describe("Logging helpers", func() {
 	Describe("SetupLogger", func() {
 		It("Should setup loging", func() {
-			helpers.SetupLogger()
+			helpers.SetupLogger("tests")
 			Expect(log.Logger.GetLevel()).To(Equal(logrus.TraceLevel))
 		})
 	})
