@@ -40,7 +40,7 @@ PROTO_FILES = $(shell find $(PROTO_DIR) -name '*.proto')
 
 MOCK_INTERFACES = $(shell egrep -rl --include="*.go" "type (\w*) interface {" /home/wil/sro/git/go-backend/pkg | sed "s/.go$$//")
 
-
+CMDS = $(shell find /home/wil/sro/git/go-backend/cmd -maxdepth 1 -mindepth 1 -type d | sed "s/^.*\///")
 
 #   _____                    _
 #  |_   _|                  | |
@@ -77,28 +77,28 @@ mocks: clean-mocks
 clean-mocks:
 	rm -rf $(ROOT_DIR)/pkg/mocks
 
-build: build-character build-chat build-gamebackend
+build: $(addprefix build-, $(CMDS))
 build-%:
 	go build -ldflags="-X 'github.com/ShatteredRealms/go-backend/pkg/config/default.Version=$(BASE_VERSION)'" -o $(ROOT_DIR)/bin/$* $(ROOT_DIR)/cmd/$*  
 
-run: run-character run-chat run-gamebackend
+run: $(addprefix run-, $(CMDS))
 run-%:
 	go run $(ROOT_DIR)/cmd/$*
 
-run-watch: run-watch-character run-watch-chat run-watch-gamebackend
+run-watch: $(addprefix run-watch-, $(CMDS))
 run-watch-%:
 	gow run $(ROOT_DIR)/cmd/$*
 
 deploy: aws-docker-login push
 
-buildi: buildi-character buildi-chat buildi-gamebackend
+buildi: $(addprefix buildi-, $(CMDS))
 buildi-%:
 	docker build --build-arg APP_VERSION=$(BASE_VERSION) -t sro-$* -f build/$*.Dockerfile .
 
 aws-docker-login:
 	aws ecr get-login-password | docker login --username AWS --password-stdin $(SRO_BASE_REGISTRY)
 
-pushf: pushf-character pushf-chat pushf-gamebackend
+pushf: $(addprefix pushf-, $(CMDS))
 pushf-%:
 	docker tag sro-$* $(SRO_REGISTRY)/$*:latest
 	docker tag sro-$* $(SRO_REGISTRY)/$*:$(BASE_VERSION)
@@ -107,7 +107,7 @@ pushf-%:
 	docker push $(SRO_REGISTRY)/$*:$(BASE_VERSION)
 	docker push $(SRO_REGISTRY)/$*:$(BASE_VERSION)-$(COMMIT_HASH)
 
-push: push-character push-chat push-gamebackend
+push: $(addprefix push-, $(CMDS))
 push-%: buildi-%
 	docker tag sro-$* $(SRO_REGISTRY)/$*:latest
 	docker tag sro-$* $(SRO_REGISTRY)/$*:$(BASE_VERSION)

@@ -11,14 +11,13 @@ import (
 
 var _ = Describe("Dimension model", func() {
 	var (
-		dimension = &model.Dimension{}
+		dimension *model.Dimension
 	)
 
 	BeforeEach(func() {
-		Expect(faker.FakeData(dimension)).To(Succeed())
-		dimension.Name = "name"
-		dimension.Location = "us-central"
+		dimension, _ = randomDimensionAndMap()
 	})
+
 	Describe("Validation", func() {
 		Context("issues", func() {
 			It("should error with empty name", func() {
@@ -58,8 +57,8 @@ var _ = Describe("Dimension model", func() {
 			var dimensions model.Dimensions
 			dimensions = make([]*model.Dimension, 10)
 			for idx := range dimensions {
-				dimensions[idx] = &model.Dimension{}
-				faker.FakeData(dimensions[idx])
+				dim, _ := randomDimensionAndMap()
+				dimensions[idx] = dim
 			}
 			out := dimensions.ToPb()
 			Expect(out.Dimensions).To(HaveLen(len(dimensions)))

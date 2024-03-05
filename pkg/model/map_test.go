@@ -1,7 +1,6 @@
 package model_test
 
 import (
-	"github.com/bxcodec/faker/v4"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -12,11 +11,11 @@ import (
 var _ = Describe("Map model", func() {
 
 	var (
-		m = &model.Map{}
+		m *model.Map
 	)
 
 	BeforeEach(func() {
-		Expect(faker.FakeData(m)).To(Succeed())
+		_, m = randomDimensionAndMap()
 	})
 
 	validateMap := (func(m *model.Map, pb *pb.Map) {
@@ -37,9 +36,10 @@ var _ = Describe("Map model", func() {
 			var maps model.Maps
 			maps = make([]*model.Map, 10)
 			for idx := range maps {
-				maps[idx] = &model.Map{}
-				faker.FakeData(maps[idx])
+				_, m := randomDimensionAndMap()
+				maps[idx] = m
 			}
+
 			out := maps.ToPb()
 			Expect(out).To(HaveLen(len(maps)))
 			for idx := range maps {
