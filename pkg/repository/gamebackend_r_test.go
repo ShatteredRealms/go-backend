@@ -283,6 +283,203 @@ var _ = Describe("Gamebackend repository", func() {
 		})
 	})
 
+	Describe("FindDimensionByName", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				out, err := repo.FindDimensionByName(nil, dimension.Name)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out.Id).To(Equal(dimension.Id))
+				Expect(out.Name).To(Equal(dimension.Name))
+			})
+		})
+
+		Context("invalid input", func() {
+			It("should return nil for no match", func() {
+				out, err := repo.FindDimensionByName(nil, dimension.Name+"a")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).To(BeNil())
+
+				out, err = repo.FindDimensionByName(nil, "")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+		})
+	})
+
+	Describe("FindMapByName", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				out, err := repo.FindMapByName(nil, m.Name)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out.Id).To(Equal(m.Id))
+				Expect(out.Name).To(Equal(m.Name))
+			})
+		})
+
+		Context("invalid input", func() {
+			It("should return nil for no match", func() {
+				out, err := repo.FindMapByName(nil, m.Name+"a")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).To(BeNil())
+
+				out, err = repo.FindMapByName(nil, "")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+		})
+	})
+
+	Describe("FindMapById", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				out, err := repo.FindMapById(nil, m.Id)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out.Id).To(Equal(m.Id))
+			})
+		})
+
+		Context("invalid input", func() {
+			It("should return nil for no match", func() {
+				id, err := uuid.NewRandom()
+				Expect(err).NotTo(HaveOccurred())
+				out, err := repo.FindMapById(nil, &id)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should return err for nil id", func() {
+				out, err := repo.FindMapById(nil, nil)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+		})
+	})
+
+	Describe("FindDimensionsByIds", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				id, err := uuid.NewRandom()
+				Expect(err).NotTo(HaveOccurred())
+				out, err := repo.FindDimensionsByIds(nil, []*uuid.UUID{dimension.Id, &id})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out).To(HaveLen(1))
+
+				out, err = repo.FindDimensionsByIds(nil, []*uuid.UUID{&id})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out).To(HaveLen(0))
+
+				out, err = repo.FindDimensionsByIds(nil, []*uuid.UUID{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out).To(HaveLen(0))
+			})
+		})
+
+		Context("invalid input", func() {
+
+		})
+	})
+
+	Describe("FindDimensionsByNames", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				name := faker.Username() + "a"
+				Expect(err).NotTo(HaveOccurred())
+				out, err := repo.FindDimensionsByNames(nil, []string{dimension.Name, name})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out).To(HaveLen(1))
+
+				out, err = repo.FindDimensionsByNames(nil, []string{name})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out).To(HaveLen(0))
+
+				out, err = repo.FindDimensionsByNames(nil, []string{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out).To(HaveLen(0))
+			})
+		})
+
+		Context("invalid input", func() {
+
+		})
+	})
+
+	Describe("FindMapsByNames", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				name := faker.Username() + "a"
+				Expect(err).NotTo(HaveOccurred())
+				out, err := repo.FindMapsByNames(nil, []string{m.Name, name})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out).To(HaveLen(1))
+
+				out, err = repo.FindMapsByNames(nil, []string{name})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out).To(HaveLen(0))
+
+				out, err = repo.FindMapsByNames(nil, []string{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out).To(HaveLen(0))
+			})
+		})
+
+		Context("invalid input", func() {
+
+		})
+	})
+
+	Describe("FindDimensionsWithMapIds", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				id, err := uuid.NewRandom()
+				Expect(err).NotTo(HaveOccurred())
+				out, err := repo.FindDimensionsWithMapIds(nil, []*uuid.UUID{m.Id, &id})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out).To(HaveLen(1))
+
+				out, err = repo.FindDimensionsWithMapIds(nil, []*uuid.UUID{&id})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out).To(HaveLen(0))
+
+				out, err = repo.FindDimensionsWithMapIds(nil, []*uuid.UUID{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+				Expect(out).To(HaveLen(0))
+			})
+		})
+
+		Context("invalid input", func() {
+
+		})
+	})
+
+	Describe("WithTrx", func() {
+		Context("valid input", func() {
+			It("should work", func() {
+				Expect(repo.WithTrx(&gorm.DB{})).NotTo(BeNil())
+			})
+		})
+
+		Context("invalid input", func() {
+			It("should use original trx", func() {
+				Expect(repo.WithTrx(nil)).NotTo(BeNil())
+			})
+		})
+	})
+
 	AfterEach(func() {
 		dbCloseFunc()
 	})

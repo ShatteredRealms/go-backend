@@ -294,6 +294,9 @@ func (r *gamebackendRepository) FindDimensionByName(ctx context.Context, name st
 
 // FindMapById implements GamebackendRepository.
 func (r *gamebackendRepository) FindMapById(ctx context.Context, id *uuid.UUID) (*model.Map, error) {
+	if id == nil {
+		return nil, fmt.Errorf("error nil: id")
+	}
 	var m *model.Map
 	result := r.DB.WithContext(ctx).Find(&m, id)
 	if result.Error != nil {
