@@ -8,6 +8,7 @@ type Map struct {
 	Path       string `gorm:"not null"`
 	MaxPlayers uint64
 	Instanced  bool
+	Dimensions Dimensions `gorm:"many2many:dimension_maps"`
 }
 
 type Maps []*Map

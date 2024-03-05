@@ -48,7 +48,7 @@ func (r chatRepository) ChangeAuthorizationForCharacter(ctx context.Context, cha
 
 func (r chatRepository) AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (model.ChatChannels, error) {
 	var channels model.ChatChannels
-	r.DB.
+	r.DB.WithContext(ctx).
 		Model(&model.ChatChannel{}).
 		Joins("JOIN chat_channel_permissions ON chat_channels.id = chat_channel_permissions.channel_id").
 		Where("chat_channel_permissions.character_id = ?", characterId).

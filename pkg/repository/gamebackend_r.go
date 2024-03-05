@@ -351,12 +351,16 @@ func (r *gamebackendRepository) FindMapsByNames(ctx context.Context, names []str
 
 // FindDimensionsWithMapIds implements GamebackendRepository.
 func (r *gamebackendRepository) FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error) {
-	var found model.Dimensions
-	return found, r.DB.WithContext(ctx).
-		Model(&model.Map{}).
-		Where("id IN ?", ids).
-		Association("Maps").
-		Find(&found)
+	var dimensions model.Dimensions
+	return dimensions, r.DB.WithContext(ctx).
+		Model(&model.Dimension{}).
+		Joins("JOIN dimension_maps ON dimensions.id = dimension_maps.dimension_id").
+		Where("dimension_maps.map_id IN ?", ids).
+		Find(&dimensions).Error
+	// Model(&model.Map{}).
+	// Where("id IN ?", ids).
+	// Association("Dimensions").
+	// Find(&dimensions)
 }
 
 // WithTrx implmeents GamebackendRepository.
