@@ -83,6 +83,7 @@ func SetupKafkaWithDocker() func() {
 	fnCleanup := func() {
 		chk(kafkaResource.Close())
 		chk(zookeeperResource.Close())
+		chk(net.Close())
 	}
 
 	return fnCleanup

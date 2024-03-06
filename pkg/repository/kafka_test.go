@@ -17,7 +17,7 @@ var _ = Describe("Kafka repository", func() {
 				cleanupFunc = testdb.SetupKafkaWithDocker()
 				kafka, err := repository.ConnectKafka(config.ServerAddress{
 					Port: 29092,
-					Host: "localhost",
+					Host: "kafka",
 				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(kafka).NotTo(BeNil())
