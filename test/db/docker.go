@@ -20,7 +20,7 @@ const (
 	dbName   = "test"
 )
 
-func SetupKafkaWithDocker() func() {
+func SetupKafkaWithDocker() (func(), *dockertest.Resource, *dockertest.Resource) {
 	pool, err := dockertest.NewPool("")
 	chk(err)
 
@@ -35,30 +35,34 @@ func SetupKafkaWithDocker() func() {
 	chk(err)
 
 	zookeeperRunDockerOpts := &dockertest.RunOptions{
-		Hostname:   "zookeeper",
+		Hostname:   "gozookeeper",
 		Repository: "confluentinc/cp-zookeeper",
 		Tag:        "latest",
-		Env: []string{
-			"ZOOKEEPER_CLIENT_PORT=2181",
-			"ZOOKEEPER_TICK_TIME=2000",
-		},
-		ExposedPorts: []string{"2181/tcp"},
+		Env:        []string{"ZOOKEEPER_CLIENT_PORT=2181"},
+		// PortBindings: map[docker.Port][]docker.PortBinding{
+		// 	"22181/tcp": {{HostIP: "gozookeeper", HostPort: "2181/tcp"}},
+		// },
+		ExposedPorts: []string{"22181/tcp", "2181/tcp"},
 		Networks:     []*dockertest.Network{net},
 	}
 
 	kafkaRunDockerOpts := &dockertest.RunOptions{
-		Hostname:   "kafka",
+		Hostname:   "gokafka",
 		Repository: "confluentinc/cp-kafka",
 		Tag:        "latest",
 		Env: []string{
 			"KAFKA_BROKER_ID=1",
-			"KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181",
-			"KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,PLAINTEXT_HOST://kafka:29092",
+			"KAFKA_ZOOKEEPER_CONNECT=gozookeeper:2181",
+			"KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://gokafka:9092,PLAINTEXT_HOST://gokafka:29092",
 			"KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT",
 			"KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT",
-			"KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1",
+			// "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1",
 		},
-		ExposedPorts: []string{"9092/tcp", "29092/tcp"},
+		PortBindings: map[docker.Port][]docker.PortBinding{
+			"39092/tcp": {{HostIP: "gokafka", HostPort: "29092/tcp"}},
+			"49092/tcp": {{HostIP: "gokafka", HostPort: "9092/tcp"}},
+		},
+		ExposedPorts: []string{"29092/tcp"},
 		Networks:     []*dockertest.Network{net},
 	}
 
@@ -86,7 +90,7 @@ func SetupKafkaWithDocker() func() {
 		chk(net.Close())
 	}
 
-	return fnCleanup
+	return fnCleanup, zookeeperResource, kafkaResource
 }
 
 func SetupMongoWithDocker() (*mongo.Database, func()) {

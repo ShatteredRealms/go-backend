@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net"
 	"strconv"
 	"time"
@@ -35,6 +37,9 @@ func ConnectKafka(address config.ServerAddress) (*kafka.Conn, error) {
 
 	controller, err := currentConn.Controller()
 	if err != nil {
+		if errors.Is(err, io.EOF) {
+			return currentConn, nil
+		}
 		return nil, fmt.Errorf("controller: %v", err)
 	}
 
@@ -55,7 +60,7 @@ func retry(op func() error) error {
 	bo.MaxElapsedTime = time.Minute
 	if err := backoff.Retry(op, bo); err != nil {
 		if bo.NextBackOff() == backoff.Stop {
-			return fmt.Errorf("reached retry deadline")
+			return fmt.Errorf("reached retry deadline: %v", err)
 		}
 
 		return err
