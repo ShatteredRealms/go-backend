@@ -318,4 +318,29 @@ var _ = Describe("Character service", func() {
 			})
 		})
 	})
+
+	Describe("Delete", func() {
+		When("given valid input", func() {
+			It("should try to delete", func() {
+				mockRepository.EXPECT().FindById(ctx, character.ID).Return(character, nil)
+				mockRepository.EXPECT().Delete(ctx, character)
+				err := charService.Delete(ctx, character.ID)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("given invalid input", func() {
+			It("should error on find error", func() {
+				mockRepository.EXPECT().FindById(ctx, character.ID).Return(nil, fakeError)
+				err := charService.Delete(ctx, character.ID)
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("should error on no character found", func() {
+				mockRepository.EXPECT().FindById(ctx, character.ID).Return(nil, nil)
+				err := charService.Delete(ctx, character.ID)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
 })
