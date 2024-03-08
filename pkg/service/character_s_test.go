@@ -343,4 +343,57 @@ var _ = Describe("Character service", func() {
 			})
 		})
 	})
+
+	Describe("FindAll", func() {
+		It("should call repo directly", func() {
+			characters := []*model.Character{character}
+			mockRepository.EXPECT().FindAll(ctx).Return(characters, fakeError)
+			out, err := charService.FindAll(ctx)
+			Expect(err).To(MatchError(fakeError))
+			Expect(out).To(ContainElements(characters))
+		})
+	})
+
+	Describe("FindAllByOwner", func() {
+		It("should call repo directly", func() {
+			characters := []*model.Character{character}
+			mockRepository.EXPECT().FindAllByOwner(ctx, character.OwnerId).Return(characters, fakeError)
+			out, err := charService.FindAllByOwner(ctx, character.OwnerId)
+			Expect(err).To(MatchError(fakeError))
+			Expect(out).To(ContainElements(characters))
+		})
+	})
+
+	Describe("AddPlayTime", func() {
+		var amount uint64
+
+		BeforeEach(func() {
+			nums, err := faker.RandomInt(1, 1e5, 1)
+			Expect(err).NotTo(HaveOccurred())
+			amount = uint64(nums[0])
+		})
+
+		When("given valid input", func() {
+			It("should try to update playtime", func() {
+				mockRepository.EXPECT().FindById(ctx, character.ID).Return(character, nil)
+				charOut := new(model.Character)
+				*charOut = *character
+				charOut.PlayTime += amount
+				mockRepository.EXPECT().Save(ctx, gomock.Any()).Return(charOut, fakeError)
+				out, err := charService.AddPlayTime(ctx, character.ID, amount)
+				Expect(err).To(MatchError(fakeError))
+				Expect(out).To(BeEquivalentTo(charOut.PlayTime))
+			})
+		})
+
+		When("given invalid input", func() {
+			It("should error on find error", func() {
+				mockRepository.EXPECT().FindById(ctx, character.ID).Return(nil, fakeError)
+				out, err := charService.AddPlayTime(ctx, character.ID, amount)
+				Expect(err).To(MatchError(fakeError))
+				Expect(out).To(BeEquivalentTo(0))
+			})
+		})
+	})
+
 })

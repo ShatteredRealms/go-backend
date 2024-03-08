@@ -150,7 +150,7 @@ func (s characterService) AddPlayTime(ctx context.Context, characterId uint, amo
 	}
 
 	character.PlayTime += amount
-	_, err = s.repo.Save(ctx, character)
+	character, err = s.repo.Save(ctx, character)
 
 	return character.PlayTime, err
 }
