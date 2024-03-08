@@ -110,7 +110,7 @@ var _ = Describe("Character service", func() {
 
 	Describe("Edit", func() {
 		When("given valid input", func() {
-			It("should succeed", func() {
+			It("should be able to edit by name", func() {
 				editReq := &pb.EditCharacterRequest{
 					Target: &pb.CharacterTarget{
 						Type: &pb.CharacterTarget_Name{
@@ -159,6 +159,56 @@ var _ = Describe("Character service", func() {
 				Expect(err).To(MatchError(fakeError))
 				Expect(out).To(Equal(character))
 			})
+
+			It("should be able to edit by di", func() {
+				editReq := &pb.EditCharacterRequest{
+					Target: &pb.CharacterTarget{
+						Type: &pb.CharacterTarget_Id{
+							Id: uint64(character.ID),
+						},
+					},
+					OptionalOwnerId: &pb.EditCharacterRequest_OwnerId{
+						OwnerId: faker.Username(),
+					},
+					OptionalNewName: &pb.EditCharacterRequest_NewName{
+						NewName: faker.Username(),
+					},
+					OptionalGender: &pb.EditCharacterRequest_Gender{
+						Gender: "Female",
+					},
+					OptionalRealm: &pb.EditCharacterRequest_Realm{
+						Realm: "Cyborg",
+					},
+					OptionalPlayTime: &pb.EditCharacterRequest_PlayTime{
+						PlayTime: 6,
+					},
+					OptionalLocation: &pb.EditCharacterRequest_Location{
+						Location: &pb.Location{
+							World: faker.Username(),
+							X:     5.0,
+							Y:     4.1,
+							Z:     3.2,
+							Roll:  2.3,
+							Pitch: 1.4,
+							Yaw:   0.5,
+						},
+					},
+				}
+				expectCharacter := new(model.Character)
+				*expectCharacter = *character
+				expectCharacter.OwnerId = editReq.GetOwnerId()
+				expectCharacter.Name = editReq.GetNewName()
+				expectCharacter.Gender = editReq.GetGender()
+				expectCharacter.Realm = editReq.GetRealm()
+				expectCharacter.PlayTime = editReq.GetPlayTime()
+				expectCharacter.Location = *model.LocationFromPb(editReq.GetLocation())
+				mockRepository.EXPECT().FindById(ctx, uint(editReq.Target.GetId())).Return(character, nil)
+				mockRepository.EXPECT().Save(ctx, expectCharacter).Return(character, fakeError)
+
+				out, err := charService.Edit(ctx, editReq)
+				Expect(err).To(MatchError(fakeError))
+				Expect(out).To(Equal(character))
+			})
 		})
 
 		When("given invalid input", func() {
@@ -176,7 +226,7 @@ var _ = Describe("Character service", func() {
 						NewName: faker.Username(),
 					},
 					OptionalGender: &pb.EditCharacterRequest_Gender{
-						Gender: "InvalidGender",
+						Gender: faker.Username(),
 					},
 					OptionalRealm: &pb.EditCharacterRequest_Realm{
 						Realm: "Cyborg",
@@ -207,6 +257,63 @@ var _ = Describe("Character service", func() {
 				mockRepository.EXPECT().FindByName(ctx, editReq.Target.GetName()).Return(character, nil)
 				out, err := charService.Edit(ctx, editReq)
 				Expect(err).To(MatchError(model.ErrInvalidGender))
+				Expect(out).To(BeNil())
+			})
+
+			It("should fail if finding character fails", func() {
+				editReq := &pb.EditCharacterRequest{
+					Target: &pb.CharacterTarget{
+						Type: &pb.CharacterTarget_Id{
+							Id: uint64(character.ID),
+						},
+					},
+					OptionalOwnerId: &pb.EditCharacterRequest_OwnerId{
+						OwnerId: faker.Username(),
+					},
+					OptionalNewName: &pb.EditCharacterRequest_NewName{
+						NewName: faker.Username(),
+					},
+					OptionalGender: &pb.EditCharacterRequest_Gender{
+						Gender: "Female",
+					},
+					OptionalRealm: &pb.EditCharacterRequest_Realm{
+						Realm: "Cyborg",
+					},
+					OptionalPlayTime: &pb.EditCharacterRequest_PlayTime{
+						PlayTime: 6,
+					},
+					OptionalLocation: &pb.EditCharacterRequest_Location{
+						Location: &pb.Location{
+							World: faker.Username(),
+							X:     5.0,
+							Y:     4.1,
+							Z:     3.2,
+							Roll:  2.3,
+							Pitch: 1.4,
+							Yaw:   0.5,
+						},
+					},
+				}
+				expectCharacter := new(model.Character)
+				*expectCharacter = *character
+				expectCharacter.OwnerId = editReq.GetOwnerId()
+				expectCharacter.Name = editReq.GetNewName()
+				expectCharacter.Gender = editReq.GetGender()
+				expectCharacter.Realm = editReq.GetRealm()
+				expectCharacter.PlayTime = editReq.GetPlayTime()
+				expectCharacter.Location = *model.LocationFromPb(editReq.GetLocation())
+				mockRepository.EXPECT().FindById(ctx, uint(editReq.Target.GetId())).Return(character, fakeError)
+				out, err := charService.Edit(ctx, editReq)
+				Expect(err).To(MatchError(fakeError))
+				Expect(out).To(BeNil())
+			})
+
+			It("should fail if unknown target", func() {
+				editReq := &pb.EditCharacterRequest{
+					Target: &pb.CharacterTarget{},
+				}
+				out, err := charService.Edit(ctx, editReq)
+				Expect(err).To(MatchError(model.ErrHandleRequest))
 				Expect(out).To(BeNil())
 			})
 		})

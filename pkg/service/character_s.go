@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
@@ -79,7 +78,7 @@ func (s characterService) Edit(ctx context.Context, character *pb.EditCharacterR
 	case *pb.CharacterTarget_Name:
 		currentCharacter, err = s.FindByName(ctx, target.Name)
 	default:
-		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
+		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
 		return nil, model.ErrHandleRequest
 	}
 
