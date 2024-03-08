@@ -87,32 +87,31 @@ func (s characterService) Edit(ctx context.Context, character *pb.EditCharacterR
 	}
 
 	if character.OptionalNewName != nil &&
-		character.OptionalNewName.(*pb.EditCharacterRequest_NewName).NewName != "" {
-		currentCharacter.Name = character.OptionalNewName.(*pb.EditCharacterRequest_NewName).NewName
+		character.GetNewName() != "" {
+		currentCharacter.Name = character.GetNewName()
 	}
 	if character.OptionalOwnerId != nil &&
-		character.OptionalOwnerId.(*pb.EditCharacterRequest_OwnerId).OwnerId != "" {
-		currentCharacter.OwnerId = character.OptionalOwnerId.(*pb.EditCharacterRequest_OwnerId).OwnerId
+		character.GetOwnerId() != "" {
+		currentCharacter.OwnerId = character.GetOwnerId()
 	}
 
 	if character.OptionalPlayTime != nil {
-		currentCharacter.PlayTime = character.OptionalPlayTime.(*pb.EditCharacterRequest_PlayTime).PlayTime
+		currentCharacter.PlayTime = character.GetPlayTime()
 	}
 
 	if character.OptionalGender != nil &&
-		character.OptionalGender.(*pb.EditCharacterRequest_Gender).Gender != "" {
-		currentCharacter.Gender = character.OptionalGender.(*pb.EditCharacterRequest_Gender).Gender
+		character.GetGender() != "" {
+		currentCharacter.Gender = character.GetGender()
 	}
 
 	if character.OptionalRealm != nil &&
-		character.OptionalRealm.(*pb.EditCharacterRequest_Realm).Realm != "" {
-		currentCharacter.Realm = character.OptionalRealm.(*pb.EditCharacterRequest_Realm).Realm
+		character.GetRealm() != "" {
+		currentCharacter.Realm = character.GetRealm()
 	}
 
 	if character.OptionalLocation != nil &&
-		character.OptionalLocation.(*pb.EditCharacterRequest_Location).Location.World != "" {
-		location := character.OptionalLocation.(*pb.EditCharacterRequest_Location).Location
-		currentCharacter.Location = *model.LocationFromPb(location)
+		character.GetLocation().World != "" {
+		currentCharacter.Location = *model.LocationFromPb(character.GetLocation())
 	}
 
 	err = currentCharacter.Validate()
