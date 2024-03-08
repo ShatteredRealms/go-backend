@@ -248,6 +248,7 @@ func (s chatService) getUserMessageWriter(ctx context.Context, username string) 
 			Addr:     s.kafkaConn.RemoteAddr(),
 			Topic:    topicNameFromUser(username),
 			Balancer: &kafka.LeastBytes{},
+			Async:    true,
 		}
 	}
 

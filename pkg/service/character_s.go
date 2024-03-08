@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
-	"github.com/ShatteredRealms/go-backend/pkg/log"
 )
 
 type CharacterService interface {

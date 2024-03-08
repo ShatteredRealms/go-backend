@@ -265,6 +265,7 @@ var _ = Describe("Gamebackend repository", func() {
 	Describe("FindAllDimensions", func() {
 		When("given valid input", func() {
 			It("should work", func() {
+				createModels()
 				out, err := gamebackendRepo.FindAllDimensions(nil)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
@@ -276,6 +277,7 @@ var _ = Describe("Gamebackend repository", func() {
 	Describe("FindAllMaps", func() {
 		When("given valid input", func() {
 			It("should work", func() {
+				createModels()
 				out, err := gamebackendRepo.FindAllMaps(nil)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())

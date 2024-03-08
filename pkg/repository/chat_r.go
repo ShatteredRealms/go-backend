@@ -79,12 +79,7 @@ func (r chatRepository) FullDeleteChannel(ctx context.Context, channel *model.Ch
 }
 
 func (r chatRepository) Migrate(ctx context.Context) error {
-	err := r.DB.WithContext(ctx).AutoMigrate(&model.ChatChannel{})
-	if err != nil {
-		return err
-	}
-
-	return r.DB.WithContext(ctx).AutoMigrate(&model.ChatChannelPermission{})
+	return r.DB.WithContext(ctx).AutoMigrate(&model.ChatChannel{}, &model.ChatChannelPermission{})
 }
 
 func (r chatRepository) FindChannelById(ctx context.Context, id uint) (*model.ChatChannel, error) {
