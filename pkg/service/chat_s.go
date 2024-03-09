@@ -18,6 +18,8 @@ var (
 
 	// ErrEmptyMessage thrown when a request to send a message is made with an empty message
 	ErrEmptyMessage = errors.New("message cannot be empty")
+
+	ErrUserNotFound = errors.New("character not found")
 )
 
 type ChatService interface {
@@ -26,6 +28,8 @@ type ChatService interface {
 	UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) (*model.ChatChannel, error)
 	CreateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error)
 	DeleteChannel(ctx context.Context, channel *model.ChatChannel) error
+
+	RegisterCharacterChatTopic(ctx context.Context, username string) error
 
 	SendChannelMessage(ctx context.Context, username string, message string, channelId uint) error
 	SendDirectMessage(ctx context.Context, senderCharacter string, message string, targetCharacter string) error
@@ -99,7 +103,7 @@ func (s chatService) DirectMessagesReader(ctx context.Context, characterName str
 
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  []string{s.kafkaConn.RemoteAddr().String()},
-		Topic:    topicNameFromUser(characterName),
+		Topic:    topicNameFromCharacter(characterName),
 		MinBytes: 1,
 		MaxBytes: 10e3,
 	})
@@ -132,7 +136,7 @@ func (s chatService) SendDirectMessage(ctx context.Context, characterName string
 	if len(message) == 0 {
 		return ErrEmptyMessage
 	}
-	w := s.getUserMessageWriter(ctx, targetCharacterName)
+	w := s.getCharacterMessageWriter(ctx, targetCharacterName)
 
 	return w.WriteMessages(ctx,
 		kafka.Message{
@@ -207,6 +211,11 @@ func NewChatService(ctx context.Context, chatRepo repository.ChatRepository, kaf
 	return service, nil
 }
 
+// RegisterCharacterChatTopic implements ChatService.
+func (service chatService) RegisterCharacterChatTopic(ctx context.Context, username string) error {
+	return service.kafkaConn.CreateTopics(createTopicConfigFromCharacter(username))
+}
+
 func createTopicConfigFromChannel(channel *model.ChatChannel) kafka.TopicConfig {
 	return kafka.TopicConfig{
 		Topic:             topicNameFromChannel(channel.ID),
@@ -215,16 +224,24 @@ func createTopicConfigFromChannel(channel *model.ChatChannel) kafka.TopicConfig 
 	}
 }
 
-func topicNameFromChannel(channelId uint) string {
-	return fmt.Sprintf("chat-channel-%d", channelId)
+func createTopicConfigFromCharacter(name string) kafka.TopicConfig {
+	return kafka.TopicConfig{
+		Topic:             topicNameFromCharacter(name),
+		NumPartitions:     1,
+		ReplicationFactor: 1,
+	}
 }
 
-func topicNameFromUser(username string) string {
-	return fmt.Sprintf("chat-user-%s", username)
+func topicNameFromChannel(channelId uint) string {
+	return fmt.Sprintf("channel-%d", channelId)
+}
+
+func topicNameFromCharacter(name string) string {
+	return fmt.Sprintf("character-%s", name)
 }
 
 func (s chatService) getChannelMessageWriter(ctx context.Context, channelId uint) *kafka.Writer {
-	ctx, span := tracer.Start(ctx, "GetChannelMessageWriter")
+	ctx, span := tracer.Start(ctx, "getChannelMessageWriter")
 	defer span.End()
 
 	if s.channelMessageWriters[channelId] == nil {
@@ -239,18 +256,18 @@ func (s chatService) getChannelMessageWriter(ctx context.Context, channelId uint
 	return s.channelMessageWriters[channelId]
 }
 
-func (s chatService) getUserMessageWriter(ctx context.Context, username string) *kafka.Writer {
-	ctx, span := tracer.Start(ctx, "GetChannelMessageWriter")
+func (s chatService) getCharacterMessageWriter(ctx context.Context, name string) *kafka.Writer {
+	ctx, span := tracer.Start(ctx, "getCharacterMessageWriter")
 	defer span.End()
 
-	if s.directMessageWriters[username] == nil {
-		s.directMessageWriters[username] = &kafka.Writer{
+	if s.directMessageWriters[name] == nil {
+		s.directMessageWriters[name] = &kafka.Writer{
 			Addr:     s.kafkaConn.RemoteAddr(),
-			Topic:    topicNameFromUser(username),
+			Topic:    topicNameFromCharacter(name),
 			Balancer: &kafka.LeastBytes{},
 			Async:    true,
 		}
 	}
 
-	return s.directMessageWriters[username]
+	return s.directMessageWriters[name]
 }

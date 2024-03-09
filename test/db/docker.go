@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ory/dockertest/v3"
@@ -22,14 +23,14 @@ const (
 )
 
 var (
-	portOffset = 0
+	portOffset = 1
 )
 
 func SetupKafkaWithDocker() (func(), uint) {
 	pool, err := dockertest.NewPool("")
 	chk(err)
 
-	net, err := pool.CreateNetwork("go-testing")
+	net, err := pool.CreateNetwork(fmt.Sprintf("go-testing-%d", time.Now().UnixMilli()))
 	chk(err)
 
 	zooKeeperPort := strconv.Itoa(2182 + portOffset)

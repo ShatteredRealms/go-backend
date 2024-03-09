@@ -110,10 +110,119 @@ var _ = Describe("Chat service", Ordered, func() {
 					Port: kafkaPort,
 					Host: "localhost",
 				})
-
-				Expect(err).To(BeNil())
+				Expect(err).To(Succeed())
 				Expect(chatService).NotTo(BeNil())
 			})
+		})
+	})
+
+	Describe("AllChannels", func() {
+		It("should directly call the repo", func() {
+			mockRepository.EXPECT().AllChannels(gomock.Any()).Return(channels, fakeError)
+			out, err := chatService.AllChannels(nil)
+			Expect(err).To(HaveOccurred())
+			Expect(out).To(ContainElements(channels))
+		})
+	})
+
+	Describe("GetChannel", func() {
+		It("should directly call the repo", func() {
+			mockRepository.EXPECT().FindChannelById(gomock.Any(), uint(1)).Return(channels[0], fakeError)
+			out, err := chatService.GetChannel(nil, uint(1))
+			Expect(err).To(HaveOccurred())
+			Expect(out).To(Equal(channels[0]))
+		})
+	})
+
+	Describe("CreateChannel", func() {
+		When("given invalid data", func() {
+			It("should directly call the repo", func() {
+				mockRepository.EXPECT().CreateChannel(gomock.Any(), channels[0]).Return(channels[0], fakeError)
+				out, err := chatService.CreateChannel(nil, channels[0])
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+		})
+
+		When("given valid data", func() {
+			It("should directly call the repo", func() {
+				mockRepository.EXPECT().CreateChannel(gomock.Any(), channels[0]).Return(channels[0], nil)
+				out, err := chatService.CreateChannel(nil, channels[0])
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).To(Equal(channels[0]))
+			})
+		})
+	})
+
+	Describe("DeleteChannel", func() {
+		When("given invalid data", func() {
+			It("should directly call the repo", func() {
+				mockRepository.EXPECT().DeleteChannel(gomock.Any(), channels[0]).Return(fakeError)
+				err := chatService.DeleteChannel(nil, channels[0])
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		When("given valid data", func() {
+			It("should directly call the repo", func() {
+				mockRepository.EXPECT().DeleteChannel(gomock.Any(), channels[1]).Return(nil)
+				err := chatService.DeleteChannel(nil, channels[1])
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("Sending channel messages", func() {
+		It("should work", func() {
+			reader := chatService.ChannelMessagesReader(context.Background(), channels[0].ID)
+			Expect(reader).NotTo(BeNil())
+
+			user := faker.Username()
+			messageA := faker.Email()
+			messageB := faker.Email()
+			Expect(chatService.SendChannelMessage(context.Background(), user, messageA, channels[0].ID)).To(Succeed())
+			Expect(chatService.SendChannelMessage(context.Background(), user, messageB, channels[0].ID)).To(Succeed())
+			eventuallyFunc := func(g Gomega) (string, error) {
+				message, err := reader.ReadMessage(context.Background())
+				Expect(err).NotTo(HaveOccurred())
+				return fmt.Sprintf("%s: %s", string(message.Key), string(message.Value)), err
+			}
+			Eventually(eventuallyFunc).Within(time.Second).Should(Equal(fmt.Sprintf("%s: %s", user, messageA)))
+			Eventually(eventuallyFunc).Within(time.Second).Should(Equal(fmt.Sprintf("%s: %s", user, messageB)))
+		})
+
+		It("should fail with empty message", func() {
+			Expect(chatService.SendChannelMessage(context.Background(), faker.Username(), "", channels[0].ID)).NotTo(Succeed())
+		})
+	})
+
+	Describe("Sending channel messages", func() {
+		It("should work", func() {
+			// user := faker.Username()
+			// sender := faker.Username() + "a"
+			// Expect(chatService.RegisterCharacterChatTopic(context.Background(), user)).To(Succeed())
+			// reader := chatService.DirectMessagesReader(context.Background(), user)
+			// Expect(reader).NotTo(BeNil())
+			//
+			// messageA := faker.Email()
+			// messageB := faker.Email()
+			// Eventually(chatService.SendDirectMessage(context.Background(), sender, messageA, user)).WithTimeout(time.Second * 5).WithPolling(time.Second).Should(Succeed())
+			// Eventually(chatService.SendDirectMessage(context.Background(), sender, messageB, user)).Should(Succeed())
+			// eventuallyFunc := func(g Gomega) (string, error) {
+			// 	message, err := reader.ReadMessage(context.Background())
+			// 	Expect(err).NotTo(HaveOccurred())
+			// 	return fmt.Sprintf("%s: %s", string(message.Key), string(message.Value)), err
+			// }
+			// Eventually(eventuallyFunc).Within(time.Second).Should(Equal(fmt.Sprintf("%s: %s", sender, messageA)))
+			// Eventually(eventuallyFunc).Within(time.Second).Should(Equal(fmt.Sprintf("%s: %s", sender, messageB)))
+		})
+
+		It("should fail with empty message", func() {
+			Expect(chatService.SendDirectMessage(context.Background(), faker.Username(), "", faker.Username())).NotTo(Succeed())
+		})
+
+		It("should fail if no character exists", func() {
+			Expect(chatService.SendDirectMessage(context.Background(), faker.Username(), faker.Email(), faker.Username())).NotTo(Succeed())
 		})
 	})
 
