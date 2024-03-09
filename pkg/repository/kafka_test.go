@@ -22,7 +22,7 @@ var _ = Describe("Kafka repository", func() {
 				Expect(err).NotTo(HaveOccurred())
 				kafka, err := repository.ConnectKafka(config.ServerAddress{
 					Port: uint(port),
-					Host: "127.0.0.1",
+					Host: "localhost",
 				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(kafka).NotTo(BeNil())
