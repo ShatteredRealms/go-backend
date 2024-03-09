@@ -66,7 +66,7 @@ func SetupKafkaWithDocker() (func(), uint) {
 			docker.Port(kafkaPort + "/tcp"):       {{HostIP: "localhost", HostPort: kafkaPort + "/tcp"}},
 			docker.Port(kafkaBrokerPort + "/tcp"): {{HostIP: "localhost", HostPort: kafkaBrokerPort + "/tcp"}},
 		},
-		ExposedPorts: []string{kafkaPort + "/tcp", kafkaPort + "/tcp"},
+		ExposedPorts: []string{kafkaPort + "/tcp", kafkaBrokerPort + "/tcp"},
 		Networks:     []*dockertest.Network{net},
 	}
 
