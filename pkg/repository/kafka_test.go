@@ -1,8 +1,6 @@
 package repository_test
 
 import (
-	"strconv"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -15,13 +13,10 @@ var _ = Describe("Kafka repository", func() {
 	Describe("ConnectKafka", func() {
 		Context("valid input", func() {
 			It("should work", func() {
-				cleanupFunc, _, kResource := testdb.SetupKafkaWithDocker()
+				cleanupFunc, port := testdb.SetupKafkaWithDocker()
 				defer cleanupFunc()
-				sPort := kResource.GetPort("29093/tcp")
-				port, err := strconv.ParseUint(sPort, 10, 64)
-				Expect(err).NotTo(HaveOccurred())
 				kafka, err := repository.ConnectKafka(config.ServerAddress{
-					Port: uint(port),
+					Port: port,
 					Host: "localhost",
 				})
 				Expect(err).NotTo(HaveOccurred())

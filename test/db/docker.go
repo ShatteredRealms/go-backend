@@ -3,6 +3,7 @@ package testdb
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ory/dockertest/v3"
@@ -20,22 +21,32 @@ const (
 	dbName   = "test"
 )
 
-func SetupKafkaWithDocker() (func(), *dockertest.Resource, *dockertest.Resource) {
+var (
+	portOffset = 0
+)
+
+func SetupKafkaWithDocker() (func(), uint) {
 	pool, err := dockertest.NewPool("")
 	chk(err)
 
 	net, err := pool.CreateNetwork("go-testing")
 	chk(err)
 
+	zooKeeperPort := strconv.Itoa(2182 + portOffset)
+	kafkaPortUint := 29093 + portOffset
+	kafkaPort := strconv.Itoa(kafkaPortUint)
+	kafkaBrokerPort := strconv.Itoa(9093 + portOffset)
+	portOffset++
+
 	zookeeperRunDockerOpts := &dockertest.RunOptions{
 		Hostname:   "gozookeeper",
 		Repository: "confluentinc/cp-zookeeper",
 		Tag:        "latest",
-		Env:        []string{"ZOOKEEPER_CLIENT_PORT=2181"},
-		// PortBindings: map[docker.Port][]docker.PortBinding{
-		// 	"22181/tcp": {{HostIP: "gozookeeper", HostPort: "2181/tcp"}},
-		// },
-		ExposedPorts: []string{"22181/tcp", "2181/tcp"},
+		Env:        []string{"ZOOKEEPER_CLIENT_PORT=" + zooKeeperPort},
+		PortBindings: map[docker.Port][]docker.PortBinding{
+			docker.Port(zooKeeperPort + "/tcp"): {{HostIP: "gozookeeper", HostPort: zooKeeperPort + "/tcp"}},
+		},
+		ExposedPorts: []string{zooKeeperPort + "/tcp", zooKeeperPort + "/tcp"},
 		Networks:     []*dockertest.Network{net},
 	}
 
@@ -45,17 +56,17 @@ func SetupKafkaWithDocker() (func(), *dockertest.Resource, *dockertest.Resource)
 		Tag:        "latest",
 		Env: []string{
 			"KAFKA_BROKER_ID=1",
-			"KAFKA_ZOOKEEPER_CONNECT=gozookeeper:2181",
-			"KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9093,PLAINTEXT_HOST://localhost:29093",
+			"KAFKA_ZOOKEEPER_CONNECT=gozookeeper:" + zooKeeperPort,
+			fmt.Sprintf("KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:%s,PLAINTEXT_HOST://localhost:%s", kafkaBrokerPort, kafkaPort),
 			"KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT",
 			"KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT",
 			// "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1",
 		},
 		PortBindings: map[docker.Port][]docker.PortBinding{
-			"29093/tcp": {{HostIP: "localhost", HostPort: "29093/tcp"}},
-			"9093/tcp":  {{HostIP: "localhost", HostPort: "9093/tcp"}},
+			docker.Port(kafkaPort + "/tcp"):       {{HostIP: "localhost", HostPort: kafkaPort + "/tcp"}},
+			docker.Port(kafkaBrokerPort + "/tcp"): {{HostIP: "localhost", HostPort: kafkaBrokerPort + "/tcp"}},
 		},
-		ExposedPorts: []string{"29093/tcp"},
+		ExposedPorts: []string{kafkaPort + "/tcp", kafkaPort + "/tcp"},
 		Networks:     []*dockertest.Network{net},
 	}
 
@@ -86,7 +97,7 @@ func SetupKafkaWithDocker() (func(), *dockertest.Resource, *dockertest.Resource)
 		chk(err3)
 	}
 
-	return fnCleanup, zookeeperResource, kafkaResource
+	return fnCleanup, uint(kafkaPortUint)
 }
 
 func SetupMongoWithDocker() (*mongo.Database, func()) {

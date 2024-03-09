@@ -3,7 +3,6 @@ package service_test
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/ShatteredRealms/go-backend/pkg/config"
@@ -14,7 +13,6 @@ import (
 	"github.com/bxcodec/faker/v4"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/ory/dockertest/v3"
 	"github.com/sirupsen/logrus/hooks/test"
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
@@ -28,7 +26,6 @@ var _ = Describe("Chat service", Ordered, func() {
 		mockController *gomock.Controller
 		mockRepository *mocks.MockChatRepository
 		cleanupFunc    func()
-		kResource      *dockertest.Resource
 
 		chatService service.ChatService
 
@@ -63,10 +60,7 @@ var _ = Describe("Chat service", Ordered, func() {
 		mockController = gomock.NewController(GinkgoT())
 		mockRepository = mocks.NewMockChatRepository(mockController)
 
-		cleanupFunc, _, kResource = testdb.SetupKafkaWithDocker()
-		sPort := kResource.GetPort("29093/tcp")
-		port, err := strconv.ParseUint(sPort, 10, 64)
-		kafkaPort = uint(port)
+		cleanupFunc, kafkaPort = testdb.SetupKafkaWithDocker()
 		Expect(err).NotTo(HaveOccurred())
 		hook.Reset()
 	})
