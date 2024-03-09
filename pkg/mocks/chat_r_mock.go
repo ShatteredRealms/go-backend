@@ -113,6 +113,21 @@ func (mr *MockChatRepositoryMockRecorder) DeleteChannel(ctx, channel any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteChannel", reflect.TypeOf((*MockChatRepository)(nil).DeleteChannel), ctx, channel)
 }
 
+// FindChannelById mocks base method.
+func (m *MockChatRepository) FindChannelById(ctx context.Context, id uint) (*model.ChatChannel, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindChannelById", ctx, id)
+	ret0, _ := ret[0].(*model.ChatChannel)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindChannelById indicates an expected call of FindChannelById.
+func (mr *MockChatRepositoryMockRecorder) FindChannelById(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindChannelById", reflect.TypeOf((*MockChatRepository)(nil).FindChannelById), ctx, id)
+}
+
 // FindDeletedWithName mocks base method.
 func (m *MockChatRepository) FindDeletedWithName(ctx context.Context, name string) (*model.ChatChannel, error) {
 	m.ctrl.T.Helper()
@@ -128,19 +143,18 @@ func (mr *MockChatRepositoryMockRecorder) FindDeletedWithName(ctx, name any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindDeletedWithName", reflect.TypeOf((*MockChatRepository)(nil).FindDeletedWithName), ctx, name)
 }
 
-// GetChannel mocks base method.
-func (m *MockChatRepository) GetChannel(ctx context.Context, id uint) (*model.ChatChannel, error) {
+// FullDeleteChannel mocks base method.
+func (m *MockChatRepository) FullDeleteChannel(ctx context.Context, channel *model.ChatChannel) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetChannel", ctx, id)
-	ret0, _ := ret[0].(*model.ChatChannel)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "FullDeleteChannel", ctx, channel)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// GetChannel indicates an expected call of GetChannel.
-func (mr *MockChatRepositoryMockRecorder) GetChannel(ctx, id any) *gomock.Call {
+// FullDeleteChannel indicates an expected call of FullDeleteChannel.
+func (mr *MockChatRepositoryMockRecorder) FullDeleteChannel(ctx, channel any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChannel", reflect.TypeOf((*MockChatRepository)(nil).GetChannel), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FullDeleteChannel", reflect.TypeOf((*MockChatRepository)(nil).FullDeleteChannel), ctx, channel)
 }
 
 // Migrate mocks base method.
@@ -158,11 +172,12 @@ func (mr *MockChatRepositoryMockRecorder) Migrate(ctx any) *gomock.Call {
 }
 
 // UpdateChannel mocks base method.
-func (m *MockChatRepository) UpdateChannel(ctx context.Context, channel *model.ChatChannel) error {
+func (m *MockChatRepository) UpdateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateChannel", ctx, channel)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*model.ChatChannel)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // UpdateChannel indicates an expected call of UpdateChannel.

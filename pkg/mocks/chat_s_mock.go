@@ -187,11 +187,12 @@ func (mr *MockChatServiceMockRecorder) SendDirectMessage(ctx, senderCharacter, m
 }
 
 // UpdateChannel mocks base method.
-func (m *MockChatService) UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) error {
+func (m *MockChatService) UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) (*model.ChatChannel, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateChannel", ctx, pb)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*model.ChatChannel)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // UpdateChannel indicates an expected call of UpdateChannel.

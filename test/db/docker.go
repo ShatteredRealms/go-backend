@@ -53,16 +53,16 @@ func SetupKafkaWithDocker() (func(), *dockertest.Resource, *dockertest.Resource)
 		Env: []string{
 			"KAFKA_BROKER_ID=1",
 			"KAFKA_ZOOKEEPER_CONNECT=gozookeeper:2181",
-			"KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://gokafka:9092,PLAINTEXT_HOST://gokafka:29092",
+			"KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9093,PLAINTEXT_HOST://localhost:29093",
 			"KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT",
 			"KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT",
 			// "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1",
 		},
 		PortBindings: map[docker.Port][]docker.PortBinding{
-			"39092/tcp": {{HostIP: "gokafka", HostPort: "29092/tcp"}},
-			"49092/tcp": {{HostIP: "gokafka", HostPort: "9092/tcp"}},
+			"29093/tcp": {{HostIP: "localhost", HostPort: "29093/tcp"}},
+			"9093/tcp":  {{HostIP: "localhost", HostPort: "9093/tcp"}},
 		},
-		ExposedPorts: []string{"29092/tcp"},
+		ExposedPorts: []string{"29093/tcp"},
 		Networks:     []*dockertest.Network{net},
 	}
 
@@ -85,9 +85,12 @@ func SetupKafkaWithDocker() (func(), *dockertest.Resource, *dockertest.Resource)
 	}))
 
 	fnCleanup := func() {
-		chk(kafkaResource.Close())
-		chk(zookeeperResource.Close())
-		chk(net.Close())
+		err1 := kafkaResource.Close()
+		err2 := zookeeperResource.Close()
+		err3 := net.Close()
+		chk(err1)
+		chk(err2)
+		chk(err3)
 	}
 
 	return fnCleanup, zookeeperResource, kafkaResource

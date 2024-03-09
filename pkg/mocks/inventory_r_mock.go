@@ -55,20 +55,6 @@ func (mr *MockInventoryRepositoryMockRecorder) GetInventory(ctx, characterId any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInventory", reflect.TypeOf((*MockInventoryRepository)(nil).GetInventory), ctx, characterId)
 }
 
-// Migrate mocks base method.
-func (m *MockInventoryRepository) Migrate(ctx context.Context) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Migrate", ctx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Migrate indicates an expected call of Migrate.
-func (mr *MockInventoryRepositoryMockRecorder) Migrate(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Migrate", reflect.TypeOf((*MockInventoryRepository)(nil).Migrate), ctx)
-}
-
 // UpdateInventory mocks base method.
 func (m *MockInventoryRepository) UpdateInventory(ctx context.Context, inventory *model.CharacterInventory) error {
 	m.ctrl.T.Helper()
