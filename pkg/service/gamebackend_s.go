@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
-	"github.com/ShatteredRealms/go-backend/pkg/log"
+	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 )
 
@@ -79,7 +79,7 @@ func NewGamebackendService(
 ) (GamebackendService, error) {
 	err := r.Migrate(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("migrate db: %w", err)
+		return nil, errors.Wrap(err, "migrate db")
 	}
 
 	return &gamebackendService{
@@ -104,14 +104,14 @@ func (s *gamebackendService) CheckPlayerConnection(ctx context.Context, id *uuid
 	}
 
 	if pc.ServerName != serverName {
-		logrus.WithContext(ctx).Warningf("%s requested: %s, but required: %s", pc.Character, serverName, pc.ServerName)
+		log.Logger.WithContext(ctx).Warningf("%s requested: %s, but required: %s", pc.Character, serverName, pc.ServerName)
 		return nil, fmt.Errorf("invalid server")
 	}
 
 	// @TODO(wil): Make expiration time a configuration variable
 	expireTime := pc.CreatedAt.Add(30 * time.Second)
 	if expireTime.Unix() < time.Now().Unix() {
-		logrus.WithContext(ctx).Infof("connection expired for %s", pc.Character)
+		log.Logger.WithContext(ctx).Infof("connection expired for %s", pc.Character)
 		s.gamebackendRepo.DeletePendingConnection(ctx, id)
 		return nil, fmt.Errorf("expired")
 	}

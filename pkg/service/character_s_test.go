@@ -8,8 +8,10 @@ import (
 	"github.com/bxcodec/faker/v4"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus/hooks/test"
 	"go.uber.org/mock/gomock"
 
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/mocks"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
@@ -19,6 +21,8 @@ import (
 var _ = Describe("Character service", func() {
 
 	var (
+		hook *test.Hook
+
 		mockController *gomock.Controller
 		mockRepository *mocks.MockCharacterRepository
 		charService    service.CharacterService
@@ -29,6 +33,8 @@ var _ = Describe("Character service", func() {
 	)
 
 	BeforeEach(func() {
+		log.Logger, hook = test.NewNullLogger()
+
 		var err error
 		ctx = context.Background()
 		mockController = gomock.NewController(GinkgoT())
@@ -58,6 +64,8 @@ var _ = Describe("Character service", func() {
 				Yaw:   1.6,
 			},
 		}
+
+		hook.Reset()
 	})
 
 	Describe("NewCharacterService", func() {

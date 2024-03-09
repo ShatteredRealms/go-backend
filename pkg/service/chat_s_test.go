@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ShatteredRealms/go-backend/pkg/config"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/mocks"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/service"
@@ -56,7 +57,7 @@ var _ = Describe("Chat service", Ordered, func() {
 	)
 
 	BeforeAll(func() {
-		_, hook = test.NewNullLogger()
+		log.Logger, hook = test.NewNullLogger()
 		mockController = gomock.NewController(GinkgoT())
 		mockRepository = mocks.NewMockChatRepository(mockController)
 
