@@ -24,14 +24,7 @@ func SetupKafkaWithDocker() (func(), *dockertest.Resource, *dockertest.Resource)
 	pool, err := dockertest.NewPool("")
 	chk(err)
 
-	var net *dockertest.Network
-	nets, err := pool.NetworksByName("go-testing")
-	if len(nets) == 0 {
-		net, err = pool.CreateNetwork("go-testing")
-		chk(err)
-	} else {
-		net = &nets[0]
-	}
+	net, err := pool.CreateNetwork("go-testing")
 	chk(err)
 
 	zookeeperRunDockerOpts := &dockertest.RunOptions{
