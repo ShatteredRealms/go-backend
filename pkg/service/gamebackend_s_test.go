@@ -16,6 +16,7 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/mocks"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/service"
 )
 
@@ -232,8 +233,255 @@ var _ = Describe("Gamebackend service", func() {
 		})
 	})
 
+	Describe("EditMap", func() {
+		When("given valid input", func() {
+			It("should work", func() {
+				req := &pb.EditMapRequest{
+					Target:             &pb.MapTarget{FindBy: &pb.MapTarget_Name{Name: m.Name}},
+					OptionalName:       &pb.EditMapRequest_Name{Name: faker.Username()},
+					OptionalPath:       &pb.EditMapRequest_Path{Path: faker.Username()},
+					OptionalMaxPlayers: &pb.EditMapRequest_MaxPlayers{MaxPlayers: 123},
+					OptionalInstanced:  &pb.EditMapRequest_Instanced{Instanced: true},
+				}
+				// Note: Maps were not changed so do not need to change
+				expectedOut := &model.Map{}
+				*expectedOut = *m
+				expectedOut.Name = req.GetName()
+				expectedOut.Path = req.GetPath()
+				expectedOut.MaxPlayers = req.GetMaxPlayers()
+				expectedOut.Instanced = req.GetInstanced()
+
+				mockRepository.EXPECT().FindMapByName(gomock.Any(), m.Name).Return(m, nil)
+				mockRepository.EXPECT().SaveMap(gomock.Any(), expectedOut).Return(expectedOut, fakeErr)
+				out, err := gbService.EditMap(ctx, req)
+				Expect(err).To(MatchError(fakeErr))
+				Expect(out).To(Equal(expectedOut))
+			})
+		})
+
+		When("given invalid input", func() {
+			It("should fail if invalid m id", func() {
+				req := &pb.EditMapRequest{
+					Target: &pb.MapTarget{
+						FindBy: &pb.MapTarget_Id{Id: "id"},
+					},
+				}
+				out, err := gbService.EditMap(ctx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error if m not found by id", func() {
+				req := &pb.EditMapRequest{
+					Target: &pb.MapTarget{
+						FindBy: &pb.MapTarget_Id{Id: m.Id.String()},
+					},
+				}
+				mockRepository.EXPECT().FindMapById(gomock.Any(), m.Id).Return(nil, nil)
+				out, err := gbService.EditMap(ctx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error if target type is unknown", func() {
+				req := &pb.EditMapRequest{
+					Target: &pb.MapTarget{},
+					OptionalName: &pb.EditMapRequest_Name{
+						Name: faker.Username(),
+					},
+				}
+				out, err := gbService.EditMap(ctx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+		})
+	})
+
 	Describe("EditDimension", func() {
-		It("should work", func() {
+		When("given valid input", func() {
+			It("should work", func() {
+				req := &pb.EditDimensionRequest{
+					Target: &pb.DimensionTarget{
+						FindBy: &pb.DimensionTarget_Name{Name: dimension.Name},
+					},
+					OptionalName: &pb.EditDimensionRequest_Name{
+						Name: faker.Username(),
+					},
+					OptionalVersion: &pb.EditDimensionRequest_Version{
+						Version: faker.Username(),
+					},
+					EditMaps: true,
+					MapIds:   []string{m.Id.String()},
+					OptionalLocation: &pb.EditDimensionRequest_Location{
+						Location: "us-central",
+					},
+				}
+				// Note: Maps were not changed so do not need to change
+				expectedOut := &model.Dimension{}
+				*expectedOut = *dimension
+				expectedOut.Name = req.GetName()
+				expectedOut.Version = req.GetVersion()
+				expectedOut.Location = req.GetLocation()
+
+				mockRepository.EXPECT().FindDimensionByName(gomock.Any(), dimension.Name).Return(dimension, nil)
+				mockRepository.EXPECT().SaveDimension(gomock.Any(), expectedOut).Return(expectedOut, fakeErr)
+				mockRepository.EXPECT().FindMapsByIds(gomock.Any(), gomock.Any()).Return(model.Maps{m}, nil)
+				out, err := gbService.EditDimension(ctx, req)
+				Expect(err).To(MatchError(fakeErr))
+				Expect(out).To(Equal(expectedOut))
+			})
+		})
+
+		When("given invalid input", func() {
+			It("should fail if invalid dimension id", func() {
+				req := &pb.EditDimensionRequest{
+					Target: &pb.DimensionTarget{
+						FindBy: &pb.DimensionTarget_Id{Id: "id"},
+					},
+				}
+				out, err := gbService.EditDimension(ctx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error if dimension not found by id", func() {
+				req := &pb.EditDimensionRequest{
+					Target: &pb.DimensionTarget{
+						FindBy: &pb.DimensionTarget_Id{Id: dimension.Id.String()},
+					},
+				}
+				mockRepository.EXPECT().FindDimensionById(gomock.Any(), dimension.Id).Return(nil, nil)
+				out, err := gbService.EditDimension(ctx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error if target type is unknown", func() {
+				req := &pb.EditDimensionRequest{
+					Target: &pb.DimensionTarget{},
+					OptionalName: &pb.EditDimensionRequest_Name{
+						Name: faker.Username(),
+					},
+					OptionalVersion: &pb.EditDimensionRequest_Version{
+						Version: faker.Username(),
+					},
+					EditMaps: true,
+					MapIds:   []string{m.Id.String()},
+					OptionalLocation: &pb.EditDimensionRequest_Location{
+						Location: "us-central",
+					},
+				}
+				out, err := gbService.EditDimension(ctx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error if map id is invalid", func() {
+				req := &pb.EditDimensionRequest{
+					Target: &pb.DimensionTarget{
+						FindBy: &pb.DimensionTarget_Name{
+							Name: dimension.Name,
+						},
+					},
+					OptionalName: &pb.EditDimensionRequest_Name{
+						Name: faker.Username(),
+					},
+					OptionalVersion: &pb.EditDimensionRequest_Version{
+						Version: faker.Username(),
+					},
+					EditMaps: true,
+					MapIds:   []string{"id"},
+					OptionalLocation: &pb.EditDimensionRequest_Location{
+						Location: "us-central",
+					},
+				}
+				mockRepository.EXPECT().FindDimensionByName(gomock.Any(), dimension.Name).Return(dimension, nil)
+				out, err := gbService.EditDimension(ctx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error if find map by ids errored", func() {
+				req := &pb.EditDimensionRequest{
+					Target: &pb.DimensionTarget{
+						FindBy: &pb.DimensionTarget_Name{
+							Name: dimension.Name,
+						},
+					},
+					OptionalName: &pb.EditDimensionRequest_Name{
+						Name: faker.Username(),
+					},
+					OptionalVersion: &pb.EditDimensionRequest_Version{
+						Version: faker.Username(),
+					},
+					EditMaps: true,
+					MapIds:   []string{m.Id.String()},
+					OptionalLocation: &pb.EditDimensionRequest_Location{
+						Location: "us-central",
+					},
+				}
+				mockRepository.EXPECT().FindDimensionByName(gomock.Any(), dimension.Name).Return(dimension, nil)
+				mockRepository.EXPECT().FindMapsByIds(gomock.Any(), gomock.Any()).Return(nil, fakeErr)
+				out, err := gbService.EditDimension(ctx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error if any map ids aren't found", func() {
+				req := &pb.EditDimensionRequest{
+					Target: &pb.DimensionTarget{
+						FindBy: &pb.DimensionTarget_Name{
+							Name: dimension.Name,
+						},
+					},
+					OptionalName: &pb.EditDimensionRequest_Name{
+						Name: faker.Username(),
+					},
+					OptionalVersion: &pb.EditDimensionRequest_Version{
+						Version: faker.Username(),
+					},
+					EditMaps: true,
+					MapIds:   []string{m.Id.String()},
+					OptionalLocation: &pb.EditDimensionRequest_Location{
+						Location: "us-central",
+					},
+				}
+				randUUID := uuid.New()
+				mockRepository.EXPECT().FindDimensionByName(gomock.Any(), dimension.Name).Return(dimension, nil)
+				mockRepository.EXPECT().FindMapsByIds(gomock.Any(), gomock.Any()).Return(model.Maps{
+					&model.Map{Model: model.Model{Id: &randUUID}},
+					&model.Map{Model: model.Model{Id: &randUUID}},
+				}, nil)
+				out, err := gbService.EditDimension(ctx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error if target type is unknown", func() {
+				req := &pb.EditDimensionRequest{
+					Target: &pb.DimensionTarget{
+						FindBy: &pb.DimensionTarget_Name{
+							Name: dimension.Name,
+						},
+					},
+					OptionalName: &pb.EditDimensionRequest_Name{
+						Name: faker.Username(),
+					},
+					OptionalVersion: &pb.EditDimensionRequest_Version{
+						Version: faker.Username(),
+					},
+					EditMaps: true,
+					MapIds:   []string{m.Id.String()},
+					OptionalLocation: &pb.EditDimensionRequest_Location{
+						Location: "us-central",
+					},
+				}
+				mockRepository.EXPECT().FindDimensionByName(gomock.Any(), dimension.Name).Return(dimension, nil)
+				mockRepository.EXPECT().FindMapsByIds(gomock.Any(), gomock.Any()).Return(nil, fakeErr)
+				out, err := gbService.EditDimension(ctx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
 
 		})
 	})

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
@@ -170,12 +169,16 @@ func (s *gamebackendService) EditDimension(ctx context.Context, request *pb.Edit
 	case *pb.DimensionTarget_Name:
 		currentDimension, err = s.FindDimensionByName(ctx, target.Name)
 	default:
-		log.Logger.WithContext(ctx).Errorf("dimension target type unknown: %s", reflect.TypeOf(target).Name())
-		return nil, model.ErrHandleRequest
+		log.Logger.WithContext(ctx).Errorf("dimension target type unknown: %+v", request.Target)
+		err = model.ErrHandleRequest
 	}
 
 	if err != nil {
 		return nil, err
+	}
+
+	if currentDimension == nil {
+		return nil, model.ErrDoesNotExist
 	}
 
 	if request.OptionalName != nil {
@@ -193,12 +196,28 @@ func (s *gamebackendService) EditDimension(ctx context.Context, request *pb.Edit
 	if request.EditMaps {
 		ids, err := helpers.ParseUUIDs(request.MapIds)
 		if err != nil {
-			return nil, fmt.Errorf("map ids: %w", err)
+			return nil, errors.Wrap(err, "invalid map ids")
 		}
 
 		maps, err := s.gamebackendRepo.FindMapsByIds(ctx, ids)
 		if err != nil {
-			return nil, fmt.Errorf("getting maps: %w", err)
+			return nil, errors.Wrap(err, "getting maps")
+		}
+
+		if len(ids) != len(maps) {
+			missingIds := make([]*uuid.UUID, len(ids))
+			count := 0
+			mapsSet := make(map[uuid.UUID]struct{})
+			for _, currentMap := range maps {
+				mapsSet[*currentMap.Id] = struct{}{}
+			}
+			for _, id := range ids {
+				if _, ok := mapsSet[*id]; !ok {
+					missingIds[count] = id
+					count++
+				}
+			}
+			return nil, fmt.Errorf("could not find map ids: %v", missingIds)
 		}
 
 		currentDimension.Maps = maps
@@ -222,12 +241,16 @@ func (s *gamebackendService) EditMap(ctx context.Context, request *pb.EditMapReq
 	case *pb.MapTarget_Name:
 		currentMap, err = s.FindMapByName(ctx, target.Name)
 	default:
-		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
-		return nil, model.ErrHandleRequest
+		log.Logger.WithContext(ctx).Errorf("map target type unknown: %+v", request.Target)
+		err = model.ErrHandleRequest
 	}
 
 	if err != nil {
 		return nil, err
+	}
+
+	if currentMap == nil {
+		return nil, model.ErrDoesNotExist
 	}
 
 	if request.OptionalName != nil {

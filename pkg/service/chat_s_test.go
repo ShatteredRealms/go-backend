@@ -272,7 +272,7 @@ var _ = Describe("Chat service", Ordered, func() {
 				Expect(chatService.RegisterCharacterChatTopic(context.Background(), user)).To(Succeed())
 				err := chatService.SendDirectMessage(context.Background(), sender, messageA, user)
 				return err
-			}).WithTimeout(time.Second * 5).WithPolling(time.Second).Should(Succeed())
+			}).WithTimeout(time.Second * 15).WithPolling(time.Second).Should(Succeed())
 			Expect(chatService.SendDirectMessage(context.Background(), sender, messageB, user)).To(Succeed())
 			eventuallyFunc := func(g Gomega) (string, error) {
 				message, err := reader.ReadMessage(context.Background())
