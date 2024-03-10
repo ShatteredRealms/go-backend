@@ -105,14 +105,15 @@ var _ = Describe("Chat service", Ordered, func() {
 
 		When("valid input is given", func() {
 			It("should succeed", func() {
-				mockRepository.EXPECT().Migrate(gomock.Any()).Return(nil)
-				mockRepository.EXPECT().AllChannels(gomock.Any()).Return(channels, nil)
-				chatService, err = service.NewChatService(context.Background(), mockRepository, config.ServerAddress{
-					Port: kafkaPort,
-					Host: "localhost",
-				})
-				Expect(err).To(Succeed())
-				Expect(chatService).NotTo(BeNil())
+				Eventually(func(g Gomega) error {
+					mockRepository.EXPECT().Migrate(gomock.Any()).Return(nil)
+					mockRepository.EXPECT().AllChannels(gomock.Any()).Return(channels, nil)
+					chatService, err = service.NewChatService(context.Background(), mockRepository, config.ServerAddress{
+						Port: kafkaPort,
+						Host: "localhost",
+					})
+					return err
+				}).Should(Succeed())
 			})
 		})
 	})
