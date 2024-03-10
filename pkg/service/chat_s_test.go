@@ -9,6 +9,7 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/mocks"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/service"
 	testdb "github.com/ShatteredRealms/go-backend/test/db"
 	"github.com/bxcodec/faker/v4"
@@ -117,6 +118,66 @@ var _ = Describe("Chat service", Ordered, func() {
 		})
 	})
 
+	Describe("ChangeAuthorizationForCharacter", func() {
+		It("should work", func() {
+			ctx := context.Background()
+			id := uint(1)
+			ids := []uint{1, 2, 3}
+			mockRepository.EXPECT().ChangeAuthorizationForCharacter(ctx, id, ids, true).Return(fakeError)
+			err := chatService.ChangeAuthorizationForCharacter(ctx, id, ids, true)
+			Expect(err).To(MatchError(fakeError))
+		})
+	})
+
+	Describe("AuthorizedChannelsForCharacter", func() {
+		It("should work", func() {
+			ctx := context.Background()
+			id := uint(1)
+			mockRepository.EXPECT().AuthorizedChannelsForCharacter(ctx, id).Return(channels, fakeError)
+			out, err := chatService.AuthorizedChannelsForCharacter(ctx, id)
+			Expect(err).To(MatchError(fakeError))
+			Expect(out).To(ContainElements(channels))
+		})
+	})
+
+	Describe("UpdateChannel", func() {
+		When("given valid input", func() {
+			It("should work", func() {
+				ctx := context.Background()
+				req := &pb.UpdateChatChannelRequest{
+					ChannelId: uint64(channels[0].ID),
+					OptionalName: &pb.UpdateChatChannelRequest_Name{
+						Name: faker.Username(),
+					},
+					OptionalDimension: &pb.UpdateChatChannelRequest_Dimension{
+						Dimension: faker.Username(),
+					},
+				}
+				expectedUpdate := &model.ChatChannel{}
+				*expectedUpdate = *channels[0]
+				expectedUpdate.Name = req.GetName()
+				expectedUpdate.Dimension = req.GetDimension()
+				mockRepository.EXPECT().FindChannelById(gomock.Any(), channels[0].ID).Return(channels[0], nil)
+				mockRepository.EXPECT().UpdateChannel(gomock.Any(), expectedUpdate).Return(expectedUpdate, fakeError)
+				out, err := chatService.UpdateChannel(ctx, req)
+				Expect(err).To(MatchError(fakeError))
+				Expect(out).To(Equal(expectedUpdate))
+			})
+		})
+		When("given valid input", func() {
+			It("should error on not found", func() {
+				ctx := context.Background()
+				req := &pb.UpdateChatChannelRequest{
+					ChannelId: uint64(channels[0].ID),
+				}
+				mockRepository.EXPECT().FindChannelById(gomock.Any(), channels[0].ID).Return(channels[0], fakeError)
+				out, err := chatService.UpdateChannel(ctx, req)
+				Expect(err).To(MatchError(fakeError))
+				Expect(out).To(BeNil())
+			})
+		})
+	})
+
 	Describe("AllChannels", func() {
 		It("should directly call the repo", func() {
 			mockRepository.EXPECT().AllChannels(gomock.Any()).Return(channels, nil).AnyTimes()
@@ -199,23 +260,27 @@ var _ = Describe("Chat service", Ordered, func() {
 
 	Describe("Sending channel messages", func() {
 		It("should work", func() {
-			// user := faker.Username()
-			// sender := faker.Username() + "a"
-			// Expect(chatService.RegisterCharacterChatTopic(context.Background(), user)).To(Succeed())
-			// reader := chatService.DirectMessagesReader(context.Background(), user)
-			// Expect(reader).NotTo(BeNil())
-			//
-			// messageA := faker.Email()
-			// messageB := faker.Email()
-			// Eventually(chatService.SendDirectMessage(context.Background(), sender, messageA, user)).WithTimeout(time.Second * 5).WithPolling(time.Second).Should(Succeed())
-			// Eventually(chatService.SendDirectMessage(context.Background(), sender, messageB, user)).Should(Succeed())
-			// eventuallyFunc := func(g Gomega) (string, error) {
-			// 	message, err := reader.ReadMessage(context.Background())
-			// 	Expect(err).NotTo(HaveOccurred())
-			// 	return fmt.Sprintf("%s: %s", string(message.Key), string(message.Value)), err
-			// }
-			// Eventually(eventuallyFunc).Within(time.Second).Should(Equal(fmt.Sprintf("%s: %s", sender, messageA)))
-			// Eventually(eventuallyFunc).Within(time.Second).Should(Equal(fmt.Sprintf("%s: %s", sender, messageB)))
+			user := faker.Username()
+			sender := faker.Username() + "a"
+			Expect(chatService.RegisterCharacterChatTopic(context.Background(), user)).To(Succeed())
+			reader := chatService.DirectMessagesReader(context.Background(), user)
+			Expect(reader).NotTo(BeNil())
+
+			messageA := faker.Email()
+			messageB := faker.Email()
+			Eventually(func(g Gomega) error {
+				Expect(chatService.RegisterCharacterChatTopic(context.Background(), user)).To(Succeed())
+				err := chatService.SendDirectMessage(context.Background(), sender, messageA, user)
+				return err
+			}).WithTimeout(time.Second * 5).WithPolling(time.Second).Should(Succeed())
+			Expect(chatService.SendDirectMessage(context.Background(), sender, messageB, user)).To(Succeed())
+			eventuallyFunc := func(g Gomega) (string, error) {
+				message, err := reader.ReadMessage(context.Background())
+				Expect(err).NotTo(HaveOccurred())
+				return fmt.Sprintf("%s: %s", string(message.Key), string(message.Value)), err
+			}
+			Eventually(eventuallyFunc).Within(time.Second).Should(Equal(fmt.Sprintf("%s: %s", sender, messageA)))
+			Eventually(eventuallyFunc).Within(time.Second).Should(Equal(fmt.Sprintf("%s: %s", sender, messageB)))
 		})
 
 		It("should fail with empty message", func() {
