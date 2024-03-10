@@ -105,8 +105,8 @@ var _ = Describe("Chat service", Ordered, func() {
 		When("valid input is given", func() {
 			It("should succeed", func() {
 				Eventually(func(g Gomega) error {
-					mockRepository.EXPECT().Migrate(gomock.Any()).Return(nil)
-					mockRepository.EXPECT().AllChannels(gomock.Any()).Return(channels, nil)
+					mockRepository.EXPECT().Migrate(gomock.Any()).Return(nil).AnyTimes()
+					mockRepository.EXPECT().AllChannels(gomock.Any()).Return(channels, nil).AnyTimes()
 					chatService, err = service.NewChatService(context.Background(), mockRepository, config.ServerAddress{
 						Port: kafkaPort,
 						Host: "localhost",
@@ -119,7 +119,7 @@ var _ = Describe("Chat service", Ordered, func() {
 
 	Describe("AllChannels", func() {
 		It("should directly call the repo", func() {
-			mockRepository.EXPECT().AllChannels(gomock.Any()).Return(channels, nil)
+			mockRepository.EXPECT().AllChannels(gomock.Any()).Return(channels, nil).AnyTimes()
 			out, err := chatService.AllChannels(nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(out).To(ContainElements(channels))
