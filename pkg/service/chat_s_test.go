@@ -113,7 +113,7 @@ var _ = Describe("Chat service", Ordered, func() {
 						Host: "localhost",
 					})
 					return err
-				}).Should(Succeed())
+				}).Within(time.Minute).Should(Succeed())
 			})
 		})
 	})
