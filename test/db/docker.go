@@ -3,9 +3,13 @@ package testdb
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
+	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
@@ -25,6 +29,46 @@ const (
 var (
 	portOffset = 1
 )
+
+func SetupKeycloakWithDocker() (func(), *gocloak.GoCloak) {
+	pool, err := dockertest.NewPool("")
+	chk(err)
+
+	fnConfig := func(config *docker.HostConfig) {
+		config.AutoRemove = true
+		config.RestartPolicy = docker.NeverRestart()
+	}
+
+	wd, err := os.Getwd()
+	chk(err)
+	realmExportFile, err := filepath.Abs(fmt.Sprintf("%s/../../test/db/keycloak-realm-export.json", wd))
+	chk(err)
+	keycloakRunDockerOpts := &dockertest.RunOptions{
+		Repository:   "quay.io/keycloak/keycloak",
+		Tag:          "latest",
+		Env:          []string{"KEYCLOAK_ADMIN=admin", "KEYCLOAK_ADMIN_PASSWORD=admin"},
+		Cmd:          []string{"start-dev --import-realm --features=declarative-user-profile"},
+		Mounts:       []string{fmt.Sprintf("%s:/opt/keycloak/data/import/realm-export.json", realmExportFile)},
+		ExposedPorts: []string{"8080/tcp"},
+	}
+
+	keycloakResource, err := pool.RunWithOptions(keycloakRunDockerOpts, fnConfig)
+	chk(err)
+
+	closeFunc := func() {
+		chk(keycloakResource.Close())
+	}
+
+	host := fmt.Sprintf("http://%s", keycloakResource.GetHostPort("8080/tcp"))
+	client := gocloak.NewClient(host)
+
+	pool.Retry(func() error {
+		_, err := http.Get(host + "/realms/default")
+		return err
+	})
+
+	return closeFunc, client
+}
 
 func SetupKafkaWithDocker() (func(), uint) {
 	pool, err := dockertest.NewPool("")

@@ -56,7 +56,7 @@ test:
 	ginkgo --race --cover -covermode atomic -coverprofile=coverage.out --output-dir $(ROOT_DIR)/ $(ROOT_DIR)/...
 
 test-watch:
-	ginkgo watch -p --race --cover -covermode atomic -output-dir=$(ROOT_DIR) $(ROOT_DIR)/...
+	ginkgo watch --race --cover -covermode atomic -output-dir=$(ROOT_DIR) $(ROOT_DIR)/...
 
 report: test
 	go tool cover -func=$(ROOT_DIR)/coverage.out
@@ -67,6 +67,8 @@ report-watch:
 		go tool cover -func=$(ROOT_DIR)/coverprofile.out; \
 		go tool cover -html=$(ROOT_DIR)/coverprofile.out; \
 	done
+
+dev-watch: test-watch report-watch
 
 mocks: clean-mocks
 	mkdir -p $(ROOT_DIR)/pkg/mocks
