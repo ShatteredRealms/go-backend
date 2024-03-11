@@ -158,6 +158,20 @@ func (mr *MockChatServiceMockRecorder) GetChannel(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChannel", reflect.TypeOf((*MockChatService)(nil).GetChannel), ctx, id)
 }
 
+// RegisterCharacterChatTopic mocks base method.
+func (m *MockChatService) RegisterCharacterChatTopic(ctx context.Context, username string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RegisterCharacterChatTopic", ctx, username)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RegisterCharacterChatTopic indicates an expected call of RegisterCharacterChatTopic.
+func (mr *MockChatServiceMockRecorder) RegisterCharacterChatTopic(ctx, username any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterCharacterChatTopic", reflect.TypeOf((*MockChatService)(nil).RegisterCharacterChatTopic), ctx, username)
+}
+
 // SendChannelMessage mocks base method.
 func (m *MockChatService) SendChannelMessage(ctx context.Context, username, message string, channelId uint) error {
 	m.ctrl.T.Helper()

@@ -55,17 +55,17 @@ func SetupKeycloakWithDocker() (func(), *gocloak.GoCloak) {
 	keycloakResource, err := pool.RunWithOptions(keycloakRunDockerOpts, fnConfig)
 	chk(err)
 
-	closeFunc := func() {
-		chk(keycloakResource.Close())
-	}
-
 	host := fmt.Sprintf("http://%s", keycloakResource.GetHostPort("8080/tcp"))
 	client := gocloak.NewClient(host)
 
-	pool.Retry(func() error {
+	chk(pool.Retry(func() error {
 		_, err := http.Get(host + "/realms/default")
 		return err
-	})
+	}))
+
+	closeFunc := func() {
+		chk(keycloakResource.Close())
+	}
 
 	return closeFunc, client
 }
