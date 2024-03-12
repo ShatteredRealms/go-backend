@@ -2,6 +2,7 @@ package srv_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/Nerzal/gocloak/v13"
@@ -26,7 +27,6 @@ var (
 		FirstName:     gocloak.StringP("adminfirstname"),
 		LastName:      gocloak.StringP("adminlastname"),
 		Email:         gocloak.StringP("admin@example.com"),
-		RealmRoles:    &[]string{"super admin"},
 		Credentials: &[]gocloak.CredentialRepresentation{
 			gocloak.CredentialRepresentation{
 				Temporary: gocloak.BoolP(false),
@@ -44,7 +44,6 @@ var (
 		FirstName:     gocloak.StringP("playerfirstname"),
 		LastName:      gocloak.StringP("playerlastname"),
 		Email:         gocloak.StringP("player@example.com"),
-		RealmRoles:    &[]string{"user", "public"},
 		Credentials: &[]gocloak.CredentialRepresentation{
 			gocloak.CredentialRepresentation{
 				Temporary: gocloak.BoolP(false),
@@ -61,15 +60,18 @@ var (
 	incAdminCtx  context.Context
 	incPlayerCtx context.Context
 	incClientCtx context.Context
+
+	fakeErr = fmt.Errorf("error")
 )
 
 func TestSrv(t *testing.T) {
 	var closeFunc func()
+	var err error
 	BeforeSuite(func() {
 		closeFunc, keycloak = testdb.SetupKeycloakWithDocker()
 		Expect(keycloak).NotTo(BeNil())
 		conf = config.NewGlobalConfig(context.Background())
-		token, err := keycloak.LoginClient(
+		clientToken, err = keycloak.LoginClient(
 			context.Background(),
 			conf.Character.Keycloak.ClientId,
 			conf.Character.Keycloak.ClientSecret,
@@ -77,9 +79,35 @@ func TestSrv(t *testing.T) {
 		)
 		Expect(err).NotTo(HaveOccurred())
 
-		*admin.ID, err = keycloak.CreateUser(context.Background(), token.AccessToken, conf.Character.Keycloak.Realm, admin)
+		*admin.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, conf.Character.Keycloak.Realm, admin)
 		Expect(err).NotTo(HaveOccurred())
-		*player.ID, err = keycloak.CreateUser(context.Background(), token.AccessToken, conf.Character.Keycloak.Realm, player)
+		*player.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, conf.Character.Keycloak.Realm, player)
+		Expect(err).NotTo(HaveOccurred())
+
+		saRole, err := keycloak.GetRealmRole(context.Background(), clientToken.AccessToken, conf.Character.Keycloak.Realm, "super admin")
+		Expect(err).NotTo(HaveOccurred())
+		userRole, err := keycloak.GetRealmRole(context.Background(), clientToken.AccessToken, conf.Character.Keycloak.Realm, "user")
+		Expect(err).NotTo(HaveOccurred())
+		publicRole, err := keycloak.GetRealmRole(context.Background(), clientToken.AccessToken, conf.Character.Keycloak.Realm, "public")
+		Expect(err).NotTo(HaveOccurred())
+
+		err = keycloak.AddRealmRoleToUser(
+			context.Background(),
+			clientToken.AccessToken,
+			conf.Character.Keycloak.Realm,
+			*admin.ID,
+			[]gocloak.Role{*saRole},
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		// add public and user
+		err = keycloak.AddRealmRoleToUser(
+			context.Background(),
+			clientToken.AccessToken,
+			conf.Character.Keycloak.Realm,
+			*player.ID,
+			[]gocloak.Role{*userRole, *publicRole},
+		)
 		Expect(err).NotTo(HaveOccurred())
 
 		adminToken, err = keycloak.GetToken(context.Background(), conf.Character.Keycloak.Realm, gocloak.TokenOptions{
@@ -98,28 +126,22 @@ func TestSrv(t *testing.T) {
 			Password:     gocloak.StringP("Password1!"),
 		})
 		Expect(err).NotTo(HaveOccurred())
-		clientToken, err = keycloak.GetToken(context.Background(), conf.Character.Keycloak.Realm, gocloak.TokenOptions{
-			ClientID:     &conf.Character.Keycloak.ClientId,
-			ClientSecret: &conf.Character.Keycloak.ClientSecret,
-			GrantType:    gocloak.StringP("client_credentials"),
-		})
-		Expect(err).NotTo(HaveOccurred())
 
 		md := metadata.New(
 			map[string]string{
-				"authorization": adminToken.AccessToken,
+				"authorization": "Bearer " + adminToken.AccessToken,
 			},
 		)
 		incAdminCtx = metadata.NewIncomingContext(context.Background(), md)
 		md = metadata.New(
 			map[string]string{
-				"authorization": playerToken.AccessToken,
+				"authorization": "Bearer " + playerToken.AccessToken,
 			},
 		)
 		incPlayerCtx = metadata.NewIncomingContext(context.Background(), md)
 		md = metadata.New(
 			map[string]string{
-				"authorization": clientToken.AccessToken,
+				"authorization": "Bearer " + clientToken.AccessToken,
 			},
 		)
 		incClientCtx = metadata.NewIncomingContext(context.Background(), md)

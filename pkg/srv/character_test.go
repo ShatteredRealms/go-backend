@@ -78,24 +78,84 @@ var _ = Describe("Character server", func() {
 
 	Describe("AddCharacterPlayTime", func() {
 		When("given valid input", func() {
-			It("should work", func() {
+			It("should work given character name", func() {
 				_ = character
-				// req := &pb.AddPlayTimeRequest{
-				// 	Character: &pb.CharacterTarget{
-				// 		Type: &pb.CharacterTarget_Id{Id: uint64(character.ID)},
-				// 	},
-				// 	Time: 100,
-				// }
-				// mockCharService.EXPECT().FindByName(gomock.Any(), character.Name).Return(character, nil)
-				// mockCharService.EXPECT().AddPlayTime(gomock.Any(), character.ID, req.Time).Return(uint64(200), nil)
-				// out, err := server.AddCharacterPlayTime(incClientCtx, req)
-				// Expect(err).NotTo(HaveOccurred())
-				// Expect(out).To(BeEquivalentTo(200))
+				req := &pb.AddPlayTimeRequest{
+					Character: &pb.CharacterTarget{
+						Type: &pb.CharacterTarget_Name{Name: character.Name},
+					},
+					Time: 100,
+				}
+				mockCharService.EXPECT().FindByName(gomock.Any(), character.Name).Return(character, nil)
+				mockCharService.EXPECT().AddPlayTime(gomock.Any(), character.ID, req.Time).Return(uint64(200), nil)
+				out, err := server.AddCharacterPlayTime(incAdminCtx, req)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out.Time).To(BeEquivalentTo(200))
+			})
+			It("should work given character id", func() {
+				_ = character
+				req := &pb.AddPlayTimeRequest{
+					Character: &pb.CharacterTarget{
+						Type: &pb.CharacterTarget_Id{Id: uint64(character.ID)},
+					},
+					Time: 100,
+				}
+				mockCharService.EXPECT().AddPlayTime(gomock.Any(), character.ID, req.Time).Return(uint64(200), nil)
+				out, err := server.AddCharacterPlayTime(incAdminCtx, req)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out.Time).To(BeEquivalentTo(200))
 			})
 		})
 		When("given invalid input", func() {
-			It("should error", func() {
-
+			It("should error if adding playtime fails", func() {
+				_ = character
+				req := &pb.AddPlayTimeRequest{
+					Character: &pb.CharacterTarget{
+						Type: &pb.CharacterTarget_Id{Id: uint64(character.ID)},
+					},
+					Time: 100,
+				}
+				mockCharService.EXPECT().AddPlayTime(gomock.Any(), character.ID, req.Time).Return(uint64(200), fakeErr)
+				out, err := server.AddCharacterPlayTime(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+			It("should error if unable to lookup target", func() {
+				_ = character
+				req := &pb.AddPlayTimeRequest{
+					Character: &pb.CharacterTarget{
+						Type: &pb.CharacterTarget_Name{Name: character.Name},
+					},
+					Time: 100,
+				}
+				mockCharService.EXPECT().FindByName(gomock.Any(), character.Name).Return(character, fakeErr)
+				out, err := server.AddCharacterPlayTime(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+			It("should error if does not have correct privledges", func() {
+				_ = character
+				req := &pb.AddPlayTimeRequest{
+					Character: &pb.CharacterTarget{
+						Type: &pb.CharacterTarget_Id{Id: uint64(character.ID)},
+					},
+					Time: 100,
+				}
+				out, err := server.AddCharacterPlayTime(incPlayerCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+			It("should error if claims are invalid", func() {
+				_ = character
+				req := &pb.AddPlayTimeRequest{
+					Character: &pb.CharacterTarget{
+						Type: &pb.CharacterTarget_Id{Id: uint64(character.ID)},
+					},
+					Time: 100,
+				}
+				out, err := server.AddCharacterPlayTime(context.Background(), req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
 			})
 		})
 	})

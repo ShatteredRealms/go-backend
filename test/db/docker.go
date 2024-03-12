@@ -105,7 +105,6 @@ func SetupKafkaWithDocker() (func(), uint) {
 			fmt.Sprintf("KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:%s,PLAINTEXT_HOST://localhost:%s", kafkaBrokerPort, kafkaPort),
 			"KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT",
 			"KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT",
-			// "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1",
 		},
 		PortBindings: map[docker.Port][]docker.PortBinding{
 			docker.Port(kafkaPort + "/tcp"):       {{HostIP: "localhost", HostPort: kafkaPort + "/tcp"}},
