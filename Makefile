@@ -38,7 +38,7 @@ PROTO_THIRD_PARTY_DIR=$(ROOT_DIR)/third_party
 
 PROTO_FILES = $(shell find $(PROTO_DIR) -name '*.proto')
 
-MOCK_INTERFACES = $(shell egrep -rl --include="*.go" "type (\w*) interface {" /home/wil/sro/git/go-backend/pkg | sed "s/.go$$//")
+MOCK_INTERFACES = $(shell egrep -rl --include="*.go" "type (\w*) interface {" $(ROOT_DIR)/pkg | sed "s/.go$$//")
 
 CMDS = $(shell find /home/wil/sro/git/go-backend/cmd -maxdepth 1 -mindepth 1 -type d | sed "s/^.*\///")
 
