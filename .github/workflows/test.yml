@@ -29,8 +29,7 @@ jobs:
     - name: Set up tools
       run: |
         make install-tools 
-        export GOPATH="$HOME/go"
-        export PATH="$GOPATH/bin:$PATH"
+        echo "$HOME/go/bin" >> $GITHUB_PATH
 
     - name: Build
       run: make build
