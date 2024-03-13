@@ -27,7 +27,10 @@ jobs:
         go-version: 1.22
 
     - name: Set up tools
-      run: make install-tools
+      run: |
+        make install-tools 
+        export GOPATH="$HOME/go"
+        export PATH="$GOPATH/bin:$PATH"
 
     - name: Build
       run: make build
