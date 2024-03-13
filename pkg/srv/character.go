@@ -38,7 +38,7 @@ var (
 
 	RoleCharacterManagementOther = registerCharacterRole(&gocloak.Role{
 		Name:        gocloak.StringP("manage_other"),
-		Description: gocloak.StringP("Allows creating, reading and deleting of any characters"),
+		Description: gocloak.StringP("Allows creating, reading, editing and deleting of any characters"),
 	})
 
 	RoleInventoryManagement = registerCharacterRole(&gocloak.Role{
@@ -147,6 +147,10 @@ func (s *charactersServiceServer) DeleteCharacter(
 		return nil, err
 	}
 
+	if character == nil {
+		return nil, model.ErrDoesNotExist
+	}
+
 	// If not requesting to delete requester own character, verify it has permission to delete others
 	if claims.Subject != character.OwnerId && !claims.HasResourceRole(RoleCharacterManagementOther, model.CharactersClientId) {
 		return nil, model.ErrUnauthorized
@@ -173,16 +177,7 @@ func (s *charactersServiceServer) EditCharacter(
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasResourceRole(RoleCharacterManagement, model.CharactersClientId) {
-		return nil, model.ErrUnauthorized
-	}
-
-	character, err := s.getCharacterFromTarget(ctx, request.Target)
-	if err != nil {
-		return nil, err
-	}
-
-	if character.OwnerId != claims.Subject && !claims.HasResourceRole(RoleCharacterManagementOther, model.CharactersClientId) {
+	if !claims.HasResourceRole(RoleCharacterManagementOther, model.CharactersClientId) {
 		return nil, model.ErrUnauthorized
 	}
 
@@ -223,6 +218,10 @@ func (s *charactersServiceServer) GetCharacter(
 		return nil, err
 	}
 
+	if character == nil {
+		return nil, model.ErrDoesNotExist
+	}
+
 	if character.OwnerId != claims.Subject && !claims.HasResourceRole(RoleCharacterManagementOther, model.CharactersClientId) {
 		log.Logger.WithContext(ctx).Infof("user %s requested character %s without %s", claims.Subject, character.Name, *RoleCharacterManagementOther.Name)
 		return nil, model.ErrUnauthorized
@@ -239,6 +238,11 @@ func (s *charactersServiceServer) GetAllCharactersForUser(
 	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
+		return nil, model.ErrUnauthorized
+	}
+
+	// Validate requester has correct permission
+	if !claims.HasResourceRole(RoleCharacterManagement, model.CharactersClientId) {
 		return nil, model.ErrUnauthorized
 	}
 
@@ -309,6 +313,10 @@ func (s *charactersServiceServer) GetInventory(
 		return nil, err
 	}
 
+	if character == nil {
+		return nil, model.ErrDoesNotExist
+	}
+
 	inv, err := s.server.InventoryService.GetInventory(ctx, character.ID)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -342,6 +350,10 @@ func (s *charactersServiceServer) SetInventory(
 		return nil, err
 	}
 
+	if character == nil {
+		return nil, model.ErrDoesNotExist
+	}
+
 	newInv := &model.CharacterInventory{
 		CharacterId: character.ID,
 		Inventory:   model.InventoryItemsFromPb(request.InventoryItems),
@@ -353,7 +365,7 @@ func (s *charactersServiceServer) SetInventory(
 			return &emptypb.Empty{}, nil
 		}
 
-		return nil, status.Errorf(codes.Internal, "get inventory for %s: %s", character.Name, err.Error())
+		return nil, status.Errorf(codes.Internal, "set inventory for %s: %s", character.Name, err.Error())
 	}
 
 	return &emptypb.Empty{}, nil
