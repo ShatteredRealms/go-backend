@@ -12,7 +12,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    container: ubuntu
     services:
       dind:
         image: docker:23.0-rc-dind-rootless
