@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ShatteredRealms/go-backend/pkg/log"
@@ -60,7 +61,7 @@ func SetupKeycloakWithDocker() (func(), string) {
 		chk(keycloakResource.Close())
 	}
 
-	host := fmt.Sprintf("http://%s", keycloakResource.GetHostPort("8080/tcp"))
+	host := strings.ReplaceAll("http://"+keycloakResource.GetHostPort("8080/tcp"), "localhost", "127.0.0.1")
 
 	chk(Retry(func() error {
 		_, err := http.Get(host)
