@@ -86,9 +86,14 @@ var (
 func TestSrv(t *testing.T) {
 	var closeFunc func()
 	var err error
-	BeforeSuite(func() {
-		closeFunc, keycloak = testdb.SetupKeycloakWithDocker()
-		Expect(keycloak).NotTo(BeNil())
+
+	SynchronizedBeforeSuite(func() []byte {
+		var host string
+		closeFunc, host = testdb.SetupKeycloakWithDocker()
+		Expect(host).NotTo(BeNil())
+		return []byte(host)
+	}, func(host []byte) {
+		keycloak = testdb.ConnectKeycloakDocker(string(host))
 		conf = config.NewGlobalConfig(context.Background())
 		clientToken, err = keycloak.LoginClient(
 			context.Background(),
@@ -178,8 +183,10 @@ func TestSrv(t *testing.T) {
 		incGuestCtx = metadata.NewIncomingContext(context.Background(), md)
 	})
 
-	AfterSuite(func() {
+	SynchronizedAfterSuite(func() {
 		closeFunc()
+	}, func() {
+
 	})
 
 	RegisterFailHandler(Fail)

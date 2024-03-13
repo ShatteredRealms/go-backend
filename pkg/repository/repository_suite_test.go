@@ -2,6 +2,7 @@ package repository_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/ShatteredRealms/go-backend/pkg/log"
@@ -30,11 +31,26 @@ var (
 )
 
 func TestRepository(t *testing.T) {
-	BeforeSuite(func() {
+	splitter := "\n"
+	SynchronizedBeforeSuite(func() []byte {
+		var gdbConnStr, mdbConnStr string
+
+		gdbCloseFunc, gdbConnStr = testdb.SetupGormWithDocker()
+		Expect(gdbCloseFunc).NotTo(BeNil())
+
+		mdbCloseFunc, mdbConnStr = testdb.SetupMongoWithDocker()
+		Expect(mdbCloseFunc).NotTo(BeNil())
+
+		return []byte(gdbConnStr + splitter + mdbConnStr)
+	}, func(hostsBytes []byte) {
 		log.Logger, hook = test.NewNullLogger()
 
-		gdb, gdbCloseFunc = testdb.SetupGormWithDocker()
+		hosts := strings.Split(string(hostsBytes), splitter)
+		Expect(hosts).To(HaveLen(2))
+		gdb = testdb.ConnectGormDocker(hosts[0])
 		Expect(gdb).NotTo(BeNil())
+		mdb = testdb.ConnectMongoDocker(hosts[1])
+		Expect(mdb).NotTo(BeNil())
 
 		characterRepo = repository.NewCharacterRepository(gdb)
 		Expect(characterRepo).NotTo(BeNil())
@@ -47,10 +63,6 @@ func TestRepository(t *testing.T) {
 		gamebackendRepo = repository.NewGamebackendRepository(gdb)
 		Expect(gamebackendRepo).NotTo(BeNil())
 		Expect(gamebackendRepo.Migrate(context.Background())).To(Succeed())
-
-		mdb, mdbCloseFunc = testdb.SetupMongoWithDocker()
-		Expect(mdb).NotTo(BeNil())
-
 		invRepo = repository.NewInventoryRepository(mdb)
 		Expect(invRepo).NotTo(BeNil())
 	})
@@ -59,7 +71,8 @@ func TestRepository(t *testing.T) {
 		log.Logger, hook = test.NewNullLogger()
 	})
 
-	AfterSuite(func() {
+	SynchronizedAfterSuite(func() {
+	}, func() {
 		gdbCloseFunc()
 		mdbCloseFunc()
 	})

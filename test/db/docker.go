@@ -11,8 +11,10 @@ import (
 
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/driver/postgres"
@@ -30,7 +32,7 @@ var (
 	portOffset = 1
 )
 
-func SetupKeycloakWithDocker() (func(), *gocloak.GoCloak) {
+func SetupKeycloakWithDocker() (func(), string) {
 	pool, err := dockertest.NewPool("")
 	chk(err)
 
@@ -55,19 +57,24 @@ func SetupKeycloakWithDocker() (func(), *gocloak.GoCloak) {
 	keycloakResource, err := pool.RunWithOptions(keycloakRunDockerOpts, fnConfig)
 	chk(err)
 
-	host := fmt.Sprintf("http://%s", keycloakResource.GetHostPort("8080/tcp"))
-	client := gocloak.NewClient(host)
-
-	chk(pool.Retry(func() error {
-		_, err := http.Get(host + "/realms/default")
-		return err
-	}))
-
 	closeFunc := func() {
 		chk(keycloakResource.Close())
 	}
 
-	return closeFunc, client
+	host := fmt.Sprintf("http://%s", keycloakResource.GetHostPort("8080/tcp"))
+	return closeFunc, host
+}
+
+func ConnectKeycloakDocker(host string) *gocloak.GoCloak {
+
+	client := gocloak.NewClient(host)
+
+	chk(Retry(func() error {
+		_, err := http.Get(host + "/realms/default")
+		return err
+	}))
+
+	return client
 }
 
 func SetupKafkaWithDocker() (func(), uint) {
@@ -144,7 +151,7 @@ func SetupKafkaWithDocker() (func(), uint) {
 	return fnCleanup, uint(kafkaPortUint)
 }
 
-func SetupMongoWithDocker() (*mongo.Database, func()) {
+func SetupMongoWithDocker() (func(), string) {
 	pool, err := dockertest.NewPool("")
 	chk(err)
 
@@ -167,13 +174,17 @@ func SetupMongoWithDocker() (*mongo.Database, func()) {
 		chk(err)
 	}
 
+	return fnCleanup, fmt.Sprintf("mongodb://root:password@localhost:%s", resource.GetPort("27017/tcp"))
+}
+
+func ConnectMongoDocker(host string) *mongo.Database {
 	var mdb *mongo.Database
-	// retry until db server is ready
-	err = pool.Retry(func() error {
+
+	chk(Retry(func() error {
 		db, err := mongo.Connect(
 			context.TODO(),
 			options.Client().ApplyURI(
-				fmt.Sprintf("mongodb://root:password@localhost:%s", resource.GetPort("27017/tcp")),
+				host,
 			),
 		)
 		if err != nil {
@@ -181,13 +192,12 @@ func SetupMongoWithDocker() (*mongo.Database, func()) {
 		}
 		mdb = db.Database("testdb")
 		return db.Ping(context.TODO(), nil)
-	})
-	chk(err)
+	}))
 
-	return mdb, fnCleanup
+	return mdb
 }
 
-func SetupGormWithDocker() (*gorm.DB, func()) {
+func SetupGormWithDocker() (func(), string) {
 	pool, err := dockertest.NewPool("")
 	chk(err)
 
@@ -210,16 +220,21 @@ func SetupGormWithDocker() (*gorm.DB, func()) {
 		chk(err)
 	}
 
-	conStr := fmt.Sprintf("host=localhost port=%s user=postgres dbname=%s password=%s sslmode=disable",
+	connStr := fmt.Sprintf("host=localhost port=%s user=postgres dbname=%s password=%s sslmode=disable",
 		resource.GetPort("5432/tcp"), // get port of localhost
 		dbName,
 		password,
 	)
 
+	// container is ready, return *gorm.Db for testing
+	return fnCleanup, connStr
+}
+
+func ConnectGormDocker(connStr string) *gorm.DB {
 	var gdb *gorm.DB
 	// retry until db server is ready
-	err = pool.Retry(func() error {
-		gdb, err = gorm.Open(postgres.Open(conStr), &gorm.Config{
+	chk(Retry(func() (err error) {
+		gdb, err = gorm.Open(postgres.Open(connStr), &gorm.Config{
 			Logger: logger.New(
 				log.Logger,
 				logger.Config{
@@ -239,15 +254,29 @@ func SetupGormWithDocker() (*gorm.DB, func()) {
 			return err
 		}
 		return db.Ping()
-	})
-	chk(err)
+	}))
 
 	// container is ready, return *gorm.Db for testing
-	return gdb, fnCleanup
+	return gdb
 }
 
 func chk(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func Retry(op func() error) error {
+	bo := backoff.NewExponentialBackOff()
+	bo.MaxInterval = time.Second
+	bo.MaxElapsedTime = time.Second * 10
+	if err := backoff.Retry(op, bo); err != nil {
+		if bo.NextBackOff() == backoff.Stop {
+			return errors.Wrap(err, "reached retry deadline")
+		}
+
+		return err
+	}
+
+	return nil
 }

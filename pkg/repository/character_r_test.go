@@ -2,7 +2,6 @@ package repository_test
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/bxcodec/faker/v4"
@@ -15,17 +14,13 @@ import (
 
 var _ = Describe("Character repository", func() {
 	var (
-		count = 0
-
 		createCharacter = func() *model.Character {
-			count++
 			character := &model.Character{
-				ID:        0,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 				DeletedAt: 0,
 				OwnerId:   faker.Username(),
-				Name:      fmt.Sprintf("ownerid%d", count),
+				Name:      faker.Username(),
 				Gender:    "Male",
 				Realm:     "Human",
 				PlayTime:  100,
