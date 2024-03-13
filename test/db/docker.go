@@ -72,7 +72,7 @@ func ConnectKeycloakDocker(host string) *gocloak.GoCloak {
 	chk(Retry(func() error {
 		_, err := http.Get(host + "/realms/default")
 		return err
-	}))
+	}, time.Second*60))
 
 	return client
 }
@@ -192,7 +192,7 @@ func ConnectMongoDocker(host string) *mongo.Database {
 		}
 		mdb = db.Database("testdb")
 		return db.Ping(context.TODO(), nil)
-	}))
+	}, time.Second*10))
 
 	return mdb
 }
@@ -254,7 +254,7 @@ func ConnectGormDocker(connStr string) *gorm.DB {
 			return err
 		}
 		return db.Ping()
-	}))
+	}, time.Second*10))
 
 	// container is ready, return *gorm.Db for testing
 	return gdb
@@ -266,10 +266,10 @@ func chk(err error) {
 	}
 }
 
-func Retry(op func() error) error {
+func Retry(op func() error, maxTime time.Duration) error {
 	bo := backoff.NewExponentialBackOff()
 	bo.MaxInterval = time.Second
-	bo.MaxElapsedTime = time.Second * 10
+	bo.MaxElapsedTime = maxTime
 	if err := backoff.Retry(op, bo); err != nil {
 		if bo.NextBackOff() == backoff.Stop {
 			return errors.Wrap(err, "reached retry deadline")
