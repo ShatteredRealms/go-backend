@@ -28,8 +28,8 @@ jobs:
 
     - name: Set up tools
       run: |
-        echo "${HOME}/go/bin" >> $GITHUB_ENV
-        echo "GOPATH=$HOME/go" >> $GITHUB_PATH
+        echo "${HOME}/go/bin" >> $GITHUB_PATH
+        echo "GOPATH=${HOME}/go" >> $GITHUB_ENV
         make install-tools 
 
     - name: Build
