@@ -34,8 +34,6 @@ jobs:
       run: |
         make install-tools
         echo "${HOME}/go/bin" >> $GITHUB_PATH
-        go install github.com/onsi/ginkgo/v2/ginkgo
-        ls ${HOME}/go/bin
         make test
 
     - name: Upload coverage reports to Codecov
