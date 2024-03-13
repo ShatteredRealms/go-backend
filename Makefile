@@ -40,7 +40,7 @@ PROTO_FILES = $(shell find $(PROTO_DIR) -name '*.proto')
 
 MOCK_INTERFACES = $(shell egrep -rl --include="*.go" "type (\w*) interface {" $(ROOT_DIR)/pkg | sed "s/.go$$//")
 
-CMDS = $(shell find /home/wil/sro/git/go-backend/cmd -maxdepth 1 -mindepth 1 -type d | sed "s/^.*\///")
+CMDS = $(shell find $(ROOT_DIR)/cmd -maxdepth 1 -mindepth 1 -type d | sed "s/^.*\///")
 
 #   _____                    _
 #  |_   _|                  | |
