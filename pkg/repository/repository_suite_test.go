@@ -33,6 +33,7 @@ var (
 func TestRepository(t *testing.T) {
 	splitter := "\n"
 	SynchronizedBeforeSuite(func() []byte {
+		log.Logger, hook = test.NewNullLogger()
 		var gdbConnStr, mdbConnStr string
 
 		gdbCloseFunc, gdbConnStr = testdb.SetupGormWithDocker()
@@ -40,6 +41,23 @@ func TestRepository(t *testing.T) {
 
 		mdbCloseFunc, mdbConnStr = testdb.SetupMongoWithDocker()
 		Expect(mdbCloseFunc).NotTo(BeNil())
+
+		gdb = testdb.ConnectGormDocker(gdbConnStr)
+		Expect(gdb).NotTo(BeNil())
+		mdb = testdb.ConnectMongoDocker(mdbConnStr)
+		Expect(mdb).NotTo(BeNil())
+
+		characterRepo = repository.NewCharacterRepository(gdb)
+		Expect(characterRepo).NotTo(BeNil())
+		Expect(characterRepo.Migrate(context.Background())).NotTo(HaveOccurred())
+
+		chatRepo = repository.NewChatRepository(gdb)
+		Expect(chatRepo).NotTo(BeNil())
+		Expect(chatRepo.Migrate(context.Background())).NotTo(HaveOccurred())
+
+		gamebackendRepo = repository.NewGamebackendRepository(gdb)
+		Expect(gamebackendRepo).NotTo(BeNil())
+		Expect(gamebackendRepo.Migrate(context.Background())).NotTo(HaveOccurred())
 
 		return []byte(gdbConnStr + splitter + mdbConnStr)
 	}, func(hostsBytes []byte) {
@@ -54,15 +72,10 @@ func TestRepository(t *testing.T) {
 
 		characterRepo = repository.NewCharacterRepository(gdb)
 		Expect(characterRepo).NotTo(BeNil())
-		Expect(characterRepo.Migrate(context.Background())).To(Succeed())
-
 		chatRepo = repository.NewChatRepository(gdb)
 		Expect(chatRepo).NotTo(BeNil())
-		Expect(chatRepo.Migrate(context.Background())).To(Succeed())
-
 		gamebackendRepo = repository.NewGamebackendRepository(gdb)
 		Expect(gamebackendRepo).NotTo(BeNil())
-		Expect(gamebackendRepo.Migrate(context.Background())).To(Succeed())
 		invRepo = repository.NewInventoryRepository(mdb)
 		Expect(invRepo).NotTo(BeNil())
 	})

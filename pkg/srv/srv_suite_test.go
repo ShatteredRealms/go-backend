@@ -91,9 +91,9 @@ func TestSrv(t *testing.T) {
 		var host string
 		closeFunc, host = testdb.SetupKeycloakWithDocker()
 		Expect(host).NotTo(BeNil())
-		return []byte(host)
-	}, func(host []byte) {
-		keycloak = testdb.ConnectKeycloakDocker(string(host))
+
+		keycloak = gocloak.NewClient(string(host))
+
 		conf = config.NewGlobalConfig(context.Background())
 		clientToken, err = keycloak.LoginClient(
 			context.Background(),
@@ -132,6 +132,18 @@ func TestSrv(t *testing.T) {
 		)
 		Expect(err).NotTo(HaveOccurred())
 
+		return []byte(host)
+	}, func(host []byte) {
+		keycloak = gocloak.NewClient(string(host))
+		conf = config.NewGlobalConfig(context.Background())
+
+		clientToken, err = keycloak.LoginClient(
+			context.Background(),
+			conf.Character.Keycloak.ClientId,
+			conf.Character.Keycloak.ClientSecret,
+			conf.Character.Keycloak.Realm,
+		)
+		Expect(err).NotTo(HaveOccurred())
 		adminToken, err = keycloak.GetToken(context.Background(), conf.Character.Keycloak.Realm, gocloak.TokenOptions{
 			ClientID:     &conf.Character.Keycloak.ClientId,
 			ClientSecret: &conf.Character.Keycloak.ClientSecret,
@@ -156,6 +168,36 @@ func TestSrv(t *testing.T) {
 			Password:     gocloak.StringP("Password1!"),
 		})
 		Expect(err).NotTo(HaveOccurred())
+
+		admins, err := keycloak.GetUsers(
+			context.Background(),
+			clientToken.AccessToken,
+			conf.Character.Keycloak.Realm,
+			gocloak.GetUsersParams{Username: admin.Username},
+		)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(admins).To(HaveLen(1))
+		admin = *admins[0]
+
+		players, err := keycloak.GetUsers(
+			context.Background(),
+			clientToken.AccessToken,
+			conf.Character.Keycloak.Realm,
+			gocloak.GetUsersParams{Username: player.Username},
+		)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(players).To(HaveLen(1))
+		player = *players[0]
+
+		guests, err := keycloak.GetUsers(
+			context.Background(),
+			clientToken.AccessToken,
+			conf.Character.Keycloak.Realm,
+			gocloak.GetUsersParams{Username: guest.Username},
+		)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(guests).To(HaveLen(1))
+		guest = *guests[0]
 
 		md := metadata.New(
 			map[string]string{
@@ -184,9 +226,8 @@ func TestSrv(t *testing.T) {
 	})
 
 	SynchronizedAfterSuite(func() {
-		closeFunc()
 	}, func() {
-
+		closeFunc()
 	})
 
 	RegisterFailHandler(Fail)

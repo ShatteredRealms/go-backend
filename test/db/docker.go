@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ory/dockertest/v3"
@@ -62,19 +61,16 @@ func SetupKeycloakWithDocker() (func(), string) {
 	}
 
 	host := fmt.Sprintf("http://%s", keycloakResource.GetHostPort("8080/tcp"))
-	return closeFunc, host
-}
-
-func ConnectKeycloakDocker(host string) *gocloak.GoCloak {
-
-	client := gocloak.NewClient(host)
 
 	chk(Retry(func() error {
-		_, err := http.Get(host + "/realms/default")
+		_, err := http.Get(host)
 		return err
 	}, time.Second*60))
 
-	return client
+	_, err = http.Get(host + "/realms/default")
+	chk(err)
+
+	return closeFunc, host
 }
 
 func SetupKafkaWithDocker() (func(), uint) {
