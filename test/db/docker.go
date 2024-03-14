@@ -46,6 +46,8 @@ func SetupKeycloakWithDocker() (func(), string) {
 	realmExportFile, err := filepath.Abs(fmt.Sprintf("%s/../../test/db/keycloak-realm-export.json", wd))
 	chk(err)
 	keycloakRunDockerOpts := &dockertest.RunOptions{
+		Name:         "testkeycloak",
+		Hostname:     "testkeycloak",
 		Repository:   "quay.io/keycloak/keycloak",
 		Tag:          "latest",
 		Env:          []string{"KEYCLOAK_ADMIN=admin", "KEYCLOAK_ADMIN_PASSWORD=admin"},
@@ -61,12 +63,31 @@ func SetupKeycloakWithDocker() (func(), string) {
 		chk(keycloakResource.Close())
 	}
 
-	host := strings.ReplaceAll("http://"+keycloakResource.GetHostPort("8080/tcp"), "localhost", "127.0.0.1")
+	host := "http://" + keycloakResource.GetHostPort("8080/tcp")
 
-	chk(Retry(func() error {
+	// try localhost
+	err = Retry(func() error {
 		_, err := http.Get(host)
 		return err
-	}, time.Second*60))
+	}, time.Second*10)
+	if err != nil {
+		// try 127.0.0.1
+		host = strings.ReplaceAll(host, "localhost", "127.0.0.1")
+		err = Retry(func() error {
+			_, err := http.Get(host)
+			return err
+		}, time.Second*10)
+	}
+	if err != nil {
+		// try container hostname
+		err = Retry(func() error {
+			host = strings.ReplaceAll(host, "127.0.0.1", keycloakRunDockerOpts.Hostname)
+			_, err := http.Get(host)
+			return err
+		}, time.Second*10)
+	}
+	if err != nil {
+	}
 
 	_, err = http.Get(host + "/realms/default")
 	chk(err)
