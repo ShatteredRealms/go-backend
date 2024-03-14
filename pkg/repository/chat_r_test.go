@@ -213,7 +213,7 @@ var _ = Describe("Chat repository", func() {
 		})
 
 		It("should not commit changes on error", func() {
-			exampleId := uint(1)
+			exampleId := uint(2)
 			exampleChannelIds := []uint{1, 2, 1e19}
 			Expect(chatRepo.ChangeAuthorizationForCharacter(nil, exampleId, exampleChannelIds, true)).NotTo(Succeed())
 
