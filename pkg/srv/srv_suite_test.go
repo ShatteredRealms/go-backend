@@ -103,8 +103,10 @@ func TestSrv(t *testing.T) {
 		)
 		Expect(err).NotTo(HaveOccurred())
 
+		// Eventually(func() error {
 		*admin.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, conf.Character.Keycloak.Realm, admin)
 		Expect(err).NotTo(HaveOccurred())
+		// }).Within(time.Minute).ProbeEvery(time.Second).ShouldNot(HaveOccurred())
 		*player.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, conf.Character.Keycloak.Realm, player)
 		Expect(err).NotTo(HaveOccurred())
 		*guest.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, conf.Character.Keycloak.Realm, guest)
@@ -227,7 +229,9 @@ func TestSrv(t *testing.T) {
 
 	SynchronizedAfterSuite(func() {
 	}, func() {
-		closeFunc()
+		if closeFunc != nil {
+			closeFunc()
+		}
 	})
 
 	RegisterFailHandler(Fail)
