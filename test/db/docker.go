@@ -69,14 +69,14 @@ func SetupKeycloakWithDocker() (func(), string) {
 	err = Retry(func() error {
 		_, err := http.Get(host)
 		return err
-	}, time.Second*10)
+	}, time.Second*60)
 	if err != nil {
 		// try 127.0.0.1
 		host = strings.ReplaceAll(host, "localhost", "127.0.0.1")
 		err = Retry(func() error {
 			_, err := http.Get(host)
 			return err
-		}, time.Second*10)
+		}, time.Second*60)
 	}
 	if err != nil {
 		// try container hostname
@@ -84,9 +84,15 @@ func SetupKeycloakWithDocker() (func(), string) {
 			host = strings.ReplaceAll(host, "127.0.0.1", keycloakRunDockerOpts.Hostname)
 			_, err := http.Get(host)
 			return err
-		}, time.Second*10)
+		}, time.Second*60)
 	}
 	if err != nil {
+		// try container hostname
+		err = Retry(func() error {
+			host = strings.ReplaceAll(host, "172.17.0.1", keycloakRunDockerOpts.Hostname)
+			_, err := http.Get(host)
+			return err
+		}, time.Second*60)
 	}
 
 	_, err = http.Get(host + "/realms/default")
