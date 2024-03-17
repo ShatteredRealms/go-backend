@@ -359,8 +359,8 @@ github.com/ShatteredRealms/go-backend/pkg/srv/connection.go:379.2,381.8 1 0
 github.com/ShatteredRealms/go-backend/pkg/srv/connection.go:384.94,391.16 2 0
 github.com/ShatteredRealms/go-backend/pkg/srv/connection.go:391.16,393.3 1 0
 github.com/ShatteredRealms/go-backend/pkg/srv/connection.go:395.2,398.8 1 0
-github.com/ShatteredRealms/go-backend/pkg/srv/health.go:13.54,15.2 1 0
-github.com/ShatteredRealms/go-backend/pkg/srv/health.go:17.92,19.2 1 0
+github.com/ShatteredRealms/go-backend/pkg/srv/health.go:13.54,15.2 1 1
+github.com/ShatteredRealms/go-backend/pkg/srv/health.go:17.92,19.2 1 1
 github.com/ShatteredRealms/go-backend/pkg/srv/servermanager.go:46.66,49.2 2 62
 github.com/ShatteredRealms/go-backend/pkg/srv/servermanager.go:61.26,63.16 2 0
 github.com/ShatteredRealms/go-backend/pkg/srv/servermanager.go:63.16,65.3 1 0
