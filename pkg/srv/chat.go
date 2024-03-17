@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/Nerzal/gocloak/v13"
 	chat "github.com/ShatteredRealms/go-backend/cmd/chat/app"
@@ -103,7 +102,11 @@ func (s chatServiceServer) ConnectDirectMessage(
 	}
 
 	char, err := s.verifyUserOwnsCharacter(server.Context(), request)
-	if err != nil {
+	if err == model.ErrNotOwner {
+		if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
+			return model.ErrUnauthorized
+		}
+	} else if err != nil {
 		return model.ErrUnauthorized
 	}
 
@@ -259,6 +262,10 @@ func (s chatServiceServer) GetChannel(
 		return nil, status.Error(codes.Internal, "unable to get chat channel")
 	}
 
+	if c == nil {
+		return nil, model.ErrDoesNotExist
+	}
+
 	return c.ToPb(), nil
 }
 
@@ -394,17 +401,17 @@ func (s chatServiceServer) GetAuthorizedChatChannels(
 		return nil, model.ErrUnauthorized
 	}
 
-	srvCtx, err := s.serverContext(ctx)
-	if err != nil {
-		log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
-		return nil, model.ErrHandleRequest
-	}
-	targetCharacterId, err := helpers.GetCharacterIdFromTarget(srvCtx, s.server.CharacterService, request)
-	if err != nil {
+	character, err := s.verifyUserOwnsCharacter(ctx, request)
+	if err == model.ErrNotOwner {
+		if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
+			return nil, status.Error(codes.PermissionDenied, model.ErrNotOwner.Error())
+		}
+	} else if err != nil || character == nil {
+		log.Logger.WithContext(ctx).Infof("verify owns character failed: %v", err)
 		return nil, err
 	}
 
-	channels, err := s.server.ChatService.AuthorizedChannelsForCharacter(ctx, targetCharacterId)
+	channels, err := s.server.ChatService.AuthorizedChannelsForCharacter(ctx, uint(character.Id))
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("get authorized channels: %v", err)
 		return nil, status.Error(codes.Internal, "unable to get channels")
@@ -428,26 +435,14 @@ func (s chatServiceServer) UpdateUserChatChannelAuthorizations(
 		return nil, model.ErrUnauthorized
 	}
 
-	targetCharacterId := uint(0)
-	switch target := request.Character.Type.(type) {
-	case *pb.CharacterTarget_Name:
-		srvCtx, err := s.serverContext(ctx)
-		if err != nil {
-			log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
-			return nil, model.ErrHandleRequest
-		}
-		targetChar, err := s.server.CharacterService.GetCharacter(srvCtx, request.Character)
-		if err != nil {
-			return nil, err
-		}
-		targetCharacterId = uint(targetChar.Id)
-
-	case *pb.CharacterTarget_Id:
-		targetCharacterId = uint(target.Id)
-
-	default:
-		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(request.Character).Name())
+	srvCtx, err := s.serverContext(ctx)
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
 		return nil, model.ErrHandleRequest
+	}
+	targetCharacterId, err := helpers.GetCharacterIdFromTarget(srvCtx, s.server.CharacterService, request.Character)
+	if err != nil {
+		return nil, err
 	}
 
 	err = s.server.ChatService.ChangeAuthorizationForCharacter(
@@ -530,35 +525,21 @@ func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, request 
 		return nil, model.ErrHandleRequest
 	}
 
-	chars, err := s.server.CharacterService.GetAllCharactersForUser(srvCtx, &pb.UserTarget{
-		Target: &pb.UserTarget_Id{Id: claims.Subject},
-	})
+	character, err := s.server.CharacterService.GetCharacter(srvCtx, request)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("chat character service get for user: %v", err)
 		return nil, status.Errorf(codes.Internal, "unable to verify character")
 	}
 
-	switch target := request.Type.(type) {
-	case *pb.CharacterTarget_Id:
-		for _, c := range chars.Characters {
-			if c.Id == target.Id {
-				return c, nil
-			}
-		}
-
-	case *pb.CharacterTarget_Name:
-		for _, c := range chars.Characters {
-			if c.Name == target.Name {
-				return c, nil
-			}
-		}
-
-	default:
-		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
-		return nil, model.ErrHandleRequest
+	if character == nil {
+		return nil, status.Errorf(codes.Internal, "character does not exist")
 	}
 
-	return nil, status.Errorf(codes.Unauthenticated, "character not found")
+	if character.Owner != claims.Subject {
+		return character, model.ErrNotOwner
+	}
+
+	return character, nil
 }
 
 func (s chatServiceServer) checkUserChannelAuth(ctx context.Context, userId string, channelId uint) error {

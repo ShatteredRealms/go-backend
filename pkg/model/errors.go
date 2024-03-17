@@ -23,6 +23,8 @@ var (
 	// ErrInvalidServerLocation thrown when a server location is unknown
 	ErrInvalidServerLocation = errors.New("invalid server location")
 
+	ErrNotOwner = errors.New("not owner")
+
 	ErrUnauthorized  = status.Error(codes.Unauthenticated, "not authorized")
 	ErrDoesNotExist  = status.Error(codes.InvalidArgument, "does not exist")
 	ErrHandleRequest = status.Error(codes.Internal, "unable to handle request")
