@@ -2,17 +2,16 @@ package repository
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/lib/pq"
 	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
-	"gopkg.in/yaml.v3"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/plugin/dbresolver"
-	"io/ioutil"
-	"time"
 )
 
 // ConnectDB Initializes the connection to a Postgres database
@@ -53,17 +52,17 @@ func ConnectDB(pool config.DBPoolConfig) (*gorm.DB, error) {
 	return db, err
 }
 
-func ConnectFromFile(filePath string) (*gorm.DB, error) {
-	file, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return nil, err
-	}
-
-	c := &config.DBPoolConfig{}
-	err = yaml.Unmarshal(file, c)
-	if err != nil {
-		return nil, err
-	}
-
-	return ConnectDB(*c)
-}
+// func ConnectFromFile(filePath string) (*gorm.DB, error) {
+// 	file, err := ioutil.ReadFile(filePath)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	c := &config.DBPoolConfig{}
+// 	err = yaml.Unmarshal(file, c)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	return ConnectDB(*c)
+// }
