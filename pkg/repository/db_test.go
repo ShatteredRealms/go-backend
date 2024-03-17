@@ -17,16 +17,16 @@ var _ = Describe("Db repository", func() {
 		log.Logger, _ = test.NewNullLogger()
 		pool = config.DBPoolConfig{
 			Master: config.DBConfig{
-				Host:     "127.0.0.1",
-				Port:     "5432",
-				Name:     "postgres",
+				Host:     gormHost,
+				Port:     gormPort,
+				Name:     "test",
 				Username: "postgres",
 				Password: "password",
 			},
 			Slaves: []config.DBConfig{{
-				Host:     "127.0.0.1",
-				Port:     "5432",
-				Name:     "postgres",
+				Host:     gormHost,
+				Port:     gormPort,
+				Name:     "test",
 				Username: "postgres",
 				Password: "password",
 			}},

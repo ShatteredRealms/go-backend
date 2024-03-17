@@ -5,12 +5,14 @@ import (
 	"time"
 
 	"github.com/ShatteredRealms/go-backend/pkg/config"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/lib/pq"
 	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"gorm.io/plugin/dbresolver"
 )
 
@@ -27,7 +29,18 @@ func ConnectDB(pool config.DBPoolConfig) (*gorm.DB, error) {
 	sqlDB.SetMaxIdleConns(10)
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		Conn: sqlDB,
-	}), &gorm.Config{})
+	}), &gorm.Config{
+		Logger: logger.New(
+			log.Logger,
+			logger.Config{
+				SlowThreshold:             0,
+				Colorful:                  true,
+				IgnoreRecordNotFoundError: true,
+				ParameterizedQueries:      true,
+				LogLevel:                  logger.Info,
+			},
+		),
+	})
 
 	if err != nil {
 		return nil, fmt.Errorf("gorm: %w", err)

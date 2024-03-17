@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	username = "root"
-	password = "test"
+	username = "postgres"
+	password = "password"
 	dbName   = "test"
 )
 

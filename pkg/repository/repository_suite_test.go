@@ -20,6 +20,8 @@ var (
 
 	gdb          *gorm.DB
 	gdbCloseFunc func()
+	gormHost     string
+	gormPort     string
 
 	mdb          *mongo.Database
 	mdbCloseFunc func()
@@ -64,7 +66,22 @@ func TestRepository(t *testing.T) {
 		log.Logger, hook = test.NewNullLogger()
 
 		hosts := strings.Split(string(hostsBytes), splitter)
-		Expect(hosts).To(HaveLen(2))
+		splitGormConnStr := strings.Split(hosts[0], " ")
+		Expect(len(splitGormConnStr)).To(BeNumerically(">=", 2))
+		for _, attr := range splitGormConnStr {
+			split := strings.Split(attr, "=")
+			Expect(split).To(HaveLen(2))
+			switch split[0] {
+			case "host":
+				gormHost = split[1]
+			case "port":
+				gormPort = split[1]
+			}
+
+		}
+		Expect(gormHost).NotTo(BeEmpty())
+		Expect(gormPort).NotTo(BeEmpty())
+
 		gdb = testdb.ConnectGormDocker(hosts[0])
 		Expect(gdb).NotTo(BeNil())
 		mdb = testdb.ConnectMongoDocker(hosts[1])
