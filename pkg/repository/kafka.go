@@ -57,7 +57,7 @@ func ConnectKafka(address config.ServerAddress) (*kafka.Conn, error) {
 func retry(op func() error) error {
 	bo := backoff.NewExponentialBackOff()
 	bo.MaxInterval = time.Second
-	bo.MaxElapsedTime = time.Second * 5
+	bo.MaxElapsedTime = time.Second * 15
 	if err := backoff.Retry(op, bo); err != nil {
 		if bo.NextBackOff() == backoff.Stop {
 			return fmt.Errorf("reached retry deadline: %v", err)

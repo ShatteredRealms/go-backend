@@ -123,7 +123,7 @@ func SetupKafkaWithDocker() (func(), uint) {
 		Env: []string{
 			"KAFKA_BROKER_ID=1",
 			"KAFKA_ZOOKEEPER_CONNECT=gozookeeper:" + zooKeeperPort,
-			fmt.Sprintf("KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:%s,PLAINTEXT_HOST://localhost:%s", kafkaBrokerPort, kafkaPort),
+			fmt.Sprintf("KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:%s,PLAINTEXT_HOST://127.0.0.1:%s", kafkaBrokerPort, kafkaPort),
 			"KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT",
 			"KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT",
 		},
@@ -136,7 +136,7 @@ func SetupKafkaWithDocker() (func(), uint) {
 	}
 
 	fnConfig := func(config *docker.HostConfig) {
-		config.AutoRemove = true
+		config.AutoRemove = false
 		config.RestartPolicy = docker.NeverRestart()
 	}
 
@@ -154,10 +154,11 @@ func SetupKafkaWithDocker() (func(), uint) {
 	}))
 
 	fnCleanup := func() {
-		err1 := kafkaResource.Close()
+		// err1 := kafkaResource.Close()
+		_ = kafkaResource
 		err2 := zookeeperResource.Close()
 		err3 := net.Close()
-		chk(err1)
+		// chk(err1)
 		chk(err2)
 		chk(err3)
 	}

@@ -57,6 +57,15 @@ func (s chatServiceServer) ConnectChannel(
 		return model.ErrUnauthorized
 	}
 
+	// Validate requester has chat channel permissions
+	if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
+		err = s.checkUserChannelAuth(server.Context(), claims.ID, uint(request.Id))
+		if err != nil {
+			log.Logger.WithContext(server.Context()).Infof("verify auth failed for %s on channel %d: %v", claims.ID, request.Id, err)
+			return err
+		}
+	}
+
 	r := s.server.ChatService.ChannelMessagesReader(server.Context(), uint(request.Id))
 
 	for {
@@ -133,23 +142,50 @@ func (s chatServiceServer) SendChatMessage(
 		log.Logger.WithContext(ctx).Infof("unauthorized request")
 		return nil, model.ErrUnauthorized
 	}
-
-	if _, err = s.verifyUserOwnsCharacter(
+	character, err := s.verifyUserOwnsCharacter(
 		ctx,
 		&pb.CharacterTarget{Type: &pb.CharacterTarget_Name{Name: request.ChatMessage.CharacterName}},
-	); err != nil {
+	)
+	if err != nil {
 		log.Logger.WithContext(ctx).Infof("verify owns character failed: %v", err)
 		return nil, err
 	}
 
-	// TODO(wil): Validate user can chat in channel
+	// Validate requester has chat channel permissions
+	// @TODO: Optimize by only checking specific channel (cache results)
+	if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
+		serverCtx, err := s.serverContext(ctx)
+		if err != nil {
+			log.Logger.WithContext(ctx).Infof("creating server context: %v", err)
+			return nil, model.ErrHandleRequest
+		}
 
-	if err := s.server.ChatService.SendChannelMessage(
+		channels, err := s.server.ChatService.AuthorizedChannelsForCharacter(serverCtx, uint(character.Id))
+		if err != nil {
+			log.Logger.WithContext(ctx).Infof("verify auth failed for %s on channel %d: %v", claims.ID, request.ChannelId, err)
+			return nil, err
+		}
+
+		canSend := false
+		for _, channel := range channels {
+			if channel.ID == uint(request.ChannelId) {
+				canSend = true
+				break
+			}
+		}
+		if !canSend {
+			log.Logger.WithContext(ctx).Infof("%s attempted sending message to chat channel %d without permission", character.Name, request.ChannelId)
+			return nil, model.ErrUnauthorized
+		}
+	}
+
+	err = s.server.ChatService.SendChannelMessage(
 		ctx,
 		request.ChatMessage.CharacterName,
 		request.ChatMessage.Message,
 		uint(request.ChannelId),
-	); err != nil {
+	)
+	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("send channel chat message: %v", err)
 		return nil, status.Errorf(codes.Internal, "unable to send message")
 	}
@@ -462,6 +498,7 @@ func NewChatServiceServer(
 	}, nil
 }
 
+// @TODO: Cache the token
 func (s chatServiceServer) serverContext(ctx context.Context) (context.Context, error) {
 	token, err := s.server.KeycloakClient.LoginClient(
 		ctx,
@@ -517,9 +554,39 @@ func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, request 
 		}
 
 	default:
-		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(request.Type).Name())
+		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
 		return nil, model.ErrHandleRequest
 	}
 
 	return nil, status.Errorf(codes.Unauthenticated, "character not found")
+}
+
+func (s chatServiceServer) checkUserChannelAuth(ctx context.Context, userId string, channelId uint) error {
+	serverAuthCtx, err := s.serverContext(ctx)
+	if err != nil {
+		return model.ErrHandleRequest
+	}
+
+	characters, err := s.server.CharacterService.GetAllCharactersForUser(serverAuthCtx, &pb.UserTarget{Target: &pb.UserTarget_Id{Id: userId}})
+
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("get characters: %v", err)
+		return model.ErrHandleRequest
+	}
+
+	for _, character := range characters.Characters {
+		channels, err := s.server.ChatService.AuthorizedChannelsForCharacter(serverAuthCtx, uint(character.Id))
+		if err != nil {
+			log.Logger.WithContext(ctx).Errorf("getting authorized channels: %v", err)
+			return model.ErrHandleRequest
+		}
+
+		for _, channel := range channels {
+			if channel.ID == channelId {
+				return nil
+			}
+		}
+	}
+
+	return model.ErrUnauthorized
 }

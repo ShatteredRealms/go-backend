@@ -62,7 +62,6 @@ var _ = Describe("Chat service", Ordered, func() {
 		mockController = gomock.NewController(GinkgoT())
 		mockRepository = mocks.NewMockChatRepository(mockController)
 		cleanupFunc, kafkaPort = testdb.SetupKafkaWithDocker()
-		Expect(err).NotTo(HaveOccurred())
 		hook.Reset()
 	})
 
@@ -72,7 +71,7 @@ var _ = Describe("Chat service", Ordered, func() {
 				mockRepository.EXPECT().Migrate(gomock.Any()).Return(fakeError)
 				chatService, err = service.NewChatService(context.Background(), mockRepository, config.ServerAddress{
 					Port: kafkaPort,
-					Host: "localhost",
+					Host: "127.0.0.1",
 				})
 
 				Expect(err).To(MatchError(fakeError))
@@ -95,7 +94,7 @@ var _ = Describe("Chat service", Ordered, func() {
 				mockRepository.EXPECT().AllChannels(gomock.Any()).Return(model.ChatChannels{}, fakeError)
 				chatService, err = service.NewChatService(context.Background(), mockRepository, config.ServerAddress{
 					Port: kafkaPort,
-					Host: "localhost",
+					Host: "127.0.0.1",
 				})
 
 				Expect(err).To(HaveOccurred())
@@ -110,7 +109,7 @@ var _ = Describe("Chat service", Ordered, func() {
 					mockRepository.EXPECT().AllChannels(gomock.Any()).Return(channels, nil).AnyTimes()
 					chatService, err = service.NewChatService(context.Background(), mockRepository, config.ServerAddress{
 						Port: kafkaPort,
-						Host: "localhost",
+						Host: "127.0.0.1",
 					})
 					return err
 				}).Within(time.Minute).Should(Succeed())

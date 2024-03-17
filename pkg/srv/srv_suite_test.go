@@ -3,6 +3,8 @@ package srv_test
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/Nerzal/gocloak/v13"
@@ -13,11 +15,17 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-const ()
+const (
+	topicName = "testtopic"
+)
 
 var (
+	// Global
+	conf    *config.GlobalConfig
+	fakeErr = fmt.Errorf("error")
+
+	// Keycloak
 	keycloak *gocloak.GoCloak
-	conf     *config.GlobalConfig
 	admin    = gocloak.User{
 		ID:            new(string),
 		Username:      gocloak.StringP("testadmin"),
@@ -80,16 +88,18 @@ var (
 	incClientCtx context.Context
 	incGuestCtx  context.Context
 
-	fakeErr = fmt.Errorf("error")
+	// Kafka
+	kafkaPort uint
 )
 
 func TestSrv(t *testing.T) {
-	var closeFunc func()
+	var keycloakCloseFunc func()
+	var kafkaCloseFunc func()
 	var err error
 
 	SynchronizedBeforeSuite(func() []byte {
 		var host string
-		closeFunc, host = testdb.SetupKeycloakWithDocker()
+		keycloakCloseFunc, host = testdb.SetupKeycloakWithDocker()
 		Expect(host).NotTo(BeNil())
 
 		keycloak = gocloak.NewClient(string(host))
@@ -134,8 +144,21 @@ func TestSrv(t *testing.T) {
 		)
 		Expect(err).NotTo(HaveOccurred())
 
-		return []byte(host)
-	}, func(host []byte) {
+		var kafkaPort uint
+		kafkaCloseFunc, kafkaPort = testdb.SetupKafkaWithDocker()
+
+		out := fmt.Sprintf("%s\n%d", host, kafkaPort)
+
+		return []byte(out)
+	}, func(data []byte) {
+		splitData := strings.Split(string(data), "\n")
+		Expect(splitData).To(HaveLen(2))
+
+		host := splitData[0]
+		kafkaPort64, err := strconv.ParseUint(splitData[1], 10, 32)
+		Expect(err).NotTo(HaveOccurred())
+		kafkaPort = uint(kafkaPort64)
+
 		keycloak = gocloak.NewClient(string(host))
 		conf = config.NewGlobalConfig(context.Background())
 
@@ -229,8 +252,11 @@ func TestSrv(t *testing.T) {
 
 	SynchronizedAfterSuite(func() {
 	}, func() {
-		if closeFunc != nil {
-			closeFunc()
+		if keycloakCloseFunc != nil {
+			keycloakCloseFunc()
+		}
+		if kafkaCloseFunc != nil {
+			kafkaCloseFunc()
 		}
 	})
 

@@ -63,9 +63,9 @@ report: test
 	go tool cover -html=$(ROOT_DIR)/coverage.out
 
 report-watch:
-	while inotifywait -e close_write $(ROOT_DIR)/coverprofile.out; do \
-		go tool cover -func=$(ROOT_DIR)/coverprofile.out; \
-		go tool cover -html=$(ROOT_DIR)/coverprofile.out; \
+	while inotifywait -e close_write $(ROOT_DIR)/coverage.out; do \
+		go tool cover -func=$(ROOT_DIR)/coverage.out; \
+		go tool cover -html=$(ROOT_DIR)/coverage.out; \
 	done
 
 dev-watch: test-watch report-watch
