@@ -131,6 +131,9 @@
             "sro-characters": [
               "manage"
             ],
+            "sro-gamebackend": [
+              "connect"
+            ],
             "account": [
               "view-consent",
               "manage-account",
