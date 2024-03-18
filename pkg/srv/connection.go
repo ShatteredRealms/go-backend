@@ -77,17 +77,7 @@ func (s connectionServiceServer) ConnectGameServer(
 	}
 
 	if s.server.GlobalConfig.GameBackend.Mode == config.LocalMode {
-		pc, err := s.server.GamebackendService.CreatePendingConnection(ctx, character.Name, "localhost")
-		if err != nil {
-			return nil, fmt.Errorf("create pending connection: %w", err)
-		}
-
-		log.Logger.WithContext(ctx).Debugf("%s using local game server", character.Name)
-		return &pb.ConnectGameServerResponse{
-			Address:      "127.0.0.1",
-			Port:         7777,
-			ConnectionId: pc.Id.String(),
-		}, nil
+		return s.requestLocalConnection(ctx, character.Name)
 	}
 
 	// Check if player is playing
@@ -100,6 +90,8 @@ func (s connectionServiceServer) ConnectGameServer(
 		}
 	}
 
+	// Validate location. First time characters can currently be nil.
+	// @TODO: Make this check unnecessary by having default character location. Add to validation check.
 	if character.Location == nil {
 		character.Location = &pb.Location{
 			World: "Scene_Demo",
@@ -108,7 +100,7 @@ func (s connectionServiceServer) ConnectGameServer(
 		character.Location.World = "Scene_Demo"
 	}
 
-	return s.requestAllocation(ctx, character, character.Location, false)
+	return s.requestConnection(ctx, character, character.Location, false)
 }
 
 func (s connectionServiceServer) VerifyConnect(
@@ -133,7 +125,7 @@ func (s connectionServiceServer) VerifyConnect(
 
 	pc, err := s.server.GamebackendService.CheckPlayerConnection(ctx, &id, request.ServerName)
 	if err != nil {
-		return nil, status.Error(codes.OK, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// If the current user can't get the character, then deny the request
@@ -145,8 +137,12 @@ func (s connectionServiceServer) VerifyConnect(
 			},
 		},
 	)
-	if err != nil || character == nil {
+	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("unable to get character %v: %s", pc.Character, err)
+		return nil, err
+	}
+	if character == nil {
+		log.Logger.WithContext(ctx).Errorf("character not found %v: %s", pc.Character, err)
 		return nil, status.Errorf(codes.Internal, "unable to find character")
 	}
 
@@ -182,23 +178,30 @@ func (s connectionServiceServer) TransferPlayer(
 	}
 
 	if s.server.GlobalConfig.GameBackend.Mode == config.LocalMode {
-		pc, err := s.server.GamebackendService.CreatePendingConnection(ctx, character.Name, "localhost")
-		if err != nil {
-			return nil, fmt.Errorf("create pending connection: %w", err)
-		}
-
-		log.Logger.WithContext(ctx).Debugf("%s using local game server", character.Name)
-		return &pb.ConnectGameServerResponse{
-			Address:      "127.0.0.1",
-			Port:         7777,
-			ConnectionId: pc.Id.String(),
-		}, nil
+		return s.requestLocalConnection(ctx, character.Name)
 	}
 
-	return s.requestAllocation(ctx, character, request.Location, true)
+	return s.requestConnection(ctx, character, request.Location, true)
 }
 
-func (s connectionServiceServer) requestAllocation(
+func (s connectionServiceServer) requestLocalConnection(
+	ctx context.Context,
+	characterName string,
+) (*pb.ConnectGameServerResponse, error) {
+	pc, err := s.server.GamebackendService.CreatePendingConnection(ctx, characterName, "localhost")
+	if err != nil {
+		return nil, fmt.Errorf("create pending connection: %w", err)
+	}
+
+	log.Logger.WithContext(ctx).Debugf("%s using local game server", characterName)
+	return &pb.ConnectGameServerResponse{
+		Address:      "127.0.0.1",
+		Port:         7777,
+		ConnectionId: pc.Id.String(),
+	}, nil
+}
+
+func (s connectionServiceServer) requestConnection(
 	ctx context.Context,
 	character *pb.CharacterDetails,
 	location *pb.Location,

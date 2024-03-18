@@ -170,4 +170,154 @@ var _ = Describe("Connection server (local)", func() {
 			})
 		})
 	})
+
+	Describe("VerifyConnect", func() {
+		var (
+			req *pb.VerifyConnectRequest
+		)
+		BeforeEach(func() {
+			req = &pb.VerifyConnectRequest{
+				ConnectionId: pendingConn.Id.String(),
+				ServerName:   pendingConn.ServerName,
+			}
+		})
+
+		When("given valid input", func() {
+			It("should work (server)", func() {
+				mockService.EXPECT().CheckPlayerConnection(gomock.Any(), pendingConn.Id, req.ServerName).Return(pendingConn, nil)
+				mockCharClient.EXPECT().GetCharacter(gomock.Any(), gomock.Any()).Return(character.ToPb(), nil)
+				out, err := server.VerifyConnect(incClientCtx, req)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).To(Equal(character.ToPb()))
+			})
+		})
+
+		When("given invalid input", func() {
+			It("should error for invalid context", func() {
+				out, err := server.VerifyConnect(nil, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for empty context", func() {
+				out, err := server.VerifyConnect(context.Background(), req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for invalid permission (player)", func() {
+				out, err := server.VerifyConnect(incPlayerCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for invalid permission (guest)", func() {
+				out, err := server.VerifyConnect(incGuestCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error on get character err", func() {
+				mockService.EXPECT().CheckPlayerConnection(gomock.Any(), pendingConn.Id, req.ServerName).Return(pendingConn, nil)
+				mockCharClient.EXPECT().GetCharacter(gomock.Any(), gomock.Any()).Return(nil, fakeErr)
+				out, err := server.VerifyConnect(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error on character not found", func() {
+				mockService.EXPECT().CheckPlayerConnection(gomock.Any(), pendingConn.Id, req.ServerName).Return(pendingConn, nil)
+				mockCharClient.EXPECT().GetCharacter(gomock.Any(), gomock.Any()).Return(nil, nil)
+				out, err := server.VerifyConnect(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error on checking pending connection error", func() {
+				mockService.EXPECT().CheckPlayerConnection(gomock.Any(), pendingConn.Id, req.ServerName).Return(nil, fakeErr)
+				out, err := server.VerifyConnect(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error if incoming pending connection id is not valid", func() {
+				req.ConnectionId = "asdf"
+				out, err := server.VerifyConnect(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+		})
+	})
+
+	Describe("TransferPlayer", func() {
+		var (
+			req *pb.TransferPlayerRequest
+		)
+		BeforeEach(func() {
+			req = &pb.TransferPlayerRequest{
+				Character: character.Name,
+				Location:  character.Location.ToPb(),
+			}
+		})
+
+		When("given valid input", func() {
+			It("should work (client)", func() {
+				mockCharClient.EXPECT().GetCharacter(gomock.Any(), gomock.Any()).Return(character.ToPb(), nil)
+				mockService.EXPECT().CreatePendingConnection(gomock.Any(), character.Name, "localhost").Return(pendingConn, nil)
+				out, err := server.TransferPlayer(incClientCtx, req)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out.Address).To(Equal("127.0.0.1"))
+				Expect(out.Port).To(BeEquivalentTo(7777))
+				Expect(out.ConnectionId).To(Equal(pendingConn.Id.String()))
+			})
+		})
+
+		When("given invalid input", func() {
+			It("should error for invalid context", func() {
+				out, err := server.TransferPlayer(nil, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for empty context", func() {
+				out, err := server.TransferPlayer(context.Background(), req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for invalid permission (player)", func() {
+				out, err := server.TransferPlayer(incPlayerCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for invalid permission (guest)", func() {
+				out, err := server.TransferPlayer(incGuestCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error on get character err", func() {
+				mockCharClient.EXPECT().GetCharacter(gomock.Any(), gomock.Any()).Return(character.ToPb(), fakeErr)
+				out, err := server.TransferPlayer(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error on character not found", func() {
+				mockCharClient.EXPECT().GetCharacter(gomock.Any(), gomock.Any()).Return(nil, nil)
+				out, err := server.TransferPlayer(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error on creating pending connection error", func() {
+				mockCharClient.EXPECT().GetCharacter(gomock.Any(), gomock.Any()).Return(character.ToPb(), nil)
+				mockService.EXPECT().CreatePendingConnection(gomock.Any(), character.Name, "localhost").Return(nil, fakeErr)
+				out, err := server.TransferPlayer(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+		})
+	})
 })
