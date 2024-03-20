@@ -4,7 +4,6 @@ import (
 	context "context"
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 
 	v1 "agones.dev/agones/pkg/apis/agones/v1"
@@ -178,29 +177,26 @@ func (s *serverManagerServiceServer) DeleteMap(
 
 	err = s.server.GamebackendService.DeleteMapById(ctx, m.Id)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "deleteing map %v: %v", request, err)
+		err = joinErrorAndLog(nil, "deleteing map %v: %w", request, err)
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 	log.Logger.WithContext(ctx).Infof("Deleted map %s (%s)", m.Name, m.Id.String())
 
-	var outErr error
+	var errs error
 	if s.server.GlobalConfig.GameBackend.Mode != config.LocalMode {
 		dimensions, err := s.server.GamebackendService.FindDimensionsWithMapIds(ctx, []*uuid.UUID{m.Id})
 		for _, dimension := range dimensions {
 			log.Logger.Infof("Deleting gameserver dimension %s map %s", dimension.Name, m.Name)
 			err = s.deleteGameServers(ctx, dimension, m)
 			if err != nil {
-				errors.Join(outErr, status.Errorf(codes.Internal, "deleting game servers for dimension %s, map %s: %s", dimension.Name, m.Name, err.Error()))
+				errs = joinErrorAndLog(errs, "deleting game servers for dimension %s, map %s: %s", dimension.Name, m.Name, err.Error())
 			}
 		}
 	} else {
 		log.Logger.WithContext(ctx).Info("Local Mode: Not deleting game servers")
 	}
 
-	if outErr != nil {
-		return nil, outErr
-	}
-
-	return &emptypb.Empty{}, nil
+	return &emptypb.Empty{}, errs
 }
 
 // DuplicateDimension implements pb.ServerManagerServiceServer.
@@ -263,15 +259,14 @@ func (s *serverManagerServiceServer) EditDimension(
 			for _, m := range originalDimension.Maps {
 				err := s.deleteGameServers(ctx, originalDimension, m)
 				if err != nil {
-					errs = errors.Join(errs, status.Errorf(
-						codes.Internal, "deleting old game server for %s - %s failed: %s",
-						originalDimension.Name, m.Name, err.Error()))
+					errs = joinErrorAndLog(errs, "deleting old game server for dimension %s, Map %s failed: %w",
+						originalDimension.Name, m.Name, err)
 				}
 			}
 
 			err = s.setupNewDimension(ctx, editedDimension)
 			if err != nil {
-				errs = errors.Join(errs, status.Errorf(codes.Internal, "setting up dimension gameservers: %s", err.Error()))
+				errs = joinErrorAndLog(errs, "setting up dimension %s gameservers: %w", editedDimension.Name, err)
 			}
 		} else {
 			// Everything wasn't deleted so we can safely change one-by-one
@@ -285,7 +280,7 @@ func (s *serverManagerServiceServer) EditDimension(
 					if _, ok := currentMaps[m.Id]; !ok {
 						err := s.deleteGameServers(ctx, editedDimension, m)
 						if err != nil {
-							errs = errors.Join(errs, status.Errorf(codes.Internal, "unable to delete old gameserver world %s: %s", m.Name, err.Error()))
+							errs = joinErrorAndLog(errs, "unable to delete old gameserver world %s: %w", m.Name, err)
 						}
 					} else {
 						delete(currentMaps, m.Id)
@@ -293,7 +288,7 @@ func (s *serverManagerServiceServer) EditDimension(
 						if request.OptionalVersion != nil {
 							err := s.updateGameServers(ctx, editedDimension, m)
 							if err != nil {
-								errs = errors.Join(errs, status.Errorf(codes.Internal, "unable to update gameserver world %s: %s", m.Name, err.Error()))
+								errs = joinErrorAndLog(errs, "unable to update gameserver world %s: %w", m.Name, err)
 							}
 						}
 					}
@@ -303,7 +298,7 @@ func (s *serverManagerServiceServer) EditDimension(
 				for _, newMap := range currentMaps {
 					err = s.createGameServers(ctx, editedDimension, newMap)
 					if err != nil {
-						errs = errors.Join(errs, status.Errorf(codes.Internal, "unable to delete old gameserver world %s: %s", newMap.Name, err.Error()))
+						errs = joinErrorAndLog(errs, "unable to delete old gameserver world %s: %w", newMap.Name, err)
 					}
 				}
 			} else if request.OptionalVersion != nil {
@@ -311,11 +306,10 @@ func (s *serverManagerServiceServer) EditDimension(
 				for _, m := range editedDimension.Maps {
 					err := s.updateGameServers(ctx, editedDimension, m)
 					if err != nil {
-						errs = errors.Join(errs, status.Errorf(codes.Internal, "unable to update gameserver world %s: %s", m.Name, err.Error()))
+						errs = joinErrorAndLog(errs, "unable to update gameserver world %s: %w", m.Name, err)
 					}
 				}
 			}
-
 		}
 	} else {
 		log.Logger.WithContext(ctx).Info("Local Mode: Not creating game servers")
@@ -334,45 +328,49 @@ func (s *serverManagerServiceServer) EditMap(
 		return nil, err
 	}
 
-	originalMap, err := s.findMapByNameOrId(ctx, request.Target)
+	originalMap, err := s.server.GamebackendService.FindMap(ctx, request.Target)
 	if err != nil {
 		return nil, err
 	}
+	if originalMap == nil {
+		return nil, model.ErrDoesNotExist
+	}
 
-	editedMap, err := s.server.GamebackendService.EditMap(ctx, request)
+	newMap, err := s.server.GamebackendService.EditMap(ctx, request)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	dimensions, err := s.server.GamebackendService.FindDimensionsWithMapIds(ctx, []*uuid.UUID{editedMap.Id})
-	if request.OptionalName != nil {
-		// Need to delete and recreate
-		for _, dimension := range dimensions {
-			err = s.deleteGameServers(ctx, dimension, originalMap)
-			if err != nil {
-				return nil,
-					status.Errorf(codes.Internal, "deleting game servers for dimension %s: %s", dimension.Name, err.Error())
-			}
-
-			err = s.createGameServers(ctx, dimension, editedMap)
-			if err != nil {
-				return nil,
-					status.Errorf(codes.Internal, "creating game servers for dimension %s: %s", dimension.Name, err.Error())
-			}
-		}
-	} else {
-		if request.OptionalPath != nil {
-			for _, dimension := range dimensions {
-				err = s.updateGameServers(ctx, dimension, editedMap)
+	var errs error
+	if s.server.GlobalConfig.GameBackend.Mode != config.LocalMode {
+		if request.OptionalName != nil {
+			// Need to delete and recreate
+			for _, dimension := range originalMap.Dimensions {
+				err = s.deleteGameServers(ctx, dimension, originalMap)
 				if err != nil {
-					return nil,
-						status.Errorf(codes.Internal, "updating game servers for dimension %s: %s", dimension.Name, err.Error())
+					errs = joinErrorAndLog(errs, "deleting old game server for dimension %s, Map %s failed: %w",
+						dimension.Name, originalMap.Name, err)
+				}
+
+				err = s.createGameServers(ctx, dimension, newMap)
+				if err != nil {
+					errs = joinErrorAndLog(errs, "setting up dimension %s gameservers: %w", dimension.Name, err)
+				}
+			}
+		} else {
+			// Update dimension
+			for _, dimension := range newMap.Dimensions {
+				err = s.updateGameServers(ctx, dimension, newMap)
+				if err != nil {
+					errs = joinErrorAndLog(errs, "unable to update gameserver world %s: %w", newMap.Name, err)
 				}
 			}
 		}
+	} else {
+		log.Logger.WithContext(ctx).Info("Local Mode: Not creating game servers")
 	}
 
-	return editedMap.ToPb(), nil
+	return newMap.ToPb(), errs
 }
 
 // GetAllDimension implements pb.ServerManagerServiceServer.
@@ -421,32 +419,17 @@ func (s *serverManagerServiceServer) GetDimension(
 		return nil, err
 	}
 
-	var out *model.Dimension
-	switch target := request.FindBy.(type) {
-	case *pb.DimensionTarget_Id:
-		id, err := uuid.Parse(target.Id)
-		if err != nil {
-			return nil, err
-		}
-		out, err = s.server.GamebackendService.FindDimensionById(ctx, &id)
-
-	case *pb.DimensionTarget_Name:
-		out, err = s.server.GamebackendService.FindDimensionByName(ctx, target.Name)
-
-	default:
-		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
-		return nil, model.ErrHandleRequest
-	}
+	dimension, err := s.server.GamebackendService.FindDimension(ctx, request)
 
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	if out == nil {
-		return nil, model.ErrDoesNotExist
+	if dimension == nil {
+		return nil, status.Error(codes.InvalidArgument, model.ErrDoesNotExist.Error())
 	}
 
-	return out.ToPb(), nil
+	return dimension.ToPb(), nil
 }
 
 // GetMap implements pb.ServerManagerServiceServer.
@@ -459,31 +442,17 @@ func (s *serverManagerServiceServer) GetMap(
 		return nil, err
 	}
 
-	var out *model.Map
-	switch target := request.FindBy.(type) {
-	case *pb.MapTarget_Id:
-		id, err := uuid.Parse(target.Id)
-		if err != nil {
-			return nil, err
-		}
-		out, err = s.server.GamebackendService.FindMapById(ctx, &id)
-
-	case *pb.MapTarget_Name:
-		out, err = s.server.GamebackendService.FindMapByName(ctx, target.Name)
-
-	default:
-		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
-		return nil, model.ErrHandleRequest
-	}
+	m, err := s.server.GamebackendService.FindMap(ctx, request)
 
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if out == nil {
-		return nil, model.ErrDoesNotExist
+
+	if m == nil {
+		return nil, status.Error(codes.InvalidArgument, model.ErrDoesNotExist.Error())
 	}
 
-	return out.ToPb(), nil
+	return m.ToPb(), nil
 }
 
 func NewServerManagerServiceServer(
@@ -809,4 +778,10 @@ func (s serverManagerServiceServer) findMapByNameOrId(
 	}
 
 	return out, nil
+}
+
+func joinErrorAndLog(err error, str string, args ...any) error {
+	newErr := fmt.Errorf(str, args...)
+	log.Logger.Error(err)
+	return errors.Join(err, newErr)
 }

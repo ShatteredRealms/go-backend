@@ -18,6 +18,7 @@ import (
 	"github.com/sirupsen/logrus/hooks/test"
 	"go.opentelemetry.io/otel"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 )
 
@@ -612,45 +613,304 @@ var _ = Describe("Servermanager server (local)", func() {
 		})
 	})
 
-	// Describe("", func() {
-	// 	var (
-	// 		req *pb.
-	// 	)
-	// 	BeforeEach(func() {
-	// 		req =
-	// 	})
-	// 	When("given valid input", func() {
-	// 		It("should work (admin)", func() {
-	// 			out, err := server.(ctx, req)
-	// 			Expect(err).NotTo(HaveOccurred())
-	// 			Expect(out).NotTo(BeNil())
-	// 		})
-	// 	})
-	//
-	// 	When("given invalid input", func() {
-	// 		It("should error for invalid ctx (nil)", func() {
-	// 			out, err := server.(nil, req)
-	// 			Expect(err).To(HaveOccurred())
-	// 			Expect(out).To(BeNil())
-	// 		})
-	// 		It("should error for empty ctx (empty)", func() {
-	// 			out, err := server.(context.Background(), req)
-	// 			Expect(err).To(HaveOccurred())
-	// 			Expect(out).To(BeNil())
-	// 		})
-	//
-	// 		It("should error for invalid permission (guest)", func() {
-	// 			out, err := server.(incGuestCtx, req)
-	// 			Expect(err).To(HaveOccurred())
-	// 			Expect(out).To(BeNil())
-	// 		})
-	//
-	// 		It("should error for invalid permission (player)", func() {
-	// 			out, err := server.(incPlayerCtx, req)
-	// 			Expect(err).To(HaveOccurred())
-	// 			Expect(out).To(BeNil())
-	// 		})
-	// 	})
-	// })
+	Describe("EditMap", func() {
+		var (
+			req *pb.EditMapRequest
+		)
+		BeforeEach(func() {
+			req = &pb.EditMapRequest{
+				Target: &pb.MapTarget{
+					FindBy: &pb.MapTarget_Id{
+						Id: dimension.Id.String(),
+					},
+				},
+				OptionalName: &pb.EditMapRequest_Name{
+					Name: faker.Username(),
+				},
+				OptionalPath: &pb.EditMapRequest_Path{
+					Path: faker.Username(),
+				},
+				OptionalInstanced: &pb.EditMapRequest_Instanced{
+					Instanced: true,
+				},
+				OptionalMaxPlayers: &pb.EditMapRequest_MaxPlayers{
+					MaxPlayers: 5,
+				},
+			}
+		})
+		When("given valid input", func() {
+			It("should work (admin)", func() {
+				mockService.EXPECT().FindMap(gomock.Any(), req.Target).Return(m, nil)
+				mockService.EXPECT().EditMap(gomock.Any(), req).Return(m, nil)
+				out, err := server.EditMap(incAdminCtx, req)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out).NotTo(BeNil())
+			})
+		})
 
+		When("given invalid input", func() {
+			It("should error for invalid ctx (nil)", func() {
+				out, err := server.EditMap(nil, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+			It("should error for empty ctx (empty)", func() {
+				out, err := server.EditMap(context.Background(), req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for invalid permission (guest)", func() {
+				out, err := server.EditMap(incGuestCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for invalid permission (player)", func() {
+				out, err := server.EditMap(incPlayerCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for FindMap errors", func() {
+				mockService.EXPECT().FindMap(gomock.Any(), req.Target).Return(nil, fakeErr)
+				out, err := server.EditMap(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for FindMap returns no matches", func() {
+				mockService.EXPECT().FindMap(gomock.Any(), req.Target).Return(nil, nil)
+				out, err := server.EditMap(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for EditMap returns an error", func() {
+				mockService.EXPECT().FindMap(gomock.Any(), req.Target).Return(m, nil)
+				mockService.EXPECT().EditMap(gomock.Any(), req).Return(nil, fakeErr)
+				out, err := server.EditMap(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+		})
+	})
+
+	Describe("GetAllDimension", func() {
+		var (
+			req *emptypb.Empty
+		)
+		BeforeEach(func() {
+			req = &emptypb.Empty{}
+		})
+		When("given valid input", func() {
+			It("should work (admin)", func() {
+				mockService.EXPECT().FindAllDimensions(gomock.Any()).Return(model.Dimensions{dimension}, nil)
+				out, err := server.GetAllDimension(incAdminCtx, req)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out.Dimensions).To(HaveLen(1))
+			})
+		})
+
+		When("given invalid input", func() {
+			It("should error for invalid ctx (nil)", func() {
+				out, err := server.GetAllDimension(nil, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+			It("should error for empty ctx (empty)", func() {
+				out, err := server.GetAllDimension(context.Background(), req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for invalid permission (guest)", func() {
+				out, err := server.GetAllDimension(incGuestCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for invalid permission (player)", func() {
+				out, err := server.GetAllDimension(incPlayerCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for FindAllDimensions error", func() {
+				mockService.EXPECT().FindAllDimensions(gomock.Any()).Return(model.Dimensions{}, fakeErr)
+				out, err := server.GetAllDimension(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+		})
+	})
+
+	Describe("GetAllMap", func() {
+		var (
+			req *emptypb.Empty
+		)
+		BeforeEach(func() {
+			req = &emptypb.Empty{}
+		})
+		When("given valid input", func() {
+			It("should work (admin)", func() {
+				mockService.EXPECT().FindAllMaps(gomock.Any()).Return(model.Maps{m}, nil)
+				out, err := server.GetAllMaps(incAdminCtx, req)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out.Maps).To(HaveLen(1))
+			})
+		})
+
+		When("given invalid input", func() {
+			It("should error for invalid ctx (nil)", func() {
+				out, err := server.GetAllMaps(nil, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+			It("should error for empty ctx (empty)", func() {
+				out, err := server.GetAllMaps(context.Background(), req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for invalid permission (guest)", func() {
+				out, err := server.GetAllMaps(incGuestCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for invalid permission (player)", func() {
+				out, err := server.GetAllMaps(incPlayerCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for FindAllMapss error", func() {
+				mockService.EXPECT().FindAllMaps(gomock.Any()).Return(model.Maps{}, fakeErr)
+				out, err := server.GetAllMaps(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+		})
+	})
+
+	Describe("GetDimension", func() {
+		var (
+			req *pb.DimensionTarget
+		)
+		BeforeEach(func() {
+			req = &pb.DimensionTarget{
+				FindBy: &pb.DimensionTarget_Id{
+					Id: dimension.Id.String(),
+				},
+			}
+		})
+		When("given valid input", func() {
+			It("should work (admin)", func() {
+				mockService.EXPECT().FindDimension(gomock.Any(), req).Return(dimension, nil)
+				out, err := server.GetDimension(incAdminCtx, req)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out.Name).To(BeEquivalentTo(dimension.Name))
+			})
+		})
+
+		When("given invalid input", func() {
+			It("should error for invalid ctx (nil)", func() {
+				out, err := server.GetDimension(nil, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+			It("should error for empty ctx (empty)", func() {
+				out, err := server.GetDimension(context.Background(), req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for invalid permission (guest)", func() {
+				out, err := server.GetDimension(incGuestCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for invalid permission (player)", func() {
+				out, err := server.GetDimension(incPlayerCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for FindDimension error", func() {
+				mockService.EXPECT().FindDimension(gomock.Any(), req).Return(nil, fakeErr)
+				out, err := server.GetDimension(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for FindDimension no results", func() {
+				mockService.EXPECT().FindDimension(gomock.Any(), req).Return(nil, nil)
+				out, err := server.GetDimension(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+		})
+	})
+
+	Describe("GetMap", func() {
+		var (
+			req *pb.MapTarget
+		)
+		BeforeEach(func() {
+			req = &pb.MapTarget{
+				FindBy: &pb.MapTarget_Id{
+					Id: dimension.Id.String(),
+				},
+			}
+		})
+		When("given valid input", func() {
+			It("should work (admin)", func() {
+				mockService.EXPECT().FindMap(gomock.Any(), req).Return(m, nil)
+				out, err := server.GetMap(incAdminCtx, req)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(out.Name).To(BeEquivalentTo(m.Name))
+			})
+		})
+
+		When("given invalid input", func() {
+			It("should error for invalid ctx (nil)", func() {
+				out, err := server.GetMap(nil, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+			It("should error for empty ctx (empty)", func() {
+				out, err := server.GetMap(context.Background(), req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for invalid permission (guest)", func() {
+				out, err := server.GetMap(incGuestCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for invalid permission (player)", func() {
+				out, err := server.GetMap(incPlayerCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for FindMap error", func() {
+				mockService.EXPECT().FindMap(gomock.Any(), req).Return(nil, fakeErr)
+				out, err := server.GetMap(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error for FindMap no results", func() {
+				mockService.EXPECT().FindMap(gomock.Any(), req).Return(nil, nil)
+				out, err := server.GetMap(incAdminCtx, req)
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+		})
+	})
 })
