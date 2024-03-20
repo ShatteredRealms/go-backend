@@ -223,6 +223,13 @@ var _ = Describe("Character repository", func() {
 
 	Describe("FindAll", func() {
 		findAll := (func(ctx context.Context) {
+			_, err := characterRepo.Create(ctx, &model.Character{
+				OwnerId: faker.Username(),
+				Name:    faker.Username(),
+				Gender:  "Male",
+				Realm:   "Human",
+			})
+			Expect(err).NotTo(HaveOccurred())
 			all, err := characterRepo.FindAll(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(all) >= 1).To(BeTrue())

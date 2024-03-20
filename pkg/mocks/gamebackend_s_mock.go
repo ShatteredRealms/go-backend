@@ -57,6 +57,20 @@ func (mr *MockdimensionServiceMockRecorder) CreateDimension(ctx, name, location,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateDimension", reflect.TypeOf((*MockdimensionService)(nil).CreateDimension), ctx, name, location, version, mapIds)
 }
 
+// DeleteDimension mocks base method.
+func (m *MockdimensionService) DeleteDimension(ctx context.Context, target *pb.DimensionTarget) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteDimension", ctx, target)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteDimension indicates an expected call of DeleteDimension.
+func (mr *MockdimensionServiceMockRecorder) DeleteDimension(ctx, target any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDimension", reflect.TypeOf((*MockdimensionService)(nil).DeleteDimension), ctx, target)
+}
+
 // DeleteDimensionById mocks base method.
 func (m *MockdimensionService) DeleteDimensionById(ctx context.Context, id *uuid.UUID) error {
 	m.ctrl.T.Helper()
@@ -86,18 +100,18 @@ func (mr *MockdimensionServiceMockRecorder) DeleteDimensionByName(ctx, name any)
 }
 
 // DuplicateDimension mocks base method.
-func (m *MockdimensionService) DuplicateDimension(ctx context.Context, refId *uuid.UUID, name string) (*model.Dimension, error) {
+func (m *MockdimensionService) DuplicateDimension(ctx context.Context, target *pb.DimensionTarget, name string) (*model.Dimension, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DuplicateDimension", ctx, refId, name)
+	ret := m.ctrl.Call(m, "DuplicateDimension", ctx, target, name)
 	ret0, _ := ret[0].(*model.Dimension)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DuplicateDimension indicates an expected call of DuplicateDimension.
-func (mr *MockdimensionServiceMockRecorder) DuplicateDimension(ctx, refId, name any) *gomock.Call {
+func (mr *MockdimensionServiceMockRecorder) DuplicateDimension(ctx, target, name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DuplicateDimension", reflect.TypeOf((*MockdimensionService)(nil).DuplicateDimension), ctx, refId, name)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DuplicateDimension", reflect.TypeOf((*MockdimensionService)(nil).DuplicateDimension), ctx, target, name)
 }
 
 // EditDimension mocks base method.
@@ -128,6 +142,21 @@ func (m *MockdimensionService) FindAllDimensions(ctx context.Context) (model.Dim
 func (mr *MockdimensionServiceMockRecorder) FindAllDimensions(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllDimensions", reflect.TypeOf((*MockdimensionService)(nil).FindAllDimensions), ctx)
+}
+
+// FindDimension mocks base method.
+func (m *MockdimensionService) FindDimension(ctx context.Context, target *pb.DimensionTarget) (*model.Dimension, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindDimension", ctx, target)
+	ret0, _ := ret[0].(*model.Dimension)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindDimension indicates an expected call of FindDimension.
+func (mr *MockdimensionServiceMockRecorder) FindDimension(ctx, target any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindDimension", reflect.TypeOf((*MockdimensionService)(nil).FindDimension), ctx, target)
 }
 
 // FindDimensionById mocks base method.
@@ -243,6 +272,20 @@ func (mr *MockmapServiceMockRecorder) CreateMap(ctx, name, path, maxPlayers, ins
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateMap", reflect.TypeOf((*MockmapService)(nil).CreateMap), ctx, name, path, maxPlayers, instanced)
 }
 
+// DeleteMap mocks base method.
+func (m *MockmapService) DeleteMap(ctx context.Context, target *pb.MapTarget) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteMap", ctx, target)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteMap indicates an expected call of DeleteMap.
+func (mr *MockmapServiceMockRecorder) DeleteMap(ctx, target any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMap", reflect.TypeOf((*MockmapService)(nil).DeleteMap), ctx, target)
+}
+
 // DeleteMapById mocks base method.
 func (m *MockmapService) DeleteMapById(ctx context.Context, id *uuid.UUID) error {
 	m.ctrl.T.Helper()
@@ -299,6 +342,21 @@ func (m *MockmapService) FindAllMaps(ctx context.Context) (model.Maps, error) {
 func (mr *MockmapServiceMockRecorder) FindAllMaps(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllMaps", reflect.TypeOf((*MockmapService)(nil).FindAllMaps), ctx)
+}
+
+// FindMap mocks base method.
+func (m *MockmapService) FindMap(ctx context.Context, target *pb.MapTarget) (*model.Map, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMap", ctx, target)
+	ret0, _ := ret[0].(*model.Map)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMap indicates an expected call of FindMap.
+func (mr *MockmapServiceMockRecorder) FindMap(ctx, target any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMap", reflect.TypeOf((*MockmapService)(nil).FindMap), ctx, target)
 }
 
 // FindMapById mocks base method.
@@ -497,6 +555,20 @@ func (mr *MockGamebackendServiceMockRecorder) CreatePendingConnection(ctx, chara
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePendingConnection", reflect.TypeOf((*MockGamebackendService)(nil).CreatePendingConnection), ctx, character, serverName)
 }
 
+// DeleteDimension mocks base method.
+func (m *MockGamebackendService) DeleteDimension(ctx context.Context, target *pb.DimensionTarget) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteDimension", ctx, target)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteDimension indicates an expected call of DeleteDimension.
+func (mr *MockGamebackendServiceMockRecorder) DeleteDimension(ctx, target any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDimension", reflect.TypeOf((*MockGamebackendService)(nil).DeleteDimension), ctx, target)
+}
+
 // DeleteDimensionById mocks base method.
 func (m *MockGamebackendService) DeleteDimensionById(ctx context.Context, id *uuid.UUID) error {
 	m.ctrl.T.Helper()
@@ -523,6 +595,20 @@ func (m *MockGamebackendService) DeleteDimensionByName(ctx context.Context, name
 func (mr *MockGamebackendServiceMockRecorder) DeleteDimensionByName(ctx, name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDimensionByName", reflect.TypeOf((*MockGamebackendService)(nil).DeleteDimensionByName), ctx, name)
+}
+
+// DeleteMap mocks base method.
+func (m *MockGamebackendService) DeleteMap(ctx context.Context, target *pb.MapTarget) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteMap", ctx, target)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteMap indicates an expected call of DeleteMap.
+func (mr *MockGamebackendServiceMockRecorder) DeleteMap(ctx, target any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMap", reflect.TypeOf((*MockGamebackendService)(nil).DeleteMap), ctx, target)
 }
 
 // DeleteMapById mocks base method.
@@ -554,18 +640,18 @@ func (mr *MockGamebackendServiceMockRecorder) DeleteMapByName(ctx, name any) *go
 }
 
 // DuplicateDimension mocks base method.
-func (m *MockGamebackendService) DuplicateDimension(ctx context.Context, refId *uuid.UUID, name string) (*model.Dimension, error) {
+func (m *MockGamebackendService) DuplicateDimension(ctx context.Context, target *pb.DimensionTarget, name string) (*model.Dimension, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DuplicateDimension", ctx, refId, name)
+	ret := m.ctrl.Call(m, "DuplicateDimension", ctx, target, name)
 	ret0, _ := ret[0].(*model.Dimension)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DuplicateDimension indicates an expected call of DuplicateDimension.
-func (mr *MockGamebackendServiceMockRecorder) DuplicateDimension(ctx, refId, name any) *gomock.Call {
+func (mr *MockGamebackendServiceMockRecorder) DuplicateDimension(ctx, target, name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DuplicateDimension", reflect.TypeOf((*MockGamebackendService)(nil).DuplicateDimension), ctx, refId, name)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DuplicateDimension", reflect.TypeOf((*MockGamebackendService)(nil).DuplicateDimension), ctx, target, name)
 }
 
 // EditDimension mocks base method.
@@ -626,6 +712,21 @@ func (m *MockGamebackendService) FindAllMaps(ctx context.Context) (model.Maps, e
 func (mr *MockGamebackendServiceMockRecorder) FindAllMaps(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllMaps", reflect.TypeOf((*MockGamebackendService)(nil).FindAllMaps), ctx)
+}
+
+// FindDimension mocks base method.
+func (m *MockGamebackendService) FindDimension(ctx context.Context, target *pb.DimensionTarget) (*model.Dimension, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindDimension", ctx, target)
+	ret0, _ := ret[0].(*model.Dimension)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindDimension indicates an expected call of FindDimension.
+func (mr *MockGamebackendServiceMockRecorder) FindDimension(ctx, target any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindDimension", reflect.TypeOf((*MockGamebackendService)(nil).FindDimension), ctx, target)
 }
 
 // FindDimensionById mocks base method.
@@ -701,6 +802,21 @@ func (m *MockGamebackendService) FindDimensionsWithMapIds(ctx context.Context, i
 func (mr *MockGamebackendServiceMockRecorder) FindDimensionsWithMapIds(ctx, ids any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindDimensionsWithMapIds", reflect.TypeOf((*MockGamebackendService)(nil).FindDimensionsWithMapIds), ctx, ids)
+}
+
+// FindMap mocks base method.
+func (m *MockGamebackendService) FindMap(ctx context.Context, target *pb.MapTarget) (*model.Map, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMap", ctx, target)
+	ret0, _ := ret[0].(*model.Map)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMap indicates an expected call of FindMap.
+func (mr *MockGamebackendServiceMockRecorder) FindMap(ctx, target any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMap", reflect.TypeOf((*MockGamebackendService)(nil).FindMap), ctx, target)
 }
 
 // FindMapById mocks base method.

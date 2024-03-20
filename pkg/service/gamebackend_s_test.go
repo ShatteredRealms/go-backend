@@ -225,11 +225,70 @@ var _ = Describe("Gamebackend service", func() {
 	})
 
 	Describe("DuplicateDimension", func() {
-		It("should work", func() {
-			mockRepository.EXPECT().DuplicateDimension(ctx, dimension.Id, dimension.Name+"a").Return(dimension, fakeErr)
-			out, err := gbService.DuplicateDimension(ctx, dimension.Id, dimension.Name+"a")
-			Expect(err).To(MatchError(fakeErr))
-			Expect(out).To(Equal(dimension))
+		var (
+			idTarget   *pb.DimensionTarget
+			nameTarget *pb.DimensionTarget
+		)
+		BeforeEach(func() {
+
+			idTarget = &pb.DimensionTarget{
+				FindBy: &pb.DimensionTarget_Id{
+					Id: dimension.Id.String(),
+				},
+			}
+			nameTarget = &pb.DimensionTarget{
+				FindBy: &pb.DimensionTarget_Name{
+					Name: dimension.Name,
+				},
+			}
+		})
+
+		When("given valid input", func() {
+			It("should work for ids", func() {
+				mockRepository.EXPECT().CreateDimension(ctx, dimension.Name+"a", dimension.Location, dimension.Version, gomock.Any()).Return(dimension, fakeErr)
+				mockRepository.EXPECT().FindDimensionById(ctx, dimension.Id).Return(dimension, nil)
+				out, err := gbService.DuplicateDimension(ctx, idTarget, dimension.Name+"a")
+				Expect(err).To(MatchError(fakeErr))
+				Expect(out).To(Equal(dimension))
+			})
+
+			It("should work for names", func() {
+				mockRepository.EXPECT().CreateDimension(ctx, dimension.Name+"a", dimension.Location, dimension.Version, gomock.Any()).Return(dimension, fakeErr)
+				mockRepository.EXPECT().FindDimensionByName(ctx, dimension.Name).Return(dimension, nil)
+				out, err := gbService.DuplicateDimension(ctx, nameTarget, dimension.Name+"a")
+				Expect(err).To(MatchError(fakeErr))
+				Expect(out).To(Equal(dimension))
+			})
+		})
+
+		When("given invalid input", func() {
+			It("should error if dimension not found by id", func() {
+				mockRepository.EXPECT().FindDimensionById(ctx, dimension.Id).Return(nil, nil)
+				out, err := gbService.DuplicateDimension(ctx, idTarget, dimension.Name+"a")
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error if dimension not found by name", func() {
+				mockRepository.EXPECT().FindDimensionByName(ctx, dimension.Name).Return(nil, nil)
+				out, err := gbService.DuplicateDimension(ctx, nameTarget, dimension.Name+"a")
+				Expect(err).To(HaveOccurred())
+				Expect(out).To(BeNil())
+			})
+
+			It("should error if error find by id ", func() {
+				mockRepository.EXPECT().FindDimensionById(ctx, dimension.Id).Return(nil, fakeErr)
+				out, err := gbService.DuplicateDimension(ctx, idTarget, dimension.Name+"a")
+				Expect(err).To(MatchError(fakeErr))
+				Expect(out).To(BeNil())
+			})
+
+			It("should error if error find by name", func() {
+				mockRepository.EXPECT().FindDimensionByName(ctx, dimension.Name).Return(nil, fakeErr)
+				out, err := gbService.DuplicateDimension(ctx, nameTarget, dimension.Name+"a")
+				Expect(err).To(MatchError(fakeErr))
+				Expect(out).To(BeNil())
+			})
 		})
 	})
 

@@ -24,7 +24,6 @@ type dimensionRepository interface {
 		version string,
 		mapIds []*uuid.UUID,
 	) (*model.Dimension, error)
-	DuplicateDimension(ctx context.Context, refId *uuid.UUID, name string) (*model.Dimension, error)
 	FindDimensionByName(ctx context.Context, name string) (*model.Dimension, error)
 	FindDimensionById(ctx context.Context, id *uuid.UUID) (*model.Dimension, error)
 	FindDimensionsByNames(ctx context.Context, names []string) (model.Dimensions, error)
@@ -174,14 +173,19 @@ func (r *gamebackendRepository) CreateMap(
 	return newMap, nil
 }
 
-// DeleteDimensionById implements GamebackendRepository.
-func (r *gamebackendRepository) DeleteDimensionById(ctx context.Context, id *uuid.UUID) error {
+// DeleteDimension implements GamebackendRepository.
+func (r *gamebackendRepository) DeleteDimension(ctx context.Context, id *uuid.UUID) error {
 	return r.DB.WithContext(ctx).Delete(&model.Dimension{}, id).Error
 }
 
 // DeleteDimensionByName implements GamebackendRepository.
 func (r *gamebackendRepository) DeleteDimensionByName(ctx context.Context, name string) error {
 	return r.DB.WithContext(ctx).Delete(&model.Dimension{}, "name = ?", name).Error
+}
+
+// DeleteDimensionById implements GamebackendRepository.
+func (r *gamebackendRepository) DeleteDimensionById(ctx context.Context, id *uuid.UUID) error {
+	return r.DB.WithContext(ctx).Delete(&model.Dimension{}, "id = ?", id.String()).Error
 }
 
 // DeleteMapById implements GamebackendRepository.
@@ -192,30 +196,6 @@ func (r *gamebackendRepository) DeleteMapById(ctx context.Context, id *uuid.UUID
 // DeleteMapByName implements GamebackendRepository.
 func (r *gamebackendRepository) DeleteMapByName(ctx context.Context, name string) error {
 	return r.DB.WithContext(ctx).Delete(&model.Map{}, "name = ?", name).Error
-}
-
-// DuplicateDimension implements GamebackendRepository.
-func (r *gamebackendRepository) DuplicateDimension(
-	ctx context.Context,
-	refId *uuid.UUID,
-	name string,
-) (*model.Dimension, error) {
-	dimension, err := r.FindDimensionById(ctx, refId)
-	if err != nil {
-		return nil, err
-	}
-
-	if dimension == nil {
-		return nil, model.ErrDoesNotExist
-	}
-
-	dimension.Id = nil
-	dimension.Name = name
-	if err = r.DB.WithContext(ctx).Preload(clause.Associations).Create(&dimension).Error; err != nil {
-		return nil, err
-	}
-
-	return dimension, nil
 }
 
 // SaveDimension implements GamebackendRepository.

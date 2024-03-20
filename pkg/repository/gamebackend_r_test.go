@@ -177,45 +177,6 @@ var _ = Describe("Gamebackend repository", func() {
 		})
 	})
 
-	Describe("DuplicateDimesnion", func() {
-		When("given valid input", func() {
-			It("should work", func() {
-				_, dimension, _ := createModels()
-				out, err := gamebackendRepo.DuplicateDimension(nil, dimension.Id, dimension.Name+"a")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(out).NotTo(BeNil())
-				Expect(out.Id).NotTo(BeNil())
-				Expect(out.Name).To(Equal(dimension.Name + "a"))
-
-				out, err = gamebackendRepo.FindDimensionByName(nil, dimension.Name+"a")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(out).NotTo(BeNil())
-
-				out2, err := gamebackendRepo.FindDimensionByName(nil, dimension.Name)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(out).NotTo(BeNil())
-
-				Expect(out.Id).NotTo(BeEquivalentTo(out2.Id))
-			})
-		})
-
-		When("given invalid input", func() {
-			It("should error when given dimension doesn't exist", func() {
-				id, err := uuid.NewRandom()
-				Expect(err).NotTo(HaveOccurred())
-
-				_, dimension, _ := createModels()
-				out, err := gamebackendRepo.DuplicateDimension(nil, &id, dimension.Name+"a")
-				Expect(err).To(MatchError(model.ErrDoesNotExist))
-				Expect(out).To(BeNil())
-
-				out, err = gamebackendRepo.FindDimensionByName(nil, dimension.Name+"a")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(out).To(BeNil())
-			})
-		})
-	})
-
 	Describe("SaveDimension", func() {
 		When("given valid input", func() {
 			It("should work", func() {
