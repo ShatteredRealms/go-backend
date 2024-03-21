@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"strings"
 
+	appsv1 "k8s.io/api/apps/v1"
+
 	v1 "agones.dev/agones/pkg/apis/agones/v1"
 	autoscalingv1 "agones.dev/agones/pkg/apis/autoscaling/v1"
-	"agones.dev/agones/pkg/client/clientset/versioned"
 	"github.com/Nerzal/gocloak/v13"
 	gamebackend "github.com/ShatteredRealms/go-backend/cmd/gamebackend/app"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
@@ -24,7 +25,6 @@ import (
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/rest"
 )
 
 var (
@@ -51,7 +51,6 @@ func registerServerManagerRole(role *gocloak.Role) *gocloak.Role {
 type serverManagerServiceServer struct {
 	pb.UnimplementedServerManagerServiceServer
 	server *gamebackend.GameBackendServerContext
-	agones *versioned.Clientset
 }
 
 // CreateDimension implements pb.ServerManagerServiceServer.
@@ -82,14 +81,11 @@ func (s *serverManagerServiceServer) CreateDimension(
 
 	if s.server.GlobalConfig.GameBackend.Mode != config.LocalMode {
 		err = s.setupNewDimension(ctx, dimension)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "dimension setup: %s", err.Error())
-		}
 	} else {
 		log.Logger.WithContext(ctx).Infof("Running Local Mode - Skipping dimension setup")
 	}
 
-	return dimension.ToPb(), nil
+	return dimension.ToPb(), err
 }
 
 // CreateMap implements pb.ServerManagerServiceServer.
@@ -140,24 +136,19 @@ func (s *serverManagerServiceServer) DeleteDimension(
 	}
 	log.Logger.WithContext(ctx).Infof("Deleted dimension %s (%s)", dimension.Name, dimension.Id.String())
 
-	var outErr error
 	if s.server.GlobalConfig.GameBackend.Mode != config.LocalMode {
 		for _, m := range dimension.Maps {
 			log.Logger.Infof("Deleting gameserver dimension %s map %s", dimension.Name, m.Name)
 			err = s.deleteGameServers(ctx, dimension, m)
 			if err != nil {
-				outErr = errors.Join(outErr, status.Errorf(codes.Internal, "deleting game servers for dimension %s, map %s: %s", dimension.Name, m.Name, err.Error()))
+				err = errors.Join(err, status.Errorf(codes.Internal, "deleting game servers for dimension %s, map %s: %s", dimension.Name, m.Name, err.Error()))
 			}
 		}
 	} else {
 		log.Logger.WithContext(ctx).Info("Local Mode: Not deleting game servers")
 	}
 
-	if outErr != nil {
-		return nil, outErr
-	}
-
-	return &emptypb.Empty{}, nil
+	return &emptypb.Empty{}, err
 }
 
 // DeleteMap implements pb.ServerManagerServiceServer.
@@ -220,7 +211,7 @@ func (s *serverManagerServiceServer) DuplicateDimension(
 	if s.server.GlobalConfig.GameBackend.Mode != config.LocalMode {
 		err = s.setupNewDimension(ctx, newDimension)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "setup dimension: %s", err.Error())
+			err = status.Errorf(codes.Internal, "setup dimension: %s", err.Error())
 		}
 	} else {
 		log.Logger.WithContext(ctx).Info("Local Mode: Not creating game servers")
@@ -247,14 +238,14 @@ func (s *serverManagerServiceServer) EditDimension(
 		return nil, model.ErrDoesNotExist
 	}
 
-	editedDimension, err := s.server.GamebackendService.EditDimension(ctx, request)
+	newDimension, err := s.server.GamebackendService.EditDimension(ctx, request)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	var errs error
 	if s.server.GlobalConfig.GameBackend.Mode != config.LocalMode {
-		if request.OptionalName != nil {
+		if originalDimension.Name != newDimension.Name {
 			// Name change requires delete and recreate
 			for _, m := range originalDimension.Maps {
 				err := s.deleteGameServers(ctx, originalDimension, m)
@@ -264,21 +255,20 @@ func (s *serverManagerServiceServer) EditDimension(
 				}
 			}
 
-			err = s.setupNewDimension(ctx, editedDimension)
+			err = s.setupNewDimension(ctx, newDimension)
 			if err != nil {
-				errs = joinErrorAndLog(errs, "setting up dimension %s gameservers: %w", editedDimension.Name, err)
+				errs = joinErrorAndLog(errs, "setting up dimension %s gameservers: %w", newDimension.Name, err)
 			}
 		} else {
-			// Everything wasn't deleted so we can safely change one-by-one
 			if request.EditMaps {
 				currentMaps := make(map[*uuid.UUID]*model.Map, len(request.MapIds))
-				for _, m := range editedDimension.Maps {
+				for _, m := range newDimension.Maps {
 					currentMaps[m.Id] = m
 				}
 
 				for _, m := range originalDimension.Maps {
 					if _, ok := currentMaps[m.Id]; !ok {
-						err := s.deleteGameServers(ctx, editedDimension, m)
+						err := s.deleteGameServers(ctx, newDimension, m)
 						if err != nil {
 							errs = joinErrorAndLog(errs, "unable to delete old gameserver world %s: %w", m.Name, err)
 						}
@@ -286,7 +276,7 @@ func (s *serverManagerServiceServer) EditDimension(
 						delete(currentMaps, m.Id)
 
 						if request.OptionalVersion != nil {
-							err := s.updateGameServers(ctx, editedDimension, m)
+							err := s.updateGameServers(ctx, newDimension, m)
 							if err != nil {
 								errs = joinErrorAndLog(errs, "unable to update gameserver world %s: %w", m.Name, err)
 							}
@@ -296,15 +286,15 @@ func (s *serverManagerServiceServer) EditDimension(
 
 				// newMaps now only contains map that weren't in the original
 				for _, newMap := range currentMaps {
-					err = s.createGameServers(ctx, editedDimension, newMap)
+					err = s.createGameServers(ctx, newDimension, newMap)
 					if err != nil {
 						errs = joinErrorAndLog(errs, "unable to delete old gameserver world %s: %w", newMap.Name, err)
 					}
 				}
 			} else if request.OptionalVersion != nil {
 				// Maps weren't changed, so update the versions
-				for _, m := range editedDimension.Maps {
-					err := s.updateGameServers(ctx, editedDimension, m)
+				for _, m := range newDimension.Maps {
+					err := s.updateGameServers(ctx, newDimension, m)
 					if err != nil {
 						errs = joinErrorAndLog(errs, "unable to update gameserver world %s: %w", m.Name, err)
 					}
@@ -315,7 +305,7 @@ func (s *serverManagerServiceServer) EditDimension(
 		log.Logger.WithContext(ctx).Info("Local Mode: Not creating game servers")
 	}
 
-	return editedDimension.ToPb(), errs
+	return newDimension.ToPb(), errs
 }
 
 // EditMap implements pb.ServerManagerServiceServer.
@@ -343,7 +333,7 @@ func (s *serverManagerServiceServer) EditMap(
 
 	var errs error
 	if s.server.GlobalConfig.GameBackend.Mode != config.LocalMode {
-		if request.OptionalName != nil {
+		if originalMap.Name != newMap.Name {
 			// Need to delete and recreate
 			for _, dimension := range originalMap.Dimensions {
 				err = s.deleteGameServers(ctx, dimension, originalMap)
@@ -480,25 +470,6 @@ func NewServerManagerServiceServer(
 		return nil, err
 	}
 
-	if server.GlobalConfig.GameBackend.Mode != config.LocalMode {
-		conf, err := rest.InClusterConfig()
-		if err != nil {
-			log.Logger.WithContext(ctx).Errorf("creating config: %v", err)
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-
-		agones, err := versioned.NewForConfig(conf)
-		if err != nil {
-			log.Logger.WithContext(ctx).Errorf("creating agones connection: %v", err)
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-
-		return &serverManagerServiceServer{
-			server: server,
-			agones: agones,
-		}, nil
-	}
-
 	return &serverManagerServiceServer{
 		server: server,
 	}, nil
@@ -541,12 +512,12 @@ func (s serverManagerServiceServer) createGameServers(
 	dimension *model.Dimension,
 	m *model.Map,
 ) error {
-	if s.agones == nil {
+	if s.server.AgonesClient == nil {
 		return ErrNoAgonesConnect
 	}
 
 	// Create the fleet
-	fleet, err := s.agones.AgonesV1().Fleets(s.server.GlobalConfig.Agones.Namespace).Create(
+	fleet, err := s.server.AgonesClient.AgonesV1().Fleets(s.server.GlobalConfig.Agones.Namespace).Create(
 		ctx,
 		buildFleet(dimension, m, s.server.GlobalConfig.Agones.Namespace),
 		metav1.CreateOptions{},
@@ -556,7 +527,7 @@ func (s serverManagerServiceServer) createGameServers(
 	}
 
 	// Create autoscaler
-	_, err = s.agones.AutoscalingV1().FleetAutoscalers(fleet.Namespace).Create(
+	_, err = s.server.AgonesClient.AutoscalingV1().FleetAutoscalers(fleet.Namespace).Create(
 		ctx,
 		buildAutoscalingFleet(dimension, m, fleet.Namespace),
 		metav1.CreateOptions{},
@@ -573,14 +544,14 @@ func (s serverManagerServiceServer) deleteGameServers(
 	dimension *model.Dimension,
 	m *model.Map,
 ) error {
-	if s.agones == nil {
+	if s.server.AgonesClient == nil {
 		return ErrNoAgonesConnect
 	}
 
 	namespace := s.server.GlobalConfig.Agones.Namespace
 
 	// Delete autoscaler
-	err := s.agones.AutoscalingV1().FleetAutoscalers(namespace).Delete(
+	err := s.server.AgonesClient.AutoscalingV1().FleetAutoscalers(namespace).Delete(
 		ctx,
 		getFleetAutoscalerName(dimension, m),
 		metav1.DeleteOptions{},
@@ -592,7 +563,7 @@ func (s serverManagerServiceServer) deleteGameServers(
 	}
 
 	// Delete autoscaler
-	err = s.agones.AgonesV1().Fleets(namespace).Delete(
+	err = s.server.AgonesClient.AgonesV1().Fleets(namespace).Delete(
 		ctx,
 		getFleetName(dimension, m),
 		metav1.DeleteOptions{},
@@ -610,12 +581,11 @@ func (s serverManagerServiceServer) updateGameServers(
 	dimension *model.Dimension,
 	m *model.Map,
 ) error {
-	if s.agones == nil {
+	if s.server.AgonesClient == nil {
 		return ErrNoAgonesConnect
 	}
 
-	// Update the fleet
-	fleet, err := s.agones.AgonesV1().Fleets(s.server.GlobalConfig.Agones.Namespace).Update(
+	fleet, err := s.server.AgonesClient.AgonesV1().Fleets(s.server.GlobalConfig.Agones.Namespace).Update(
 		ctx,
 		buildFleet(dimension, m, s.server.GlobalConfig.Agones.Namespace),
 		metav1.UpdateOptions{},
@@ -624,8 +594,7 @@ func (s serverManagerServiceServer) updateGameServers(
 		return fmt.Errorf("creating fleet: %w", err)
 	}
 
-	// Update autoscalergones not setup, not connected in local mode
-	_, err = s.agones.AutoscalingV1().FleetAutoscalers(fleet.Namespace).Update(
+	_, err = s.server.AgonesClient.AutoscalingV1().FleetAutoscalers(fleet.Namespace).Update(
 		ctx,
 		buildAutoscalingFleet(dimension, m, fleet.Namespace),
 		metav1.UpdateOptions{},
@@ -661,15 +630,6 @@ func buildAutoscalingFleet(dimension *model.Dimension, m *model.Map, namespace s
 }
 
 func buildFleet(dimension *model.Dimension, m *model.Map, namespace string) *v1.Fleet {
-	// Create the starting arguments
-	startArgs := make([]string, 2)
-
-	// Map name to load
-	startArgs[0] = m.Path
-
-	// Enable logging
-	startArgs[1] = "-log"
-
 	return &v1.Fleet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -679,6 +639,19 @@ func buildFleet(dimension *model.Dimension, m *model.Map, namespace string) *v1.
 		Spec: v1.FleetSpec{
 			Replicas:   1,
 			Scheduling: "",
+			Strategy: appsv1.DeploymentStrategy{
+				Type: "RollingUpdate",
+				RollingUpdate: &appsv1.RollingUpdateDeployment{
+					MaxUnavailable: &intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 25,
+					},
+					MaxSurge: &intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 25,
+					},
+				},
+			},
 			Template: v1.GameServerTemplateSpec{
 				Spec: v1.GameServerSpec{
 					Container: "",
@@ -703,9 +676,12 @@ func buildFleet(dimension *model.Dimension, m *model.Map, namespace string) *v1.
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{
 								{
-									Name:            "gameserver",
-									Image:           dimension.GetImageName(),
-									Args:            startArgs,
+									Name:  "gameserver",
+									Image: dimension.GetImageName(),
+									Args: []string{
+										m.Path,
+										"-log",
+									},
 									ImagePullPolicy: "Always",
 								},
 							},

@@ -7,7 +7,7 @@ import (
 	"errors"
 	"os"
 
-	aapb "agones.dev/agones/pkg/allocation/go"
+	"agones.dev/agones/pkg/client/clientset/versioned"
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
@@ -18,6 +18,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"k8s.io/client-go/rest"
 )
 
 var (
@@ -29,8 +30,8 @@ type GameBackendServerContext struct {
 	CharacterClient    pb.CharacterServiceClient
 	ChatClient         pb.ChatServiceClient
 	GamebackendService service.GamebackendService
-	AgonesClient       aapb.AllocationServiceClient
 	KeycloakClient     *gocloak.GoCloak
+	AgonesClient       versioned.Interface
 	Tracer             trace.Tracer
 }
 
@@ -49,10 +50,12 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *GameBacke
 	helpers.Check(ctx, err, "connecting to chat")
 	server.ChatClient = pb.NewChatServiceClient(chatService)
 
-	if conf.GameBackend.Mode != config.LocalMode {
-		ac, err := helpers.GrpcClientWithOtel(conf.Agones.Allocator.Address())
-		helpers.Check(ctx, err, "connecting to agones")
-		server.AgonesClient = aapb.NewAllocationServiceClient(ac)
+	if server.GlobalConfig.GameBackend.Mode != config.LocalMode {
+		conf, err := rest.InClusterConfig()
+		helpers.Check(ctx, err, "creating config")
+
+		server.AgonesClient, err = versioned.NewForConfig(conf)
+		helpers.Check(ctx, err, "creating agones connection")
 	}
 
 	db, err := repository.ConnectDB(conf.GameBackend.Postgres)
