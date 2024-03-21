@@ -1,4 +1,4 @@
-# Overview 
+# Overview [![Run Tests](https://github.com/ShatteredRealms/go-backend/actions/workflows/test.yml/badge.svg)](https://github.com/ShatteredRealms/go-backend/actions/workflows/test.yml) [![codecov](https://codecov.io/gh/ShatteredRealms/go-backend/graph/badge.svg?token=ABeWahnnss)](https://codecov.io/gh/ShatteredRealms/go-backend)
 Golang implementation of microservices that manage Shattered Realms Online.
 
 ## Components
