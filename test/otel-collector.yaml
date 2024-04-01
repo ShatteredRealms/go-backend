@@ -1,65 +1,43 @@
-extensions:
-  health_check:
-  pprof:
-    endpoint: 0.0.0.0:1777
-  zpages:
-    endpoint: 0.0.0.0:55679
-
 receivers:
   otlp:
     protocols:
       grpc:
-      http:
-  hostmetrics:
-    collection_interval: 10s
-    scrapers:
-      cpu:
-      disk:
-      load:
-      filesystem:
-      memory:
-      network:
-      paging:
-  jaeger:
-    protocols:
-      grpc:
-
-processors:
-  resourcedetection:
-    detectors: ['system']
-  batch:
-    send_batch_size: 10000
-    timeout: 10s
 
 exporters:
-  logging:
-    logLevel: debug
-  otlp/uptrace:
-    endpoint: uptrace:14317
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    const_labels:
+      label1: value1
+
+  debug:
+
+  zipkin:
+    endpoint: "http://zipkin:9411/api/v2/spans"
+    format: proto
+
+  otlp:
+    endpoint: jaeger:4317
     tls:
       insecure: true
-    headers: { 'uptrace-dsn': 'http://project1_secret_token@localhost:14317/1' }
+
+processors:
+  batch:
+
+extensions:
+  health_check:
+  pprof:
+    endpoint: :1888
+  zpages:
+    endpoint: :55679
 
 service:
-  # telemetry:
-  #   logs:
-  #     level: DEBUG
+  extensions: [pprof, zpages, health_check]
   pipelines:
     traces:
-      receivers: [otlp, jaeger]
+      receivers: [otlp]
       processors: [batch]
-      exporters: [otlp/uptrace, logging]
+      exporters: [debug, zipkin, otlp]
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp/uptrace]
-    metrics/hostmetrics:
-      receivers: [hostmetrics]
-      processors: [batch, resourcedetection]
-      exporters: [otlp/uptrace]
-    logs:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [otlp/uptrace]
-
-  extensions: [health_check, pprof, zpages]
+      exporters: [debug, prometheus]

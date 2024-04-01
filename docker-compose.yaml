@@ -26,42 +26,39 @@ services:
     networks:
       - backend
 
-  clickhouse:
-    image: clickhouse/clickhouse-server:22.7
-    restart: on-failure
-    environment:
-      CLICKHOUSE_DB: uptrace
-    healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'localhost:8123/ping']
-      interval: 1s
-      timeout: 1s
-      retries: 30
-    volumes:
-      - ch_data_2:/var/lib/clickhouse
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    restart: always
     ports:
-      - '8123:8123'
-      - '9000:9000'
+      - "16686:16686"
+      - "14268"
+      - "14250"
     networks:
       - backend
 
-  uptrace:
-    image: 'uptrace/uptrace-dev:latest'
-    restart: on-failure
-    volumes:
-      - uptrace_data:/var/lib/uptrace
-      - ./test/uptrace.yml:/etc/uptrace/uptrace.yml
-    #environment:
-    #  - DEBUG=2
+  zipkin:
+    image: openzipkin/zipkin:latest
+    environment:
+      - JAVA_OPTS=-Xms1024m -Xmx1024m -XX:+ExitOnOutOfMemoryError
+    restart: always
     ports:
-      - '14317:14317'
-      - '14318:14318'
-    depends_on:
-      - clickhouse
+      - "9411:9411"
+    networks:
+      - backend
+
+  
+  prometheus:
+    image: prom/prometheus:latest
+    restart: always
+    volumes:
+      - ./test/prometheus.yaml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
     networks:
       - backend
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.70.0
+    image: otel/opentelemetry-collector-contrib:0.97.0
     restart: on-failure
     user: '0:0' # required for logs
     volumes:
@@ -69,8 +66,15 @@ services:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/log:/var/log:ro
     ports:
-      - '4317:4317'
-      - '4318:4318'
+      - "1888:1888"   # pprof extension
+      - "8888:8888"   # Prometheus metrics exposed by the collector
+      - "8889:8889"   # Prometheus exporter metrics
+      - "13133:13133" # health_check extension
+      - "4317:4317"   # OTLP gRPC receiver
+      - "55679:55679" # zpages extension
+    depends_on:
+      - zipkin
+      - prometheus
     networks:
       - backend
 
@@ -93,13 +97,6 @@ services:
     restart: on-failure
     ports:
       - '8025:8025'
-    networks:
-      - backend
-
-  vector:
-    image: timberio/vector:0.24.X-alpine
-    volumes:
-      - ./test/vector.toml:/etc/vector/vector.toml:ro
     networks:
       - backend
 
@@ -152,16 +149,8 @@ services:
       - 8080:8080
     depends_on:
       - postgres
-      - keycloak-fix
     networks:
       - backend
-    volumes:
-      - keycloak:/opt/keycloak/data/h2
-
-  keycloak-fix:
-    image: ubuntu
-    user: root
-    command: chmod 777 /opt/keycloak/data/h2
     volumes:
       - keycloak:/opt/keycloak/data/h2
 

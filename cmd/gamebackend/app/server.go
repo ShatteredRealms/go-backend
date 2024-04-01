@@ -39,7 +39,7 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *GameBacke
 	server := &GameBackendServerContext{
 		GlobalConfig:   conf,
 		Tracer:         otel.Tracer("GameBackendService"),
-		KeycloakClient: gocloak.NewClient(conf.GameBackend.Keycloak.BaseURL),
+		KeycloakClient: gocloak.NewClient(conf.Keycloak.BaseURL),
 	}
 
 	charactersService, err := helpers.GrpcClientWithOtel(conf.Character.Remote.Address())

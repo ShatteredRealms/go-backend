@@ -57,15 +57,15 @@ func (s *charactersServiceServer) AddCharacterPlayTime(
 	ctx context.Context,
 	request *pb.AddPlayTimeRequest,
 ) (*pb.PlayTimeResponse, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleAddCharacterPlayTime, model.CharactersClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	characterId, err := s.getCharacterTargetId(ctx, request.Character)
@@ -74,12 +74,12 @@ func (s *charactersServiceServer) AddCharacterPlayTime(
 	}
 
 	// Add playtime
-	time, err := s.server.CharacterService.AddPlayTime(ctx, characterId, request.Time)
+	character, err := s.server.CharacterService.AddPlayTime(ctx, characterId, request.Time)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "could not update playtime")
 	}
 
-	return &pb.PlayTimeResponse{Time: time}, nil
+	return &pb.PlayTimeResponse{Time: character.PlayTime}, nil
 }
 
 // CreateCharacter implements pb.CharacterServiceServer
@@ -87,15 +87,15 @@ func (s *charactersServiceServer) CreateCharacter(
 	ctx context.Context,
 	request *pb.CreateCharacterRequest,
 ) (*pb.CharacterDetails, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleCharacterManagement, model.CharactersClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	ownerId, err := s.getUserIdFromTarget(ctx, request.Owner)
@@ -105,7 +105,7 @@ func (s *charactersServiceServer) CreateCharacter(
 
 	// If not requesting to create character for self, verify requester has permission for other
 	if claims.Subject != ownerId && !claims.HasResourceRole(RoleCharacterManagementOther, model.CharactersClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Create new character
@@ -131,15 +131,15 @@ func (s *charactersServiceServer) DeleteCharacter(
 	ctx context.Context,
 	request *pb.CharacterTarget,
 ) (*emptypb.Empty, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleCharacterManagement, model.CharactersClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	character, err := s.getCharacterFromTarget(ctx, request)
@@ -148,12 +148,12 @@ func (s *charactersServiceServer) DeleteCharacter(
 	}
 
 	if character == nil {
-		return nil, model.ErrDoesNotExist
+		return nil, model.ErrDoesNotExist.Err()
 	}
 
 	// If not requesting to delete requester own character, verify it has permission to delete others
 	if claims.Subject != character.OwnerId && !claims.HasResourceRole(RoleCharacterManagementOther, model.CharactersClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	err = s.server.CharacterService.Delete(ctx, character.ID)
@@ -170,15 +170,15 @@ func (s *charactersServiceServer) EditCharacter(
 	ctx context.Context,
 	request *pb.EditCharacterRequest,
 ) (*emptypb.Empty, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleCharacterManagementOther, model.CharactersClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission to change playtime otherwise don't allow changing
@@ -200,16 +200,16 @@ func (s *charactersServiceServer) GetCharacter(
 	ctx context.Context,
 	request *pb.CharacterTarget,
 ) (*pb.CharacterDetails, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleCharacterManagement, model.CharactersClientId) {
 		log.Logger.WithContext(ctx).Error("no permission")
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	character, err := s.getCharacterFromTarget(ctx, request)
@@ -219,12 +219,12 @@ func (s *charactersServiceServer) GetCharacter(
 	}
 
 	if character == nil {
-		return nil, model.ErrDoesNotExist
+		return nil, model.ErrDoesNotExist.Err()
 	}
 
 	if character.OwnerId != claims.Subject && !claims.HasResourceRole(RoleCharacterManagementOther, model.CharactersClientId) {
 		log.Logger.WithContext(ctx).Infof("user %s requested character %s without %s", claims.Subject, character.Name, *RoleCharacterManagementOther.Name)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	return character.ToPb(), nil
@@ -235,27 +235,27 @@ func (s *charactersServiceServer) GetAllCharactersForUser(
 	ctx context.Context,
 	request *pb.UserTarget,
 ) (*pb.CharactersDetails, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleCharacterManagement, model.CharactersClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	id, err := s.getUserIdFromTarget(ctx, request)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("get user id from target: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if id != claims.Subject &&
 		!claims.HasResourceRole(RoleCharacterManagementOther, model.CharactersClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	chars, err := s.server.CharacterService.FindAllByOwner(ctx, id)
@@ -272,15 +272,15 @@ func (s *charactersServiceServer) GetCharacters(
 	ctx context.Context,
 	msg *emptypb.Empty,
 ) (*pb.CharactersDetails, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleCharacterManagementOther, model.CharactersClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	chars, err := s.server.CharacterService.FindAll(ctx)
@@ -297,15 +297,15 @@ func (s *charactersServiceServer) GetInventory(
 	ctx context.Context,
 	request *pb.CharacterTarget,
 ) (*pb.Inventory, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleInventoryManagement, model.CharactersClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	character, err := s.getCharacterFromTarget(ctx, request)
@@ -314,7 +314,7 @@ func (s *charactersServiceServer) GetInventory(
 	}
 
 	if character == nil {
-		return nil, model.ErrDoesNotExist
+		return nil, model.ErrDoesNotExist.Err()
 	}
 
 	inv, err := s.server.InventoryService.GetInventory(ctx, character.ID)
@@ -334,15 +334,15 @@ func (s *charactersServiceServer) SetInventory(
 	ctx context.Context,
 	request *pb.UpdateInventoryRequest,
 ) (*emptypb.Empty, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Character.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleInventoryManagement, model.CharactersClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	character, err := s.getCharacterFromTarget(ctx, request.Target)
@@ -351,7 +351,7 @@ func (s *charactersServiceServer) SetInventory(
 	}
 
 	if character == nil {
-		return nil, model.ErrDoesNotExist
+		return nil, model.ErrDoesNotExist.Err()
 	}
 
 	newInv := &model.CharacterInventory{
@@ -379,7 +379,7 @@ func NewCharacterServiceServer(
 		ctx,
 		server.GlobalConfig.Character.Keycloak.ClientId,
 		server.GlobalConfig.Character.Keycloak.ClientSecret,
-		server.GlobalConfig.Character.Keycloak.Realm,
+		server.GlobalConfig.Keycloak.Realm,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("login keycloak: %v", err)
@@ -388,7 +388,7 @@ func NewCharacterServiceServer(
 	err = createRoles(ctx,
 		server.KeycloakClient,
 		token.AccessToken,
-		server.GlobalConfig.Character.Keycloak.Realm,
+		server.GlobalConfig.Keycloak.Realm,
 		server.GlobalConfig.Character.Keycloak.Id,
 		&CharacterRoles,
 	)
@@ -404,9 +404,9 @@ func NewCharacterServiceServer(
 func (s charactersServiceServer) serverContext(ctx context.Context) (context.Context, error) {
 	token, err := s.server.KeycloakClient.LoginClient(
 		ctx,
-		s.server.GlobalConfig.Chat.Keycloak.ClientId,
-		s.server.GlobalConfig.Chat.Keycloak.ClientSecret,
-		s.server.GlobalConfig.Chat.Keycloak.Realm,
+		s.server.GlobalConfig.Character.Keycloak.ClientId,
+		s.server.GlobalConfig.Character.Keycloak.ClientSecret,
+		s.server.GlobalConfig.Keycloak.Realm,
 	)
 	if err != nil {
 		return nil, err
@@ -439,7 +439,7 @@ func (s charactersServiceServer) getCharacterTargetId(
 		characterId = char.ID
 	default:
 		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
-		return 0, model.ErrHandleRequest
+		return 0, model.ErrHandleRequest.Err()
 	}
 
 	return characterId, nil
@@ -465,17 +465,17 @@ func (s charactersServiceServer) getCharacterFromTarget(
 
 	default:
 		log.Logger.WithContext(ctx).Errorf("target type unknown: %s", reflect.TypeOf(target).Name())
-		return nil, model.ErrHandleRequest
+		return nil, model.ErrHandleRequest.Err()
 	}
 
 	if err != nil {
 		log.Logger.WithContext(ctx).Debugf("err: %v", err)
-		return nil, model.ErrHandleRequest
+		return nil, model.ErrHandleRequest.Err()
 	}
 
 	if character == nil {
 		log.Logger.WithContext(ctx).Debugf("character not found")
-		return nil, model.ErrDoesNotExist
+		return nil, model.ErrDoesNotExist.Err()
 	}
 
 	return character, nil
@@ -489,11 +489,11 @@ func (s charactersServiceServer) getUserIdFromTarget(
 		ctx,
 		s.server.GlobalConfig.Character.Keycloak.ClientId,
 		s.server.GlobalConfig.Character.Keycloak.ClientSecret,
-		s.server.GlobalConfig.Character.Keycloak.Realm,
+		s.server.GlobalConfig.Keycloak.Realm,
 	)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("login keycloak: %v", err)
-		return "", model.ErrHandleRequest
+		return "", model.ErrHandleRequest.Err()
 	}
 
 	ownerId := request.GetId()
@@ -501,7 +501,7 @@ func (s charactersServiceServer) getUserIdFromTarget(
 		resp, err := s.server.KeycloakClient.GetUsers(
 			ctx,
 			token.AccessToken,
-			s.server.GlobalConfig.Character.Keycloak.Realm,
+			s.server.GlobalConfig.Keycloak.Realm,
 			gocloak.GetUsersParams{
 				Exact:    gocloak.BoolP(true),
 				Username: gocloak.StringP(val.Username),
@@ -509,10 +509,10 @@ func (s charactersServiceServer) getUserIdFromTarget(
 		)
 		if err != nil {
 			log.Logger.WithContext(ctx).Errorf("keycloak get users: %v", err)
-			return "", model.ErrHandleRequest
+			return "", model.ErrHandleRequest.Err()
 		}
 		if len(resp) == 0 || len(resp) > 1 {
-			return "", model.ErrDoesNotExist
+			return "", model.ErrDoesNotExist.Err()
 		}
 
 		ownerId = *resp[0].ID

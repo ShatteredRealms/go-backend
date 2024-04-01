@@ -91,7 +91,8 @@ func (s *gamebackendService) FindDimension(ctx context.Context, target *pb.Dimen
 
 	default:
 		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
-		return nil, model.ErrHandleRequest
+		return nil, model.ErrHandleRequest.Err()
+
 	}
 }
 
@@ -110,7 +111,8 @@ func (s *gamebackendService) FindMap(ctx context.Context, target *pb.MapTarget) 
 
 	default:
 		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
-		return nil, model.ErrHandleRequest
+		return nil, model.ErrHandleRequest.Err()
+
 	}
 }
 
@@ -121,7 +123,8 @@ func (s *gamebackendService) DuplicateDimension(ctx context.Context, target *pb.
 		return nil, err
 	}
 	if dimension == nil {
-		return nil, model.ErrDoesNotExist
+		return nil, model.ErrDoesNotExist.Err()
+
 	}
 
 	ids := make([]*uuid.UUID, len(dimension.Maps))
@@ -218,7 +221,8 @@ func (s *gamebackendService) EditDimension(ctx context.Context, request *pb.Edit
 	}
 
 	if currentDimension == nil {
-		return nil, model.ErrDoesNotExist
+		return nil, model.ErrDoesNotExist.Err()
+
 	}
 
 	if request.OptionalName != nil {
@@ -282,7 +286,8 @@ func (s *gamebackendService) EditMap(ctx context.Context, request *pb.EditMapReq
 		currentMap, err = s.FindMapByName(ctx, target.Name)
 	default:
 		log.Logger.WithContext(ctx).Errorf("map target type unknown: %+v", request.Target)
-		err = model.ErrHandleRequest
+		err = model.ErrHandleRequest.Err()
+
 	}
 
 	if err != nil {
@@ -290,7 +295,8 @@ func (s *gamebackendService) EditMap(ctx context.Context, request *pb.EditMapReq
 	}
 
 	if currentMap == nil {
-		return nil, model.ErrDoesNotExist
+		return nil, model.ErrDoesNotExist.Err()
+
 	}
 
 	if request.OptionalName != nil {
@@ -382,7 +388,8 @@ func (s *gamebackendService) DeleteDimension(ctx context.Context, target *pb.Dim
 
 	default:
 		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
-		return model.ErrHandleRequest
+		return model.ErrHandleRequest.Err()
+
 	}
 }
 
@@ -401,6 +408,7 @@ func (s *gamebackendService) DeleteMap(ctx context.Context, target *pb.MapTarget
 
 	default:
 		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
-		return model.ErrHandleRequest
+		return model.ErrHandleRequest.Err()
+
 	}
 }

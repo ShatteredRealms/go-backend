@@ -127,7 +127,7 @@ func (s *serverManagerServiceServer) DeleteDimension(
 		return nil, err
 	}
 	if dimension == nil {
-		return nil, model.ErrDoesNotExist
+		return nil, model.ErrDoesNotExist.Err()
 	}
 
 	err = s.server.GamebackendService.DeleteDimensionById(ctx, dimension.Id)
@@ -235,7 +235,7 @@ func (s *serverManagerServiceServer) EditDimension(
 		return nil, err
 	}
 	if originalDimension == nil {
-		return nil, model.ErrDoesNotExist
+		return nil, model.ErrDoesNotExist.Err()
 	}
 
 	newDimension, err := s.server.GamebackendService.EditDimension(ctx, request)
@@ -323,7 +323,7 @@ func (s *serverManagerServiceServer) EditMap(
 		return nil, err
 	}
 	if originalMap == nil {
-		return nil, model.ErrDoesNotExist
+		return nil, model.ErrDoesNotExist.Err()
 	}
 
 	newMap, err := s.server.GamebackendService.EditMap(ctx, request)
@@ -416,7 +416,7 @@ func (s *serverManagerServiceServer) GetDimension(
 	}
 
 	if dimension == nil {
-		return nil, status.Error(codes.InvalidArgument, model.ErrDoesNotExist.Error())
+		return nil, model.ErrDoesNotExist.Err()
 	}
 
 	return dimension.ToPb(), nil
@@ -439,7 +439,7 @@ func (s *serverManagerServiceServer) GetMap(
 	}
 
 	if m == nil {
-		return nil, status.Error(codes.InvalidArgument, model.ErrDoesNotExist.Error())
+		return nil, model.ErrDoesNotExist.Err()
 	}
 
 	return m.ToPb(), nil
@@ -453,7 +453,7 @@ func NewServerManagerServiceServer(
 		ctx,
 		server.GlobalConfig.GameBackend.Keycloak.ClientId,
 		server.GlobalConfig.GameBackend.Keycloak.ClientSecret,
-		server.GlobalConfig.GameBackend.Keycloak.Realm,
+		server.GlobalConfig.Keycloak.Realm,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("login keycloak: %v", err)
@@ -462,7 +462,7 @@ func NewServerManagerServiceServer(
 	err = createRoles(ctx,
 		server.KeycloakClient,
 		token.AccessToken,
-		server.GlobalConfig.GameBackend.Keycloak.Realm,
+		server.GlobalConfig.Keycloak.Realm,
 		server.GlobalConfig.GameBackend.Keycloak.Id,
 		&ConnectionRoles,
 	)
@@ -480,7 +480,7 @@ func (s serverManagerServiceServer) serverContext(ctx context.Context) (context.
 		ctx,
 		s.server.GlobalConfig.GameBackend.Keycloak.ClientId,
 		s.server.GlobalConfig.GameBackend.Keycloak.ClientSecret,
-		s.server.GlobalConfig.GameBackend.Keycloak.Realm,
+		s.server.GlobalConfig.Keycloak.Realm,
 	)
 	if err != nil {
 		return nil, err
@@ -493,15 +493,15 @@ func (s serverManagerServiceServer) serverContext(ctx context.Context) (context.
 }
 
 func (s serverManagerServiceServer) hasServerManagerRole(ctx context.Context) error {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.GameBackend.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return model.ErrUnauthorized
+		return model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleServerManager, model.GamebackendClientId) {
-		return model.ErrUnauthorized
+		return model.ErrUnauthorized.Err()
 	}
 
 	return nil
@@ -743,14 +743,14 @@ func (s serverManagerServiceServer) findMapByNameOrId(
 
 	default:
 		log.Logger.WithContext(ctx).Errorf("target type unknown: %v", requestTarget)
-		return nil, model.ErrHandleRequest
+		return nil, model.ErrHandleRequest.Err()
 	}
 
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if out == nil {
-		return nil, model.ErrDoesNotExist
+		return nil, model.ErrDoesNotExist.Err()
 	}
 
 	return out, nil

@@ -18,9 +18,16 @@ type GlobalConfig struct {
 	Character   CharacterServer   `yaml:"character"`
 	GameBackend GamebackendServer `yaml:"gamebackend"`
 	Chat        ChatServer        `json:"chat" yaml:"chat"`
-	Uptrace     UptraceConfig     `json:"uptrace" yaml:"uptrace"`
-	Agones      AgonesConfig      `json:"agones"`
-	Version     string
+	// Uptrace     UptraceConfig     `json:"uptrace" yaml:"uptrace"`
+	OpenTelemetry OpenTelemetryConfig `json:"otel" yaml:"otel"`
+	Agones        AgonesConfig        `json:"agones"`
+	Keycloak      KeycloakGlobal      `yaml:"keycloak"`
+	Version       string
+}
+
+type KeycloakGlobal struct {
+	BaseURL string `yaml:"baseURL"`
+	Realm   string `yaml:"realm"`
 }
 
 func NewGlobalConfig(ctx context.Context) *GlobalConfig {
@@ -38,8 +45,6 @@ func NewGlobalConfig(ctx context.Context) *GlobalConfig {
 				Mode:     LocalMode,
 				LogLevel: logrus.InfoLevel,
 				Keycloak: KeycloakClientConfig{
-					Realm:        "default",
-					BaseURL:      "http://localhost:8080",
 					ClientId:     model.CharactersClientId,
 					ClientSecret: "**********",
 					Id:           "738a426a-da91-4b16-b5fc-92d63a22eb76",
@@ -77,8 +82,6 @@ func NewGlobalConfig(ctx context.Context) *GlobalConfig {
 				Mode:     LocalMode,
 				LogLevel: logrus.InfoLevel,
 				Keycloak: KeycloakClientConfig{
-					Realm:        "default",
-					BaseURL:      "http://localhost:8080",
 					ClientId:     model.GamebackendClientId,
 					ClientSecret: "**********",
 					Id:           "c3cacba8-cd16-4a4f-bc86-367274cb7cb5",
@@ -108,8 +111,6 @@ func NewGlobalConfig(ctx context.Context) *GlobalConfig {
 				Mode:     LocalMode,
 				LogLevel: logrus.InfoLevel,
 				Keycloak: KeycloakClientConfig{
-					Realm:        "default",
-					BaseURL:      "http://localhost:8080",
 					ClientId:     model.ChatClientId,
 					ClientSecret: "**********",
 					Id:           "4c79d4a0-a3fd-495f-b56e-eea508bb0862",
@@ -130,8 +131,8 @@ func NewGlobalConfig(ctx context.Context) *GlobalConfig {
 				Slaves: []DBConfig{},
 			},
 		},
-		Uptrace: UptraceConfig{
-			DSN: "http://project2_secret_token@localhost:14317/2",
+		OpenTelemetry: OpenTelemetryConfig{
+			Addr: "otel-collector:4317",
 		},
 		Agones: AgonesConfig{
 			KeyFile:    "/etc/sro/auth/agones/client/key",
@@ -143,17 +144,25 @@ func NewGlobalConfig(ctx context.Context) *GlobalConfig {
 				Host: "localhost",
 			},
 		},
+		Keycloak: KeycloakGlobal{
+			BaseURL: "http://localhost:80801/",
+			Realm:   "default",
+		},
 		Version: Version,
 	}
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./")
-	viper.AddConfigPath("./test/")
 	viper.AddConfigPath("/etc/sro/")
+	viper.AddConfigPath("./test/")
+	viper.AddConfigPath(".")
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigParseError); ok {
-			log.Logger.WithContext(ctx).Fatalf("read appConfig: %v", err)
+			log.Logger.WithContext(ctx).Fatalf("read app config parse error: %v", err)
+		} else if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			log.Logger.WithContext(ctx).Warnf("no config found, using default: %v", err)
+		} else {
+			log.Logger.WithContext(ctx).Fatalf("unknown error prasing config : %v", err)
 		}
 	}
 

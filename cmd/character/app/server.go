@@ -10,12 +10,13 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/service"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 )
 
 var (
-	ServiceName = "characters"
+	ServiceName = "character"
 )
 
 type CharactersServerContext struct {
@@ -30,18 +31,22 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *Character
 	server := &CharactersServerContext{
 		GlobalConfig:   conf,
 		Tracer:         otel.Tracer("CharactersService"),
-		KeycloakClient: gocloak.NewClient(conf.GameBackend.Keycloak.BaseURL),
+		KeycloakClient: gocloak.NewClient(conf.Keycloak.BaseURL),
 	}
 
 	postgres, err := repository.ConnectDB(server.GlobalConfig.Character.Postgres)
 	helpers.Check(ctx, err, "connecting to postgres database")
 
-	characterRepo := repository.NewCharacterRepository(postgres)
+	characterRepo, err := repository.NewCharacterRepository(postgres)
+	helpers.Check(ctx, err, "character repo")
 	characterService, err := service.NewCharacterService(ctx, characterRepo)
 	helpers.Check(ctx, err, "character serivce")
 	server.CharacterService = characterService
 
-	mongoDb, err := mongo.Connect(ctx, options.Client().ApplyURI(server.GlobalConfig.Character.Mongo.Master.MongoDSN()))
+	opts := options.Client()
+	opts.Monitor = otelmongo.NewMonitor()
+	opts.ApplyURI(server.GlobalConfig.Character.Mongo.Master.MongoDSN())
+	mongoDb, err := mongo.Connect(ctx, opts)
 	helpers.Check(ctx, err, "connecting to mongo database")
 	invRepo := repository.NewInventoryRepository(mongoDb.Database(server.GlobalConfig.Character.Mongo.Master.Name))
 	server.InventoryService = service.NewInventoryService(invRepo)

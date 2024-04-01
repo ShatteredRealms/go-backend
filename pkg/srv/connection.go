@@ -51,15 +51,15 @@ func (s connectionServiceServer) ConnectGameServer(
 	ctx context.Context,
 	request *pb.CharacterTarget,
 ) (*pb.ConnectGameServerResponse, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.GameBackend.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleConnect, model.GamebackendClientId) {
-		return nil, errors.Wrapf(model.ErrUnauthorized, "no role %s", *RoleConnect.Name)
+		return nil, errors.Wrapf(model.ErrUnauthorized.Err(), "no role %s", *RoleConnect.Name)
 	}
 
 	// If the current user can't get the character, then deny the request
@@ -73,7 +73,7 @@ func (s connectionServiceServer) ConnectGameServer(
 	}
 	if character == nil {
 		log.Logger.WithContext(ctx).Warnf("%s requested character %v but does not exists", claims.Username, request.Type)
-		return nil, model.ErrDoesNotExist
+		return nil, model.ErrDoesNotExist.Err()
 	}
 
 	if s.server.GlobalConfig.GameBackend.Mode == config.LocalMode {
@@ -107,15 +107,15 @@ func (s connectionServiceServer) VerifyConnect(
 	ctx context.Context,
 	request *pb.VerifyConnectRequest,
 ) (*pb.CharacterDetails, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.GameBackend.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleManageConnections, model.GamebackendClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	id, err := uuid.Parse(request.ConnectionId)
@@ -153,15 +153,15 @@ func (s connectionServiceServer) TransferPlayer(
 	ctx context.Context,
 	request *pb.TransferPlayerRequest,
 ) (*pb.ConnectGameServerResponse, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.GameBackend.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleManageConnections, model.GamebackendClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	character, err := s.server.CharacterClient.GetCharacter(
@@ -212,7 +212,7 @@ func (s connectionServiceServer) requestConnection(
 	srvCtx, err := s.serverContext(ctx)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
-		return nil, model.ErrHandleRequest
+		return nil, model.ErrHandleRequest.Err()
 	}
 
 	allocatedState := v1.GameServerStateAllocated
@@ -300,7 +300,7 @@ func NewConnectionServiceServer(
 		ctx,
 		server.GlobalConfig.GameBackend.Keycloak.ClientId,
 		server.GlobalConfig.GameBackend.Keycloak.ClientSecret,
-		server.GlobalConfig.GameBackend.Keycloak.Realm,
+		server.GlobalConfig.Keycloak.Realm,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("login keycloak: %v", err)
@@ -309,7 +309,7 @@ func NewConnectionServiceServer(
 	err = createRoles(ctx,
 		server.KeycloakClient,
 		token.AccessToken,
-		server.GlobalConfig.GameBackend.Keycloak.Realm,
+		server.GlobalConfig.Keycloak.Realm,
 		server.GlobalConfig.GameBackend.Keycloak.Id,
 		&ConnectionRoles,
 	)
@@ -346,7 +346,7 @@ func (s connectionServiceServer) serverContext(ctx context.Context) (context.Con
 		ctx,
 		s.server.GlobalConfig.GameBackend.Keycloak.ClientId,
 		s.server.GlobalConfig.GameBackend.Keycloak.ClientSecret,
-		s.server.GlobalConfig.GameBackend.Keycloak.Realm,
+		s.server.GlobalConfig.Keycloak.Realm,
 	)
 	if err != nil {
 		return nil, err
