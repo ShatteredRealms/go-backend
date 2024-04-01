@@ -18,34 +18,29 @@ func BindEnvsToStruct(obj interface{}) {
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Type().Field(i)
 		key := field.Name
-		env := field.Name
 		if field.Anonymous {
-			env = ""
+			key = ""
 		}
-		bindRecursive(key, env, val.Field(i))
+		bindRecursive(key, val.Field(i))
 	}
 }
 
-func bindRecursive(key, env string, val reflect.Value) {
+func bindRecursive(key string, val reflect.Value) {
 	if val.Kind() != reflect.Struct {
-		env = "SRO_" + strings.ToUpper(env)
-		_ = viper.BindEnv(key, env)
+		env := "SRO_" + strings.ReplaceAll(strings.ToUpper(key), ".", "_")
+		viper.MustBindEnv(key, env)
 		return
 	}
 
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Type().Field(i)
 		newKey := field.Name
-		newEnv := field.Name
-		if key != "" {
+		if field.Anonymous {
+			newKey = ""
+		} else if key != "" {
 			newKey = "." + newKey
 		}
-		if field.Anonymous {
-			newEnv = ""
-		} else if env != "" {
-			newEnv = "_" + newEnv
-		}
 
-		bindRecursive(key+newKey, env+newEnv, val.Field(i))
+		bindRecursive(key+newKey, val.Field(i))
 	}
 }

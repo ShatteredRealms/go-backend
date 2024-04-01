@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
-	"github.com/ShatteredRealms/go-backend/pkg/log"
 )
 
 func GetCharacterIdFromTarget(
@@ -32,7 +32,7 @@ func GetCharacterIdFromTarget(
 
 	default:
 		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
-		return 0, model.ErrHandleRequest
+		return 0, model.ErrHandleRequest.Err()
 	}
 
 	return targetCharacterId, nil
@@ -61,7 +61,8 @@ func GetCharacterNameFromTarget(
 
 	default:
 		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
-		return "", model.ErrHandleRequest
+		return "", model.ErrHandleRequest.Err()
+
 	}
 
 	return targetCharacterName, nil

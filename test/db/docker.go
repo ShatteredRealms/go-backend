@@ -85,7 +85,10 @@ func SetupKeycloakWithDocker() (func(), string) {
 		return err
 	}, time.Second*60)
 
-	_, err = http.Get(host + "/realms/default")
+	err = Retry(func() error {
+		_, err = http.Get(host + "/realms/default")
+		return err
+	}, time.Second*60)
 	chk(err)
 
 	return closeFunc, host
@@ -136,7 +139,7 @@ func SetupKafkaWithDocker() (func(), uint) {
 	}
 
 	fnConfig := func(config *docker.HostConfig) {
-		config.AutoRemove = false
+		config.AutoRemove = true
 		config.RestartPolicy = docker.NeverRestart()
 	}
 
@@ -154,11 +157,10 @@ func SetupKafkaWithDocker() (func(), uint) {
 	}))
 
 	fnCleanup := func() {
-		// err1 := kafkaResource.Close()
-		_ = kafkaResource
+		err1 := kafkaResource.Close()
 		err2 := zookeeperResource.Close()
 		err3 := net.Close()
-		// chk(err1)
+		chk(err1)
 		chk(err2)
 		chk(err3)
 	}
@@ -207,7 +209,7 @@ func ConnectMongoDocker(host string) *mongo.Database {
 		}
 		mdb = db.Database("testdb")
 		return db.Ping(context.TODO(), nil)
-	}, time.Second*10))
+	}, time.Second*30))
 
 	return mdb
 }

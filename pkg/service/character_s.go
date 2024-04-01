@@ -22,7 +22,7 @@ type CharacterService interface {
 
 	FindAll(context.Context) (model.Characters, error)
 
-	AddPlayTime(ctx context.Context, characterId uint, amount uint64) (uint64, error)
+	AddPlayTime(ctx context.Context, characterId uint, amount uint64) (*model.Character, error)
 }
 
 type characterService struct {
@@ -79,7 +79,8 @@ func (s characterService) Edit(ctx context.Context, character *pb.EditCharacterR
 		currentCharacter, err = s.FindByName(ctx, target.Name)
 	default:
 		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
-		return nil, model.ErrHandleRequest
+		return nil, model.ErrHandleRequest.Err()
+
 	}
 
 	if err != nil {
@@ -143,14 +144,14 @@ func (s characterService) FindAllByOwner(ctx context.Context, owner string) (mod
 	return s.repo.FindAllByOwner(ctx, owner)
 }
 
-func (s characterService) AddPlayTime(ctx context.Context, characterId uint, amount uint64) (uint64, error) {
+func (s characterService) AddPlayTime(ctx context.Context, characterId uint, amount uint64) (*model.Character, error) {
 	character, err := s.FindById(ctx, characterId)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	character.PlayTime += amount
 	character, err = s.repo.Save(ctx, character)
 
-	return character.PlayTime, err
+	return character, err
 }

@@ -40,7 +40,8 @@ PROTO_FILES = $(shell find $(PROTO_DIR) -name '*.proto')
 
 MOCK_INTERFACES = $(shell egrep -rl --include="*.go" "type (\w*) interface {" $(ROOT_DIR)/pkg | sed "s/.go$$//")
 
-CMDS = $(shell find $(ROOT_DIR)/cmd -maxdepth 1 -mindepth 1 -type d | sed "s/^.*\///")
+ALL_CMDS = $(shell find $(ROOT_DIR)/cmd -maxdepth 1 -mindepth 1 -type d | sed "s/^.*\///")
+CMDS = $(filter-out stressy, $(ALL_CMDS))
 
 #   _____                    _
 #  |_   _|                  | |
@@ -53,7 +54,11 @@ CMDS = $(shell find $(ROOT_DIR)/cmd -maxdepth 1 -mindepth 1 -type d | sed "s/^.*
 
 .PHONY: test report mocks clean-mocks report-watch
 test:
-	ginkgo --race -p --cover -covermode atomic -coverprofile=coverage.out --output-dir $(ROOT_DIR)/ $(ROOT_DIR)/...
+	ginkgo --race -p --cover -covermode atomic -coverprofile=coverage.out --output-dir $(ROOT_DIR)/ $(ROOT_DIR)/pkg/...
+
+test-e2e:
+	@echo "Starting e2e integration tests"
+	ginkgo --race -p $(ROOT_DIR)/test/e2e/...
 
 test-watch:
 	ginkgo watch --race -p --cover -covermode atomic -output-dir=$(ROOT_DIR) $(ROOT_DIR)/...
@@ -79,9 +84,11 @@ mocks: clean-mocks
 clean-mocks:
 	rm -rf $(ROOT_DIR)/pkg/mocks
 
-build: $(addprefix build-, $(CMDS))
+build: $(addprefix build-, $(CMDS)) buildclis
 build-%:
 	go build -ldflags="-X 'github.com/ShatteredRealms/go-backend/pkg/config/default.Version=$(BASE_VERSION)'" -o $(ROOT_DIR)/bin/$* $(ROOT_DIR)/cmd/$*  
+buildclis:
+	go build -o $(ROOT_DIR)/bin/stressy $(ROOT_DIR)/cmd/stressy
 
 run: $(addprefix run-, $(CMDS))
 run-%:

@@ -88,10 +88,10 @@ var _ = Describe("Character server", func() {
 					Time: 100,
 				}
 				mockCharService.EXPECT().FindByName(gomock.Any(), character.Name).Return(character, nil)
-				mockCharService.EXPECT().AddPlayTime(gomock.Any(), character.ID, req.Time).Return(uint64(200), nil)
+				mockCharService.EXPECT().AddPlayTime(gomock.Any(), character.ID, req.Time).Return(character, nil)
 				out, err := server.AddCharacterPlayTime(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(out.Time).To(BeEquivalentTo(200))
+				Expect(out.Time).To(BeEquivalentTo(character.PlayTime))
 			})
 			It("should work given character id", func() {
 				req := &pb.AddPlayTimeRequest{
@@ -100,10 +100,10 @@ var _ = Describe("Character server", func() {
 					},
 					Time: 100,
 				}
-				mockCharService.EXPECT().AddPlayTime(gomock.Any(), character.ID, req.Time).Return(uint64(200), nil)
+				mockCharService.EXPECT().AddPlayTime(gomock.Any(), character.ID, req.Time).Return(character, nil)
 				out, err := server.AddCharacterPlayTime(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(out.Time).To(BeEquivalentTo(200))
+				Expect(out.Time).To(BeEquivalentTo(character.PlayTime))
 			})
 		})
 		When("given invalid input", func() {
@@ -114,7 +114,7 @@ var _ = Describe("Character server", func() {
 					},
 					Time: 100,
 				}
-				mockCharService.EXPECT().AddPlayTime(gomock.Any(), character.ID, req.Time).Return(uint64(200), fakeErr)
+				mockCharService.EXPECT().AddPlayTime(gomock.Any(), character.ID, req.Time).Return(character, fakeErr)
 				out, err := server.AddCharacterPlayTime(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())

@@ -6,7 +6,17 @@ import (
 
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/srospan"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
+)
+
+var (
+	tracer    = otel.Tracer("character-repo")
+	meter     = otel.Meter("character-repo")
+	createCnt metric.Int64Counter
 )
 
 type CharacterRepository interface {
@@ -29,14 +39,18 @@ type characterRepository struct {
 	DB *gorm.DB
 }
 
-func NewCharacterRepository(db *gorm.DB) CharacterRepository {
-	return characterRepository{
+func NewCharacterRepository(db *gorm.DB) (repo CharacterRepository, err error) {
+	repo = characterRepository{
 		DB: db,
 	}
+	createCnt, err = meter.Int64Counter("sro.character.create",
+		metric.WithDescription("The number of created characters by creator"),
+		metric.WithUnit("{ownerId}"))
+	return
 }
 
 func (r characterRepository) FindByName(ctx context.Context, name string) (*model.Character, error) {
-	var character *model.Character = nil
+	var character *model.Character
 	result := r.DB.WithContext(ctx).Where("name = ?", name).Find(&character)
 	if result.Error != nil {
 		log.Logger.WithContext(ctx).Debugf("find by name err: %v", result.Error)
@@ -49,6 +63,12 @@ func (r characterRepository) FindByName(ctx context.Context, name string) (*mode
 	}
 
 	log.Logger.WithContext(ctx).Debugf("character name %s found", name)
+
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		srospan.TargetCharacterId(int(character.ID)),
+		srospan.TargetCharacterName(character.Name),
+	)
 	return character, nil
 }
 
@@ -62,6 +82,11 @@ func (r characterRepository) Create(ctx context.Context, character *model.Charac
 		return nil, err
 	}
 
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		srospan.TargetCharacterId(int(character.ID)),
+		srospan.TargetCharacterName(character.Name),
+	)
 	return character, nil
 }
 
@@ -71,6 +96,11 @@ func (r characterRepository) Save(ctx context.Context, character *model.Characte
 		return nil, err
 	}
 
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		srospan.TargetCharacterId(int(character.ID)),
+		srospan.TargetCharacterName(character.Name),
+	)
 	return character, nil
 }
 
@@ -92,6 +122,11 @@ func (r characterRepository) FindById(ctx context.Context, id uint) (*model.Char
 		return nil, nil
 	}
 
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		srospan.TargetCharacterId(int(character.ID)),
+		srospan.TargetCharacterName(character.Name),
+	)
 	return character, nil
 }
 

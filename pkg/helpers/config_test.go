@@ -17,7 +17,8 @@ const (
 )
 
 type TestStruct struct {
-	EmbeddedStruct
+	EmbeddedStruct `yaml:",inline" mapstructure:",squash"`
+
 	Foo string
 	Bar TestInnerStruct
 }

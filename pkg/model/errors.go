@@ -23,9 +23,18 @@ var (
 	// ErrInvalidServerLocation thrown when a server location is unknown
 	ErrInvalidServerLocation = errors.New("invalid server location")
 
+	// ErrNotOwner thrown when the requester is not the owner of the target
+	// and doesn't have additional priviledges
 	ErrNotOwner = errors.New("not owner")
 
-	ErrUnauthorized  = status.Error(codes.Unauthenticated, "not authorized")
-	ErrDoesNotExist  = status.Error(codes.InvalidArgument, "does not exist")
-	ErrHandleRequest = status.Error(codes.Internal, "unable to handle request")
+	ErrMissingContext = errors.New("missing valid context")
+
+	ErrMissingAuthorization = errors.New("missing authorization")
+	ErrInvalidAuthorization = errors.New("invalid authorization scheme")
+	ErrInvalidAuth          = errors.New("invalid auth")
+	ErrMissingGocloak       = errors.New("error A01")
+
+	ErrUnauthorized  = status.New(codes.Unauthenticated, "not authorized")
+	ErrDoesNotExist  = status.New(codes.InvalidArgument, "does not exist")
+	ErrHandleRequest = status.New(codes.Internal, "unable to handle request")
 )

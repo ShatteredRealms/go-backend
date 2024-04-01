@@ -2,17 +2,20 @@ package helpers
 
 import (
 	"context"
-	"github.com/ShatteredRealms/go-backend/pkg/log"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/ShatteredRealms/go-backend/pkg/log"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+	"google.golang.org/grpc"
 )
 
 func GRPCHandlerFunc(grpcServer http.Handler, otherHandler http.Handler) http.Handler {
 	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
 			grpcServer.ServeHTTP(w, r)
 		} else {
@@ -31,23 +34,18 @@ func GRPCHandlerFunc(grpcServer http.Handler, otherHandler http.Handler) http.Ha
 
 func StartServer(
 	ctx context.Context,
-	grpcServer http.Handler,
-	gwmux http.Handler,
+	grpcServer *grpc.Server,
+	gwmux *runtime.ServeMux,
 	address string,
-) net.Listener {
+) error {
 	log.Logger.WithContext(ctx).Info("Starting server")
 	listen, err := net.Listen("tcp", address)
 	Check(ctx, err, "listen server")
 
 	httpSrv := &http.Server{
 		Addr:    address,
-		Handler: GRPCHandlerFunc(grpcServer, gwmux),
+		Handler: GRPCHandlerFunc(grpcServer, otelhttp.NewHandler(gwmux, "/")),
 	}
 
-	go func() {
-		err := httpSrv.Serve(listen)
-		Check(context.Background(), err, "server stopped")
-	}()
-
-	return listen
+	return httpSrv.Serve(listen)
 }

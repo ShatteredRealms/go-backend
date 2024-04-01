@@ -2,7 +2,10 @@ package repository
 
 import (
 	"context"
+
 	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/srospan"
+	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 )
 
@@ -43,6 +46,11 @@ func (r chatRepository) ChangeAuthorizationForCharacter(ctx context.Context, cha
 		return nil
 	}
 
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		srospan.TargetCharacterId(int(characterId)),
+	)
+
 	return r.DB.Delete(&model.ChatChannelPermission{}, "character_id = ? AND channel_id IN ?", characterId, channelIds).Error
 }
 
@@ -53,10 +61,17 @@ func (r chatRepository) AuthorizedChannelsForCharacter(ctx context.Context, char
 		Joins("JOIN chat_channel_permissions ON chat_channels.id = chat_channel_permissions.channel_id").
 		Where("chat_channel_permissions.character_id = ?", characterId).
 		Find(&channels)
+
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		srospan.TargetCharacterId(int(characterId)),
+	)
+
 	return channels, r.DB.Error
 }
 
 func (r chatRepository) UpdateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error) {
+	trace.SpanFromContext(ctx).SetAttributes(srospan.ChatChannelAttributes(channel)...)
 	return channel, r.DB.WithContext(ctx).Save(&channel).Error
 }
 
@@ -67,14 +82,17 @@ func (r chatRepository) AllChannels(ctx context.Context) (model.ChatChannels, er
 }
 
 func (r chatRepository) CreateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error) {
+	trace.SpanFromContext(ctx).SetAttributes(srospan.ChatChannelAttributes(channel)...)
 	return channel, r.DB.WithContext(ctx).Create(&channel).Error
 }
 
 func (r chatRepository) DeleteChannel(ctx context.Context, channel *model.ChatChannel) error {
+	trace.SpanFromContext(ctx).SetAttributes(srospan.ChatChannelAttributes(channel)...)
 	return r.DB.WithContext(ctx).Delete(channel).Error
 }
 
 func (r chatRepository) FullDeleteChannel(ctx context.Context, channel *model.ChatChannel) error {
+	trace.SpanFromContext(ctx).SetAttributes(srospan.ChatChannelAttributes(channel)...)
 	return r.DB.WithContext(ctx).Unscoped().Delete(channel).Error
 }
 
@@ -93,6 +111,7 @@ func (r chatRepository) FindChannelById(ctx context.Context, id uint) (*model.Ch
 		return nil, nil
 	}
 
+	trace.SpanFromContext(ctx).SetAttributes(srospan.ChatChannelAttributes(channel)...)
 	return channel, nil
 }
 
@@ -107,6 +126,7 @@ func (r chatRepository) FindDeletedWithName(ctx context.Context, name string) (*
 		return nil, nil
 	}
 
+	trace.SpanFromContext(ctx).SetAttributes(srospan.ChatChannelAttributes(channel)...)
 	return channel, nil
 }
 

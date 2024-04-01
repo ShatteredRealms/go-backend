@@ -321,7 +321,7 @@ var _ = Describe("Character service", func() {
 					Target: &pb.CharacterTarget{},
 				}
 				out, err := charService.Edit(ctx, editReq)
-				Expect(err).To(MatchError(model.ErrHandleRequest))
+				Expect(err).To(MatchError(model.ErrHandleRequest.Err()))
 				Expect(out).To(BeNil())
 			})
 		})
@@ -390,7 +390,7 @@ var _ = Describe("Character service", func() {
 				mockRepository.EXPECT().Save(ctx, gomock.Any()).Return(charOut, fakeError)
 				out, err := charService.AddPlayTime(ctx, character.ID, amount)
 				Expect(err).To(MatchError(fakeError))
-				Expect(out).To(BeEquivalentTo(charOut.PlayTime))
+				Expect(out.PlayTime).To(BeEquivalentTo(charOut.PlayTime))
 			})
 		})
 
@@ -399,7 +399,7 @@ var _ = Describe("Character service", func() {
 				mockRepository.EXPECT().FindById(ctx, character.ID).Return(nil, fakeError)
 				out, err := charService.AddPlayTime(ctx, character.ID, amount)
 				Expect(err).To(MatchError(fakeError))
-				Expect(out).To(BeEquivalentTo(0))
+				Expect(out).To(BeNil())
 			})
 		})
 	})

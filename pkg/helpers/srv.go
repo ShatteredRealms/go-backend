@@ -6,10 +6,14 @@ import (
 
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/srospan"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -29,33 +33,9 @@ var (
 	jwtParser = jwt.NewParser()
 )
 
-func UnaryLogRequest() grpc.UnaryServerInterceptor {
-	return func(
-		ctx context.Context,
-		req interface{},
-		info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler,
-	) (interface{}, error) {
-		log.Logger.WithContext(ctx).Info(info.FullMethod)
-		return handler(ctx, req)
-	}
-}
-func StreamLogRequest() grpc.StreamServerInterceptor {
-	return func(
-		srv interface{},
-		stream grpc.ServerStream,
-		info *grpc.StreamServerInfo,
-		handler grpc.StreamHandler,
-	) error {
-		log.Logger.WithContext(stream.Context()).Info(info.FullMethod)
-		return handler(srv, stream)
-	}
-}
-
 func GrpcDialOpts() []grpc.DialOption {
 	return []grpc.DialOption{
-		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
-		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 }
@@ -65,30 +45,34 @@ func GrpcClientWithOtel(address string) (*grpc.ClientConn, error) {
 }
 
 func InitServerDefaults() (*grpc.Server, *runtime.ServeMux) {
+	opts := []logging.Option{
+		logging.WithLogOnEvents(logging.StartCall),
+		logging.WithCodes(logging.DefaultErrorToCode),
+	}
+
 	return grpc.NewServer(
+			grpc.StatsHandler(otelgrpc.NewServerHandler()),
 			grpc.ChainUnaryInterceptor(
-				UnaryLogRequest(),
-				otelgrpc.UnaryServerInterceptor(),
+				logging.UnaryServerInterceptor(interceptorLogger(log.Logger), opts...),
 			),
 			grpc.ChainStreamInterceptor(
-				StreamLogRequest(),
-				otelgrpc.StreamServerInterceptor(),
+				logging.StreamServerInterceptor(interceptorLogger(log.Logger), opts...),
 			)),
 		runtime.NewServeMux()
 }
 
 func ExtractToken(ctx context.Context) (string, error) {
 	if ctx == nil {
-		return "", status.Errorf(codes.Internal, "context is missing")
+		return "", model.ErrMissingContext
 	}
 
 	val := metautils.ExtractIncoming(ctx).Get(AuthorizationHeader)
 	if val == "" {
-		return "", status.Errorf(codes.Unauthenticated, "request missing authorization")
+		return "", model.ErrMissingAuthorization
 	}
 
 	if !strings.HasPrefix(val, AuthorizationScheme) {
-		return "", status.Errorf(codes.Unauthenticated, "invalid authorization scheme. Expected %s.", AuthorizationScheme)
+		return "", model.ErrInvalidAuthorization
 	}
 
 	return val[len(AuthorizationScheme):], nil
@@ -96,7 +80,7 @@ func ExtractToken(ctx context.Context) (string, error) {
 
 func ExtractClaims(ctx context.Context) (*model.SROClaims, error) {
 	if ctx == nil {
-		return nil, status.Errorf(codes.Internal, "context is missing")
+		return nil, model.ErrMissingContext
 	}
 
 	token, err := ExtractToken(ctx)
@@ -115,17 +99,13 @@ func ExtractClaims(ctx context.Context) (*model.SROClaims, error) {
 }
 
 func VerifyClaims(ctx context.Context, client model.KeycloakClient, realm string) (*jwt.Token, *model.SROClaims, error) {
-	if ctx == nil {
-		return nil, nil, status.Errorf(codes.Internal, "context is missing")
-	}
-
 	if client == nil {
-		return nil, nil, status.Errorf(codes.Internal, "gocloak is missing")
+		return nil, nil, status.Errorf(codes.Internal, model.ErrMissingGocloak.Error())
 	}
 
 	tokenString, err := ExtractToken(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, status.Errorf(codes.Unauthenticated, "invalid authentication")
 	}
 
 	var claims model.SROClaims
@@ -137,13 +117,46 @@ func VerifyClaims(ctx context.Context, client model.KeycloakClient, realm string
 	)
 
 	if err != nil {
-		log.Logger.WithContext(ctx).Errorf("extract claims: %v", err)
-		return nil, nil, model.ErrUnauthorized
+		log.Logger.WithContext(ctx).Infof("issues extracting claims: %v", err)
+		return nil, nil, model.ErrUnauthorized.Err()
 	}
 
 	if !token.Valid {
-		return nil, nil, model.ErrUnauthorized
+		return nil, nil, model.ErrUnauthorized.Err()
 	}
 
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		srospan.SourceOwnerId(claims.Subject),
+		srospan.SourceOwnerUsername(claims.Username),
+	)
+
 	return token, &claims, nil
+}
+
+// InterceptorLogger adapts logrus logger to interceptor logger.
+// This code is simple enough to be copied and not imported.
+func interceptorLogger(l logrus.FieldLogger) logging.Logger {
+	return logging.LoggerFunc(func(_ context.Context, lvl logging.Level, msg string, fields ...any) {
+		f := make(map[string]any, len(fields)/2)
+		i := logging.Fields(fields).Iterator()
+		for i.Next() {
+			k, v := i.At()
+			f[k] = v
+		}
+		l := l.WithFields(f)
+
+		switch lvl {
+		case logging.LevelDebug:
+			l.Debug(msg)
+		case logging.LevelInfo:
+			l.Info(msg)
+		case logging.LevelWarn:
+			l.Warn(msg)
+		case logging.LevelError:
+			l.Error(msg)
+		default:
+			l.Fatalf("unknown level %v", lvl)
+		}
+	})
 }

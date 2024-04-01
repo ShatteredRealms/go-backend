@@ -45,15 +45,15 @@ func (s chatServiceServer) ConnectChannel(
 	request *pb.ChatChannelTarget,
 	server pb.ChatService_ConnectChannelServer,
 ) error {
-	_, claims, err := helpers.VerifyClaims(server.Context(), s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(server.Context(), s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(server.Context()).Errorf("verify claims: %v", err)
-		return model.ErrUnauthorized
+		return model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleChat, model.ChatClientId) {
-		return model.ErrUnauthorized
+		return model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has chat channel permissions
@@ -90,24 +90,24 @@ func (s chatServiceServer) ConnectDirectMessage(
 	request *pb.CharacterTarget,
 	server pb.ChatService_ConnectDirectMessageServer,
 ) error {
-	_, claims, err := helpers.VerifyClaims(server.Context(), s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(server.Context(), s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(server.Context()).Errorf("verify claims: %v", err)
-		return model.ErrUnauthorized
+		return model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleChat, model.ChatClientId) {
-		return model.ErrUnauthorized
+		return model.ErrUnauthorized.Err()
 	}
 
 	char, err := s.verifyUserOwnsCharacter(server.Context(), request)
 	if err == model.ErrNotOwner {
 		if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
-			return model.ErrUnauthorized
+			return model.ErrUnauthorized.Err()
 		}
 	} else if err != nil {
-		return model.ErrUnauthorized
+		return model.ErrUnauthorized.Err()
 	}
 
 	r := s.server.ChatService.DirectMessagesReader(server.Context(), char.Name)
@@ -134,16 +134,16 @@ func (s chatServiceServer) SendChatMessage(
 	ctx context.Context,
 	request *pb.SendChatMessageRequest,
 ) (*emptypb.Empty, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleChat, model.ChatClientId) {
 		log.Logger.WithContext(ctx).Infof("unauthorized request")
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 	character, err := s.verifyUserOwnsCharacter(
 		ctx,
@@ -160,7 +160,7 @@ func (s chatServiceServer) SendChatMessage(
 		serverCtx, err := s.serverContext(ctx)
 		if err != nil {
 			log.Logger.WithContext(ctx).Infof("creating server context: %v", err)
-			return nil, model.ErrHandleRequest
+			return nil, model.ErrHandleRequest.Err()
 		}
 
 		channels, err := s.server.ChatService.AuthorizedChannelsForCharacter(serverCtx, uint(character.Id))
@@ -178,7 +178,7 @@ func (s chatServiceServer) SendChatMessage(
 		}
 		if !canSend {
 			log.Logger.WithContext(ctx).Infof("%s attempted sending message to chat channel %d without permission", character.Name, request.ChannelId)
-			return nil, model.ErrUnauthorized
+			return nil, model.ErrUnauthorized.Err()
 		}
 	}
 
@@ -200,15 +200,15 @@ func (s chatServiceServer) SendDirectMessage(
 	ctx context.Context,
 	request *pb.SendDirectMessageRequest,
 ) (*emptypb.Empty, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleChat, model.ChatClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	if _, err = s.verifyUserOwnsCharacter(
@@ -221,7 +221,7 @@ func (s chatServiceServer) SendDirectMessage(
 	srvCtx, err := s.serverContext(ctx)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
-		return nil, model.ErrHandleRequest
+		return nil, model.ErrHandleRequest.Err()
 	}
 	targetCharacterName, err := helpers.GetCharacterNameFromTarget(srvCtx, s.server.CharacterService, request.Target)
 	if err != nil {
@@ -245,15 +245,15 @@ func (s chatServiceServer) GetChannel(
 	ctx context.Context,
 	request *pb.ChatChannelTarget,
 ) (*pb.ChatChannel, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	c, err := s.server.ChatService.GetChannel(ctx, uint(request.Id))
@@ -263,7 +263,7 @@ func (s chatServiceServer) GetChannel(
 	}
 
 	if c == nil {
-		return nil, model.ErrDoesNotExist
+		return nil, model.ErrDoesNotExist.Err()
 	}
 
 	return c.ToPb(), nil
@@ -273,15 +273,15 @@ func (s chatServiceServer) CreateChannel(
 	ctx context.Context,
 	request *pb.CreateChannelMessage,
 ) (*emptypb.Empty, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	_, err = s.server.ChatService.CreateChannel(
@@ -308,15 +308,15 @@ func (s chatServiceServer) DeleteChannel(
 	ctx context.Context,
 	request *pb.ChatChannelTarget,
 ) (*emptypb.Empty, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	err = s.server.ChatService.DeleteChannel(ctx, &model.ChatChannel{
@@ -324,7 +324,7 @@ func (s chatServiceServer) DeleteChannel(
 	})
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, model.ErrDoesNotExist
+			return nil, model.ErrDoesNotExist.Err()
 		}
 
 		log.Logger.WithContext(ctx).Errorf("delete channel: %v", err)
@@ -338,21 +338,21 @@ func (s chatServiceServer) EditChannel(
 	ctx context.Context,
 	request *pb.UpdateChatChannelRequest,
 ) (*emptypb.Empty, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	_, err = s.server.ChatService.UpdateChannel(ctx, request)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, model.ErrDoesNotExist
+			return nil, model.ErrDoesNotExist.Err()
 		}
 
 		log.Logger.WithContext(ctx).Errorf("edit channel: %v", err)
@@ -366,15 +366,15 @@ func (s chatServiceServer) AllChatChannels(
 	ctx context.Context,
 	_ *emptypb.Empty,
 ) (*pb.ChatChannels, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	channels, err := s.server.ChatService.AllChannels(ctx)
@@ -390,15 +390,15 @@ func (s chatServiceServer) GetAuthorizedChatChannels(
 	ctx context.Context,
 	request *pb.CharacterTarget,
 ) (*pb.ChatChannels, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleChat, model.ChatClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	character, err := s.verifyUserOwnsCharacter(ctx, request)
@@ -424,21 +424,21 @@ func (s chatServiceServer) UpdateUserChatChannelAuthorizations(
 	ctx context.Context,
 	request *pb.RequestChatChannelAuthChange,
 ) (*emptypb.Empty, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
 	if !claims.HasResourceRole(RoleChatChannelManage, model.ChatClientId) {
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	srvCtx, err := s.serverContext(ctx)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
-		return nil, model.ErrHandleRequest
+		return nil, model.ErrHandleRequest.Err()
 	}
 	targetCharacterId, err := helpers.GetCharacterIdFromTarget(srvCtx, s.server.CharacterService, request.Character)
 	if err != nil {
@@ -471,7 +471,7 @@ func NewChatServiceServer(
 		ctx,
 		server.GlobalConfig.Chat.Keycloak.ClientId,
 		server.GlobalConfig.Chat.Keycloak.ClientSecret,
-		server.GlobalConfig.Chat.Keycloak.Realm,
+		server.GlobalConfig.Keycloak.Realm,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("login keycloak: %v", err)
@@ -480,7 +480,7 @@ func NewChatServiceServer(
 	err = createRoles(ctx,
 		server.KeycloakClient,
 		token.AccessToken,
-		server.GlobalConfig.Chat.Keycloak.Realm,
+		server.GlobalConfig.Keycloak.Realm,
 		server.GlobalConfig.Chat.Keycloak.Id,
 		&ChatRoles,
 	)
@@ -499,7 +499,7 @@ func (s chatServiceServer) serverContext(ctx context.Context) (context.Context, 
 		ctx,
 		s.server.GlobalConfig.Chat.Keycloak.ClientId,
 		s.server.GlobalConfig.Chat.Keycloak.ClientSecret,
-		s.server.GlobalConfig.Chat.Keycloak.Realm,
+		s.server.GlobalConfig.Keycloak.Realm,
 	)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("keycloak login failure: %v", err)
@@ -513,16 +513,16 @@ func (s chatServiceServer) serverContext(ctx context.Context) (context.Context, 
 }
 
 func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, request *pb.CharacterTarget) (*pb.CharacterDetails, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Chat.Keycloak.Realm)
+	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized
+		return nil, model.ErrUnauthorized.Err()
 	}
 
 	srvCtx, err := s.serverContext(ctx)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
-		return nil, model.ErrHandleRequest
+		return nil, model.ErrHandleRequest.Err()
 	}
 
 	character, err := s.server.CharacterService.GetCharacter(srvCtx, request)
@@ -545,21 +545,21 @@ func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, request 
 func (s chatServiceServer) checkUserChannelAuth(ctx context.Context, userId string, channelId uint) error {
 	serverAuthCtx, err := s.serverContext(ctx)
 	if err != nil {
-		return model.ErrHandleRequest
+		return model.ErrHandleRequest.Err()
 	}
 
 	characters, err := s.server.CharacterService.GetAllCharactersForUser(serverAuthCtx, &pb.UserTarget{Target: &pb.UserTarget_Id{Id: userId}})
 
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("get characters: %v", err)
-		return model.ErrHandleRequest
+		return model.ErrHandleRequest.Err()
 	}
 
 	for _, character := range characters.Characters {
 		channels, err := s.server.ChatService.AuthorizedChannelsForCharacter(serverAuthCtx, uint(character.Id))
 		if err != nil {
 			log.Logger.WithContext(ctx).Errorf("getting authorized channels: %v", err)
-			return model.ErrHandleRequest
+			return model.ErrHandleRequest.Err()
 		}
 
 		for _, channel := range channels {
@@ -569,5 +569,5 @@ func (s chatServiceServer) checkUserChannelAuth(ctx context.Context, userId stri
 		}
 	}
 
-	return model.ErrUnauthorized
+	return model.ErrUnauthorized.Err()
 }

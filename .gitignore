@@ -21,3 +21,6 @@ coverprofile.out
 
 # Development postgres data
 postgres-data
+
+# SRO config files
+cmd/**/config.yaml

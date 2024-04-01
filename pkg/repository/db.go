@@ -33,11 +33,10 @@ func ConnectDB(pool config.DBPoolConfig) (*gorm.DB, error) {
 		Logger: logger.New(
 			log.Logger,
 			logger.Config{
-				SlowThreshold:             0,
+				SlowThreshold:             time.Millisecond * 500,
 				Colorful:                  true,
 				IgnoreRecordNotFoundError: true,
 				ParameterizedQueries:      true,
-				LogLevel:                  logger.Info,
 			},
 		),
 	})

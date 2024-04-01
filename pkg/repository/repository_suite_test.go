@@ -49,7 +49,9 @@ func TestRepository(t *testing.T) {
 		mdb = testdb.ConnectMongoDocker(mdbConnStr)
 		Expect(mdb).NotTo(BeNil())
 
-		characterRepo = repository.NewCharacterRepository(gdb)
+		var err error
+		characterRepo, err = repository.NewCharacterRepository(gdb)
+		Expect(err).NotTo(HaveOccurred())
 		Expect(characterRepo).NotTo(BeNil())
 		Expect(characterRepo.Migrate(context.Background())).NotTo(HaveOccurred())
 
@@ -87,7 +89,9 @@ func TestRepository(t *testing.T) {
 		mdb = testdb.ConnectMongoDocker(hosts[1])
 		Expect(mdb).NotTo(BeNil())
 
-		characterRepo = repository.NewCharacterRepository(gdb)
+		var err error
+		characterRepo, err = repository.NewCharacterRepository(gdb)
+		Expect(err).NotTo(HaveOccurred())
 		Expect(characterRepo).NotTo(BeNil())
 		chatRepo = repository.NewChatRepository(gdb)
 		Expect(chatRepo).NotTo(BeNil())
