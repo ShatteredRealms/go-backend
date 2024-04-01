@@ -7,13 +7,16 @@ import (
 	"github.com/bxcodec/faker/v4"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus/hooks/test"
 
 	"github.com/ShatteredRealms/go-backend/pkg/config"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 )
 
 var _ = Describe("Server config", func() {
 	Describe("ServerAddress Address", func() {
 		It("should generate an address", func() {
+			log.Logger, _ = test.NewNullLogger()
 			config := config.NewGlobalConfig(context.TODO())
 			Expect(config).NotTo(BeNil())
 			Expect(config.Character.Local.Address()).To(Equal(fmt.Sprintf("%s:%d", config.Character.Local.Host, config.Character.Local.Port)))

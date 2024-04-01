@@ -55,7 +55,7 @@ var _ = Describe("Character helpers", func() {
 
 			It("should error on invalid target", func() {
 				id, err := helpers.GetCharacterIdFromTarget(ctx, mockCSC, target)
-				Expect(err).Should(MatchError(model.ErrHandleRequest))
+				Expect(err).Should(MatchError(model.ErrHandleRequest.Err()))
 				Expect(id).NotTo(Equal(uint(characterDetails.Id)))
 				Expect(hook.AllEntries()).To(HaveLen(1))
 				Expect(hook.LastEntry().String()).To(ContainSubstring("target type unknown"))
@@ -107,7 +107,7 @@ var _ = Describe("Character helpers", func() {
 
 			It("should error on invalid target", func() {
 				name, err := helpers.GetCharacterNameFromTarget(ctx, mockCSC, target)
-				Expect(err).Should(MatchError(model.ErrHandleRequest))
+				Expect(err).Should(MatchError(model.ErrHandleRequest.Err()))
 				Expect(name).NotTo(Equal(characterDetails.Name))
 				Expect(hook.AllEntries()).To(HaveLen(1))
 				Expect(hook.LastEntry().String()).To(ContainSubstring("target type unknown"))

@@ -3,7 +3,7 @@ character:
     host: 'characters'
     port: 8081
   mode: 'local'
-  logLevel: 5
+  logLevel: Debug
   keycloak:
     clientSecret: '**********'
     id: '738a426a-da91-4b16-b5fc-92d63a22eb76'
@@ -20,7 +20,7 @@ gamebackend:
     host: 'gamebackend'
     port: 8082
   mode: 'local'
-  logLevel: 5
+  logLevel: Debug
   keycloak:
     clientSecret: '**********'
     id: 'c3cacba8-cd16-4a4f-bc86-367274cb7cb5'
@@ -32,7 +32,7 @@ chat:
     host: 'chat'
     port: 8180
   mode: 'local'
-  logLevel: 5
+  logLevel: Debug
   keycloak:
     clientSecret: '**********'
     id: '4c79d4a0-a3fd-495f-b56e-eea508bb0862'

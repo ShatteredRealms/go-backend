@@ -188,12 +188,12 @@ var _ = Describe("Chat", func() {
 			When("given invalid input", func() {
 				It("should error on invalid claims", func() {
 					mockInSrv.EXPECT().Context().Return(nil).AnyTimes()
-					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(model.ErrUnauthorized))
+					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(model.ErrUnauthorized.Err()))
 				})
 
 				It("should error on no permissions (guest)", func() {
 					mockInSrv.EXPECT().Context().Return(incGuestCtx).AnyTimes()
-					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(model.ErrUnauthorized))
+					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(model.ErrUnauthorized.Err()))
 				})
 
 				It("should error on no permissions for chat channel (player)", func() {
@@ -202,7 +202,7 @@ var _ = Describe("Chat", func() {
 						Return(&pb.CharactersDetails{Characters: []*pb.CharacterDetails{character.ToPb()}}, nil)
 					mockChatService.EXPECT().AuthorizedChannelsForCharacter(gomock.Any(), character.ID).Return(model.ChatChannels{}, nil)
 					mockInSrv.EXPECT().Context().Return(incPlayerCtx).AnyTimes()
-					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(model.ErrUnauthorized))
+					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(model.ErrUnauthorized.Err()))
 				})
 
 				It("should error if getting characters has errors", func() {
@@ -210,7 +210,7 @@ var _ = Describe("Chat", func() {
 						GetAllCharactersForUser(gomock.Any(), gomock.Any()).
 						Return(nil, fakeErr)
 					mockInSrv.EXPECT().Context().Return(incPlayerCtx).AnyTimes()
-					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(model.ErrHandleRequest))
+					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(model.ErrHandleRequest.Err()))
 				})
 
 				It("should error if getting authorized channels for character has errors", func() {
@@ -219,7 +219,7 @@ var _ = Describe("Chat", func() {
 						Return(&pb.CharactersDetails{Characters: []*pb.CharacterDetails{character.ToPb()}}, nil)
 					mockChatService.EXPECT().AuthorizedChannelsForCharacter(gomock.Any(), character.ID).Return(nil, fakeErr)
 					mockInSrv.EXPECT().Context().Return(incPlayerCtx).AnyTimes()
-					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(model.ErrHandleRequest))
+					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(model.ErrHandleRequest.Err()))
 				})
 			})
 		})
@@ -259,7 +259,7 @@ var _ = Describe("Chat", func() {
 				})
 
 				It("should work for users with chat permissions (player)", func() {
-					_, claims, err := helpers.VerifyClaims(incPlayerCtx, keycloak, conf.Chat.Keycloak.Realm)
+					_, claims, err := helpers.VerifyClaims(incPlayerCtx, keycloak, conf.Keycloak.Realm)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(claims.Subject).To(Equal(character.OwnerId))
 					mockChatService.EXPECT().DirectMessagesReader(gomock.Any(), character.Name).Return(kafka.NewReader(readerConfig))
@@ -276,12 +276,12 @@ var _ = Describe("Chat", func() {
 			When("given invalid input", func() {
 				It("should error on invalid claims", func() {
 					mockInSrv.EXPECT().Context().Return(nil).AnyTimes()
-					Expect(server.ConnectDirectMessage(req, mockInSrv)).To(MatchError(model.ErrUnauthorized))
+					Expect(server.ConnectDirectMessage(req, mockInSrv)).To(MatchError(model.ErrUnauthorized.Err()))
 				})
 
 				It("should error on no permissions (guest)", func() {
 					mockInSrv.EXPECT().Context().Return(incGuestCtx).AnyTimes()
-					Expect(server.ConnectDirectMessage(req, mockInSrv)).To(MatchError(model.ErrUnauthorized))
+					Expect(server.ConnectDirectMessage(req, mockInSrv)).To(MatchError(model.ErrUnauthorized.Err()))
 				})
 
 				It("should error if not owner of character (player)", func() {
@@ -290,7 +290,7 @@ var _ = Describe("Chat", func() {
 						GetCharacter(gomock.Any(), gomock.Any()).
 						Return(character.ToPb(), nil)
 					mockInSrv.EXPECT().Context().Return(incPlayerCtx).AnyTimes()
-					Expect(server.ConnectDirectMessage(req, mockInSrv)).To(MatchError(model.ErrUnauthorized))
+					Expect(server.ConnectDirectMessage(req, mockInSrv)).To(MatchError(model.ErrUnauthorized.Err()))
 				})
 
 				It("should error if getting characters has errors", func() {

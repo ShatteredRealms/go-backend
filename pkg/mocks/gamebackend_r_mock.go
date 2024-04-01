@@ -86,21 +86,6 @@ func (mr *MockdimensionRepositoryMockRecorder) DeleteDimensionByName(ctx, name a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDimensionByName", reflect.TypeOf((*MockdimensionRepository)(nil).DeleteDimensionByName), ctx, name)
 }
 
-// DuplicateDimension mocks base method.
-func (m *MockdimensionRepository) DuplicateDimension(ctx context.Context, refId *uuid.UUID, name string) (*model.Dimension, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DuplicateDimension", ctx, refId, name)
-	ret0, _ := ret[0].(*model.Dimension)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DuplicateDimension indicates an expected call of DuplicateDimension.
-func (mr *MockdimensionRepositoryMockRecorder) DuplicateDimension(ctx, refId, name any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DuplicateDimension", reflect.TypeOf((*MockdimensionRepository)(nil).DuplicateDimension), ctx, refId, name)
-}
-
 // FindAllDimensions mocks base method.
 func (m *MockdimensionRepository) FindAllDimensions(ctx context.Context) (model.Dimensions, error) {
 	m.ctrl.T.Helper()
@@ -498,21 +483,6 @@ func (m *MockGamebackendRepository) DeletePendingConnection(ctx context.Context,
 func (mr *MockGamebackendRepositoryMockRecorder) DeletePendingConnection(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePendingConnection", reflect.TypeOf((*MockGamebackendRepository)(nil).DeletePendingConnection), ctx, id)
-}
-
-// DuplicateDimension mocks base method.
-func (m *MockGamebackendRepository) DuplicateDimension(ctx context.Context, refId *uuid.UUID, name string) (*model.Dimension, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DuplicateDimension", ctx, refId, name)
-	ret0, _ := ret[0].(*model.Dimension)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DuplicateDimension indicates an expected call of DuplicateDimension.
-func (mr *MockGamebackendRepositoryMockRecorder) DuplicateDimension(ctx, refId, name any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DuplicateDimension", reflect.TypeOf((*MockGamebackendRepository)(nil).DuplicateDimension), ctx, refId, name)
 }
 
 // FindAllDimensions mocks base method.

@@ -49,7 +49,8 @@ func NewCharacterRepository(db *gorm.DB) (repo CharacterRepository, err error) {
 	return
 }
 
-func (r characterRepository) FindByName(ctx context.Context, name string) (character *model.Character, err error) {
+func (r characterRepository) FindByName(ctx context.Context, name string) (*model.Character, error) {
+	var character *model.Character
 	result := r.DB.WithContext(ctx).Where("name = ?", name).Find(&character)
 	if result.Error != nil {
 		log.Logger.WithContext(ctx).Debugf("find by name err: %v", result.Error)
@@ -58,7 +59,7 @@ func (r characterRepository) FindByName(ctx context.Context, name string) (chara
 
 	if result.RowsAffected == 0 {
 		log.Logger.WithContext(ctx).Debugf("find by name: no rows affected. character: %+v", character)
-		return
+		return nil, nil
 	}
 
 	log.Logger.WithContext(ctx).Debugf("character name %s found", name)

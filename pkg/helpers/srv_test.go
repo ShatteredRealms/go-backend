@@ -28,28 +28,7 @@ var _ = Describe("Srv helpers", func() {
 
 	BeforeEach(func() {
 		log.Logger, hook = test.NewNullLogger()
-	})
-
-	Describe("UnaryLogRequest", func() {
-		It("should handle requests", func() {
-			method := faker.Username()
-			fakeHandler := &mockHandler{}
-			testFunc := helpers.UnaryLogRequest()
-			testFunc(nil, nil, &grpc.UnaryServerInfo{FullMethod: method}, fakeHandler.UnaryHandler)
-			Expect(fakeHandler.WasCalled).To(BeTrue())
-			Expect(hook.LastEntry().Message).To(ContainSubstring(method))
-		})
-	})
-
-	Describe("StreamLogRequest", func() {
-		It("should handle requests", func() {
-			method := faker.Username()
-			fakeHandler := &mockHandler{}
-			testFunc := helpers.StreamLogRequest()
-			testFunc(nil, mockServerStream{}, &grpc.StreamServerInfo{FullMethod: method}, fakeHandler.StreamHandler)
-			Expect(fakeHandler.WasCalled).To(BeTrue())
-			Expect(hook.LastEntry().Message).To(ContainSubstring(method))
-		})
+		hook.Reset()
 	})
 
 	Describe("GrpcDialOpts", func() {
@@ -236,7 +215,7 @@ var _ = Describe("Srv helpers", func() {
 				jwtToken, outClaims, err := helpers.VerifyClaims(ctx, mockKeycloak, realm)
 				Expect(jwtToken).To(BeNil())
 				Expect(outClaims).To(BeNil())
-				Expect(err).To(MatchError(model.ErrUnauthorized))
+				Expect(err).To(MatchError(model.ErrUnauthorized.Err()))
 			})
 		})
 

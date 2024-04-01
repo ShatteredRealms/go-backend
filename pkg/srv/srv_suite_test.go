@@ -9,9 +9,11 @@ import (
 
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	testdb "github.com/ShatteredRealms/go-backend/test/db"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus/hooks/test"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -98,6 +100,7 @@ func TestSrv(t *testing.T) {
 	var err error
 
 	SynchronizedBeforeSuite(func() []byte {
+		log.Logger, _ = test.NewNullLogger()
 		var host string
 		keycloakCloseFunc, host = testdb.SetupKeycloakWithDocker()
 		Expect(host).NotTo(BeNil())
@@ -109,28 +112,28 @@ func TestSrv(t *testing.T) {
 			context.Background(),
 			conf.Character.Keycloak.ClientId,
 			conf.Character.Keycloak.ClientSecret,
-			conf.Character.Keycloak.Realm,
+			conf.Keycloak.Realm,
 		)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Eventually(func() error {
-		*admin.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, conf.Character.Keycloak.Realm, admin)
+		*admin.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, conf.Keycloak.Realm, admin)
 		Expect(err).NotTo(HaveOccurred())
 		// }).Within(time.Minute).ProbeEvery(time.Second).ShouldNot(HaveOccurred())
-		*player.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, conf.Character.Keycloak.Realm, player)
+		*player.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, conf.Keycloak.Realm, player)
 		Expect(err).NotTo(HaveOccurred())
-		*guest.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, conf.Character.Keycloak.Realm, guest)
+		*guest.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, conf.Keycloak.Realm, guest)
 		Expect(err).NotTo(HaveOccurred())
 
-		saRole, err := keycloak.GetRealmRole(context.Background(), clientToken.AccessToken, conf.Character.Keycloak.Realm, "super admin")
+		saRole, err := keycloak.GetRealmRole(context.Background(), clientToken.AccessToken, conf.Keycloak.Realm, "super admin")
 		Expect(err).NotTo(HaveOccurred())
-		userRole, err := keycloak.GetRealmRole(context.Background(), clientToken.AccessToken, conf.Character.Keycloak.Realm, "user")
+		userRole, err := keycloak.GetRealmRole(context.Background(), clientToken.AccessToken, conf.Keycloak.Realm, "user")
 		Expect(err).NotTo(HaveOccurred())
 
 		err = keycloak.AddRealmRoleToUser(
 			context.Background(),
 			clientToken.AccessToken,
-			conf.Character.Keycloak.Realm,
+			conf.Keycloak.Realm,
 			*admin.ID,
 			[]gocloak.Role{*saRole},
 		)
@@ -138,7 +141,7 @@ func TestSrv(t *testing.T) {
 		err = keycloak.AddRealmRoleToUser(
 			context.Background(),
 			clientToken.AccessToken,
-			conf.Character.Keycloak.Realm,
+			conf.Keycloak.Realm,
 			*player.ID,
 			[]gocloak.Role{*userRole},
 		)
@@ -151,6 +154,7 @@ func TestSrv(t *testing.T) {
 
 		return []byte(out)
 	}, func(data []byte) {
+		log.Logger, _ = test.NewNullLogger()
 		splitData := strings.Split(string(data), "\n")
 		Expect(splitData).To(HaveLen(2))
 
@@ -166,10 +170,10 @@ func TestSrv(t *testing.T) {
 			context.Background(),
 			conf.Character.Keycloak.ClientId,
 			conf.Character.Keycloak.ClientSecret,
-			conf.Character.Keycloak.Realm,
+			conf.Keycloak.Realm,
 		)
 		Expect(err).NotTo(HaveOccurred())
-		adminToken, err = keycloak.GetToken(context.Background(), conf.Character.Keycloak.Realm, gocloak.TokenOptions{
+		adminToken, err = keycloak.GetToken(context.Background(), conf.Keycloak.Realm, gocloak.TokenOptions{
 			ClientID:     &conf.Character.Keycloak.ClientId,
 			ClientSecret: &conf.Character.Keycloak.ClientSecret,
 			GrantType:    gocloak.StringP("password"),
@@ -177,7 +181,7 @@ func TestSrv(t *testing.T) {
 			Password:     gocloak.StringP("Password1!"),
 		})
 		Expect(err).NotTo(HaveOccurred())
-		playerToken, err = keycloak.GetToken(context.Background(), conf.Character.Keycloak.Realm, gocloak.TokenOptions{
+		playerToken, err = keycloak.GetToken(context.Background(), conf.Keycloak.Realm, gocloak.TokenOptions{
 			ClientID:     &conf.Character.Keycloak.ClientId,
 			ClientSecret: &conf.Character.Keycloak.ClientSecret,
 			GrantType:    gocloak.StringP("password"),
@@ -185,7 +189,7 @@ func TestSrv(t *testing.T) {
 			Password:     gocloak.StringP("Password1!"),
 		})
 		Expect(err).NotTo(HaveOccurred())
-		guestToken, err = keycloak.GetToken(context.Background(), conf.Character.Keycloak.Realm, gocloak.TokenOptions{
+		guestToken, err = keycloak.GetToken(context.Background(), conf.Keycloak.Realm, gocloak.TokenOptions{
 			ClientID:     &conf.Character.Keycloak.ClientId,
 			ClientSecret: &conf.Character.Keycloak.ClientSecret,
 			GrantType:    gocloak.StringP("password"),
@@ -197,7 +201,7 @@ func TestSrv(t *testing.T) {
 		admins, err := keycloak.GetUsers(
 			context.Background(),
 			clientToken.AccessToken,
-			conf.Character.Keycloak.Realm,
+			conf.Keycloak.Realm,
 			gocloak.GetUsersParams{Username: admin.Username},
 		)
 		Expect(err).NotTo(HaveOccurred())
@@ -207,7 +211,7 @@ func TestSrv(t *testing.T) {
 		players, err := keycloak.GetUsers(
 			context.Background(),
 			clientToken.AccessToken,
-			conf.Character.Keycloak.Realm,
+			conf.Keycloak.Realm,
 			gocloak.GetUsersParams{Username: player.Username},
 		)
 		Expect(err).NotTo(HaveOccurred())
@@ -217,7 +221,7 @@ func TestSrv(t *testing.T) {
 		guests, err := keycloak.GetUsers(
 			context.Background(),
 			clientToken.AccessToken,
-			conf.Character.Keycloak.Realm,
+			conf.Keycloak.Realm,
 			gocloak.GetUsersParams{Username: guest.Username},
 		)
 		Expect(err).NotTo(HaveOccurred())

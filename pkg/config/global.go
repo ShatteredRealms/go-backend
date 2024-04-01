@@ -166,6 +166,7 @@ func NewGlobalConfig(ctx context.Context) *GlobalConfig {
 		}
 	}
 
+	viper.SetEnvPrefix("SRO")
 	// Read from environment variables
 	helpers.BindEnvsToStruct(config)
 
