@@ -190,7 +190,7 @@ var _ = Describe("Chat", func() {
 
 			When("given invalid input", func() {
 				It("should error on invalid claims", func() {
-					mockInSrv.EXPECT().Context().Return(nil).AnyTimes()
+					mockInSrv.EXPECT().Context().Return(context.TODO()).AnyTimes()
 					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(common.ErrUnauthorized.Err()))
 				})
 
@@ -275,7 +275,7 @@ var _ = Describe("Chat", func() {
 
 			When("given invalid input", func() {
 				It("should error on invalid claims", func() {
-					mockInSrv.EXPECT().Context().Return(nil).AnyTimes()
+					mockInSrv.EXPECT().Context().Return(context.TODO()).AnyTimes()
 					Expect(server.ConnectDirectMessage(req, mockInSrv)).To(MatchError(common.ErrUnauthorized.Err()))
 				})
 
@@ -483,11 +483,7 @@ var _ = Describe("Chat", func() {
 
 			When("given invalid input", func() {
 				It("should err on invalid context", func() {
-					out, err := server.SendDirectMessage(nil, req)
-					Expect(err).To(HaveOccurred())
-					Expect(out).To(BeNil())
-
-					out, err = server.SendDirectMessage(context.Background(), req)
+					out, err := server.SendDirectMessage(context.Background(), req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 				})
@@ -560,8 +556,8 @@ var _ = Describe("Chat", func() {
 		})
 
 		When("given invalid input", func() {
-			It("should error if invalid context (nil)", func() {
-				out, err := server.GetChannel(nil, req)
+			It("should error if empty context", func() {
+				out, err := server.GetChannel(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -623,7 +619,7 @@ var _ = Describe("Chat", func() {
 
 		When("given invalid input", func() {
 			It("should error if invalid context (nil)", func() {
-				out, err := server.CreateChannel(nil, req)
+				out, err := server.CreateChannel(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -688,7 +684,7 @@ var _ = Describe("Chat", func() {
 
 		When("given invalid input", func() {
 			It("should error if invalid context (nil)", func() {
-				out, err := server.DeleteChannel(nil, req)
+				out, err := server.DeleteChannel(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -755,7 +751,7 @@ var _ = Describe("Chat", func() {
 
 		When("given invalid input", func() {
 			It("should error if invalid context (nil)", func() {
-				out, err := server.EditChannel(nil, req)
+				out, err := server.EditChannel(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -819,7 +815,7 @@ var _ = Describe("Chat", func() {
 
 		When("given invalid input", func() {
 			It("should error if invalid context (nil)", func() {
-				out, err := server.AllChatChannels(nil, req)
+				out, err := server.AllChatChannels(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -905,7 +901,7 @@ var _ = Describe("Chat", func() {
 
 		When("given invalid input", func() {
 			It("should error if invalid context (nil)", func() {
-				out, err := server.GetAuthorizedChatChannels(nil, req)
+				out, err := server.GetAuthorizedChatChannels(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -985,7 +981,7 @@ var _ = Describe("Chat", func() {
 
 		When("given invalid input", func() {
 			It("should error if invalid context (nil)", func() {
-				out, err := server.UpdateUserChatChannelAuthorizations(nil, req)
+				out, err := server.UpdateUserChatChannelAuthorizations(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})

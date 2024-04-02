@@ -128,7 +128,7 @@
             "sro-chat": [
               "chat"
             ],
-            "sro-characters": [
+            "sro-character": [
               "manage"
             ],
             "sro-gamebackend": [
@@ -184,7 +184,7 @@
             "grafana": [
               "grafanaadmin"
             ],
-            "sro-characters": [
+            "sro-character": [
               "manage",
               "uma_protection",
               "manage_other",
@@ -519,7 +519,7 @@
           "attributes": {}
         }
       ],
-      "sro-characters": [
+      "sro-character": [
         {
           "id": "ddef4e8c-e433-4fb5-bcbf-f28f402f0e8a",
           "name": "manage",
@@ -807,11 +807,11 @@
     {
       "id": "17c36f56-4c37-4afd-a5e0-844944ae2616",
       "createdTimestamp": 1678132985919,
-      "username": "service-account-sro-characters",
+      "username": "service-account-sro-character",
       "enabled": true,
       "totp": false,
       "emailVerified": false,
-      "serviceAccountClientId": "sro-characters",
+      "serviceAccountClientId": "sro-character",
       "disableableCredentialTypes": [],
       "requiredActions": [],
       "realmRoles": [
@@ -819,7 +819,7 @@
         "super admin"
       ],
       "clientRoles": {
-        "sro-characters": [
+        "sro-character": [
           "uma_protection"
         ]
       },
@@ -1651,7 +1651,7 @@
     },
     {
       "id": "738a426a-da91-4b16-b5fc-92d63a22eb76",
-      "clientId": "sro-characters",
+      "clientId": "sro-character",
       "name": "Shattered Realms Online Characters",
       "description": "The Shattered Realms Online backend character service",
       "rootUrl": "http://localhost:8081",

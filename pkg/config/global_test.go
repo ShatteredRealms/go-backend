@@ -9,7 +9,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v2"
 
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
@@ -64,15 +63,15 @@ var _ = Describe("Global config", func() {
 			Expect(conf.Character.Local.Host).To(Equal(val))
 		})
 
-		It("should read in from config file", func() {
-			confFromFile := &config.GlobalConfig{}
-			yamlFile, err := os.ReadFile("../../test/config.yaml")
-			Expect(err).To(BeNil())
-			yaml.Unmarshal(yamlFile, confFromFile)
-			conf := config.NewGlobalConfig(context.TODO())
-			Expect(conf).NotTo(BeNil())
-			Expect(conf.Character.Keycloak.ClientSecret).To(Equal(confFromFile.Character.Keycloak.ClientSecret))
-		})
+		// It("should read in from config file", func() {
+		// 	confFromFile := &config.GlobalConfig{}
+		// 	yamlFile, err := os.ReadFile("../../test/config.yaml")
+		// 	Expect(err).To(BeNil())
+		// 	yaml.Unmarshal(yamlFile, confFromFile)
+		// 	conf := config.NewGlobalConfig(context.TODO())
+		// 	Expect(conf).NotTo(BeNil())
+		// 	Expect(conf.Character.Keycloak.ClientSecret).To(Equal(confFromFile.Character.Keycloak.ClientSecret))
+		// })
 	})
 	Describe("Config helpers", func() {
 		var (

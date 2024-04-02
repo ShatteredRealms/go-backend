@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Nerzal/gocloak/v13"
+	"github.com/ShatteredRealms/go-backend/pkg/auth"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	testdb "github.com/ShatteredRealms/go-backend/test/db"
@@ -239,18 +240,27 @@ func TestSrv(t *testing.T) {
 				"authorization": "Bearer " + playerToken.AccessToken,
 			},
 		)
+		incAdminCtx, err = auth.AuthFunc(keycloak, conf.Keycloak.Realm)(incAdminCtx)
+		Expect(err).NotTo(HaveOccurred())
+
 		incPlayerCtx = metadata.NewIncomingContext(context.Background(), md)
 		md = metadata.New(
 			map[string]string{
 				"authorization": "Bearer " + clientToken.AccessToken,
 			},
 		)
+		incPlayerCtx, err = auth.AuthFunc(keycloak, conf.Keycloak.Realm)(incPlayerCtx)
+		Expect(err).NotTo(HaveOccurred())
+
 		incClientCtx = metadata.NewIncomingContext(context.Background(), md)
 		md = metadata.New(
 			map[string]string{
 				"authorization": "Bearer " + guestToken.AccessToken,
 			},
 		)
+		incClientCtx, err = auth.AuthFunc(keycloak, conf.Keycloak.Realm)(incClientCtx)
+		Expect(err).NotTo(HaveOccurred())
+
 		incGuestCtx = metadata.NewIncomingContext(context.Background(), md)
 	})
 

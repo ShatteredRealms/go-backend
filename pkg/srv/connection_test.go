@@ -132,7 +132,7 @@ var _ = Describe("Connection server (local)", func() {
 
 		When("given invalid input", func() {
 			It("should error for invalid context", func() {
-				out, err := server.ConnectGameServer(nil, req)
+				out, err := server.ConnectGameServer(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -196,7 +196,7 @@ var _ = Describe("Connection server (local)", func() {
 
 		When("given invalid input", func() {
 			It("should error for invalid context", func() {
-				out, err := server.VerifyConnect(nil, req)
+				out, err := server.VerifyConnect(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -276,7 +276,7 @@ var _ = Describe("Connection server (local)", func() {
 
 		When("given invalid input", func() {
 			It("should error for invalid context", func() {
-				out, err := server.TransferPlayer(nil, req)
+				out, err := server.TransferPlayer(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})

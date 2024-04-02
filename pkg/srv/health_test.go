@@ -13,7 +13,7 @@ import (
 var _ = Describe("Health server", func() {
 	It("should work", func() {
 		srv := srv.NewHealthServiceServer()
-		out, err := srv.Health(context.Background(), &emptypb.Empty{})
+		out, err := srv.Health(context.TODO(), &emptypb.Empty{})
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out.Status).To(Equal("ok"))
 	})

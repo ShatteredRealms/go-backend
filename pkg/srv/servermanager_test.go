@@ -130,7 +130,7 @@ var _ = Describe("Servermanager server", func() {
 
 			When("given invalid input", func() {
 				It("should error for invalid ctx (nil)", func() {
-					out, err := server.CreateDimension(nil, req)
+					out, err := server.CreateDimension(context.TODO(), req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 				})
@@ -281,7 +281,7 @@ var _ = Describe("Servermanager server", func() {
 
 		When("given invalid input", func() {
 			It("should error for invalid ctx (nil)", func() {
-				out, err := server.CreateMap(nil, req)
+				out, err := server.CreateMap(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -357,7 +357,7 @@ var _ = Describe("Servermanager server", func() {
 
 			When("given invalid input", func() {
 				It("should error for invalid ctx (nil)", func() {
-					out, err := server.DeleteDimension(nil, req)
+					out, err := server.DeleteDimension(context.TODO(), req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 				})
@@ -555,7 +555,7 @@ var _ = Describe("Servermanager server", func() {
 
 			When("given invalid input", func() {
 				It("should error for invalid ctx (nil)", func() {
-					out, err := server.DeleteMap(nil, req)
+					out, err := server.DeleteMap(context.TODO(), req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 				})
@@ -719,7 +719,7 @@ var _ = Describe("Servermanager server", func() {
 
 			When("given invalid input", func() {
 				It("should error for invalid ctx (nil)", func() {
-					out, err := server.DuplicateDimension(nil, req)
+					out, err := server.DuplicateDimension(context.TODO(), req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 				})
@@ -835,7 +835,7 @@ var _ = Describe("Servermanager server", func() {
 
 			When("given invalid input", func() {
 				It("should error for invalid ctx (nil)", func() {
-					out, err := server.EditDimension(nil, req)
+					out, err := server.EditDimension(context.TODO(), req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 				})
@@ -1181,7 +1181,7 @@ var _ = Describe("Servermanager server", func() {
 
 			When("given invalid input", func() {
 				It("should error for invalid ctx (nil)", func() {
-					out, err := server.EditMap(nil, req)
+					out, err := server.EditMap(context.TODO(), req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 				})
@@ -1349,7 +1349,7 @@ var _ = Describe("Servermanager server", func() {
 
 		When("given invalid input", func() {
 			It("should error for invalid ctx (nil)", func() {
-				out, err := server.GetAllDimension(nil, req)
+				out, err := server.GetAllDimension(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -1398,7 +1398,7 @@ var _ = Describe("Servermanager server", func() {
 
 		When("given invalid input", func() {
 			It("should error for invalid ctx (nil)", func() {
-				out, err := server.GetAllMaps(nil, req)
+				out, err := server.GetAllMaps(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -1451,7 +1451,7 @@ var _ = Describe("Servermanager server", func() {
 
 		When("given invalid input", func() {
 			It("should error for invalid ctx (nil)", func() {
-				out, err := server.GetDimension(nil, req)
+				out, err := server.GetDimension(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -1511,7 +1511,7 @@ var _ = Describe("Servermanager server", func() {
 
 		When("given invalid input", func() {
 			It("should error for invalid ctx (nil)", func() {
-				out, err := server.GetMap(nil, req)
+				out, err := server.GetMap(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
