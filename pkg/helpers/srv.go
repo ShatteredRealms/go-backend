@@ -71,7 +71,7 @@ func interceptorLogger(l logrus.FieldLogger) logging.Logger {
 		case logging.LevelError:
 			l.Error(msg)
 		default:
-			l.Fatalf("unknown level %v", lvl)
+			l.Debugf("unknown level %v: %s", lvl, msg)
 		}
 	})
 }
