@@ -9,13 +9,13 @@ import (
 	. "github.com/onsi/gomega"
 	"gorm.io/gorm"
 
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/chat"
 )
 
 var _ = Describe("Chat repository", func() {
 
-	createChannel := func() *model.ChatChannel {
-		channel := &model.ChatChannel{
+	createChannel := func() *chat.ChatChannel {
+		channel := &chat.ChatChannel{
 			Model: gorm.Model{
 				ID:        0,
 				CreatedAt: time.Now(),
@@ -156,7 +156,7 @@ var _ = Describe("Chat repository", func() {
 	})
 
 	Describe("FindDeleteWithName", func() {
-		var channel *model.ChatChannel
+		var channel *chat.ChatChannel
 		BeforeEach(func() {
 			channel = createChannel()
 			Expect(chatRepo.DeleteChannel(nil, channel)).To(Succeed())

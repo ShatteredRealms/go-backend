@@ -4,10 +4,11 @@ import (
 	"context"
 	"time"
 
-	app "github.com/ShatteredRealms/go-backend/cmd/character/app"
+	characterApp "github.com/ShatteredRealms/go-backend/cmd/character/app"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/mocks"
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/character"
+	"github.com/ShatteredRealms/go-backend/pkg/model/game"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/srv"
 	"github.com/bxcodec/faker/v4"
@@ -26,12 +27,12 @@ var _ = Describe("Character server", func() {
 		mockController  *gomock.Controller
 		mockCharService *mocks.MockCharacterService
 		mockInvService  *mocks.MockInventoryService
-		charCtx         *app.CharactersServerContext
+		charCtx         *characterApp.CharactersServerContext
 
 		server pb.CharacterServiceServer
 		ctx    = context.Background()
 
-		character *model.Character
+		char *character.Character
 	)
 
 	BeforeEach(func() {
@@ -41,7 +42,7 @@ var _ = Describe("Character server", func() {
 		mockCharService = mocks.NewMockCharacterService(mockController)
 		mockInvService = mocks.NewMockInventoryService(mockController)
 
-		charCtx = &app.CharactersServerContext{
+		charCtx = &characterApp.CharactersServerContext{
 			GlobalConfig:     conf,
 			CharacterService: mockCharService,
 			InventoryService: mockInvService,
@@ -54,7 +55,7 @@ var _ = Describe("Character server", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(server).NotTo(BeNil())
 
-		character = &model.Character{
+		char = &character.Character{
 			ID:        0,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -64,7 +65,7 @@ var _ = Describe("Character server", func() {
 			Gender:    "Male",
 			Realm:     "Human",
 			PlayTime:  100,
-			Location: model.Location{
+			Location: game.Location{
 				World: faker.Username(),
 				X:     1.1,
 				Y:     1.2,
@@ -83,38 +84,38 @@ var _ = Describe("Character server", func() {
 			It("should work given character name", func() {
 				req := &pb.AddPlayTimeRequest{
 					Character: &pb.CharacterTarget{
-						Type: &pb.CharacterTarget_Name{Name: character.Name},
+						Type: &pb.CharacterTarget_Name{Name: char.Name},
 					},
 					Time: 100,
 				}
-				mockCharService.EXPECT().FindByName(gomock.Any(), character.Name).Return(character, nil)
-				mockCharService.EXPECT().AddPlayTime(gomock.Any(), character.ID, req.Time).Return(character, nil)
+				mockCharService.EXPECT().FindByName(gomock.Any(), char.Name).Return(char, nil)
+				mockCharService.EXPECT().AddPlayTime(gomock.Any(), char.ID, req.Time).Return(char, nil)
 				out, err := server.AddCharacterPlayTime(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(out.Time).To(BeEquivalentTo(character.PlayTime))
+				Expect(out.Time).To(BeEquivalentTo(char.PlayTime))
 			})
 			It("should work given character id", func() {
 				req := &pb.AddPlayTimeRequest{
 					Character: &pb.CharacterTarget{
-						Type: &pb.CharacterTarget_Id{Id: uint64(character.ID)},
+						Type: &pb.CharacterTarget_Id{Id: uint64(char.ID)},
 					},
 					Time: 100,
 				}
-				mockCharService.EXPECT().AddPlayTime(gomock.Any(), character.ID, req.Time).Return(character, nil)
+				mockCharService.EXPECT().AddPlayTime(gomock.Any(), char.ID, req.Time).Return(char, nil)
 				out, err := server.AddCharacterPlayTime(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(out.Time).To(BeEquivalentTo(character.PlayTime))
+				Expect(out.Time).To(BeEquivalentTo(char.PlayTime))
 			})
 		})
 		When("given invalid input", func() {
 			It("should error if adding playtime fails", func() {
 				req := &pb.AddPlayTimeRequest{
 					Character: &pb.CharacterTarget{
-						Type: &pb.CharacterTarget_Id{Id: uint64(character.ID)},
+						Type: &pb.CharacterTarget_Id{Id: uint64(char.ID)},
 					},
 					Time: 100,
 				}
-				mockCharService.EXPECT().AddPlayTime(gomock.Any(), character.ID, req.Time).Return(character, fakeErr)
+				mockCharService.EXPECT().AddPlayTime(gomock.Any(), char.ID, req.Time).Return(char, fakeErr)
 				out, err := server.AddCharacterPlayTime(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
@@ -122,20 +123,20 @@ var _ = Describe("Character server", func() {
 			It("should error if unable to lookup target", func() {
 				req := &pb.AddPlayTimeRequest{
 					Character: &pb.CharacterTarget{
-						Type: &pb.CharacterTarget_Name{Name: character.Name},
+						Type: &pb.CharacterTarget_Name{Name: char.Name},
 					},
 					Time: 100,
 				}
-				mockCharService.EXPECT().FindByName(gomock.Any(), character.Name).Return(character, fakeErr)
+				mockCharService.EXPECT().FindByName(gomock.Any(), char.Name).Return(char, fakeErr)
 				out, err := server.AddCharacterPlayTime(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
 			It("should error if does not have correct privledges", func() {
-				_ = character
+				_ = char
 				req := &pb.AddPlayTimeRequest{
 					Character: &pb.CharacterTarget{
-						Type: &pb.CharacterTarget_Id{Id: uint64(character.ID)},
+						Type: &pb.CharacterTarget_Id{Id: uint64(char.ID)},
 					},
 					Time: 100,
 				}
@@ -144,10 +145,10 @@ var _ = Describe("Character server", func() {
 				Expect(out).To(BeNil())
 			})
 			It("should error if claims are invalid", func() {
-				_ = character
+				_ = char
 				req := &pb.AddPlayTimeRequest{
 					Character: &pb.CharacterTarget{
-						Type: &pb.CharacterTarget_Id{Id: uint64(character.ID)},
+						Type: &pb.CharacterTarget_Id{Id: uint64(char.ID)},
 					},
 					Time: 100,
 				}
@@ -168,19 +169,19 @@ var _ = Describe("Character server", func() {
 					},
 				},
 				Name:   faker.Username(),
-				Gender: character.Gender,
-				Realm:  character.Realm,
+				Gender: char.Gender,
+				Realm:  char.Realm,
 			}
 		})
 		When("given valid input", func() {
 			It("should work for players creating for themselves", func() {
-				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(character, nil)
+				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(char, nil)
 				out, err := server.CreateCharacter(incPlayerCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 
 				req.Owner.Target = &pb.UserTarget_Username{Username: *player.Username}
-				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(character, nil)
+				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(char, nil)
 				out, err = server.CreateCharacter(incPlayerCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
@@ -188,26 +189,26 @@ var _ = Describe("Character server", func() {
 
 			It("should work for admins creating for themselves", func() {
 				req.Owner.Target = &pb.UserTarget_Id{Id: *admin.ID}
-				mockCharService.EXPECT().Create(gomock.Any(), *admin.ID, req.Name, req.Gender, req.Realm).Return(character, nil)
+				mockCharService.EXPECT().Create(gomock.Any(), *admin.ID, req.Name, req.Gender, req.Realm).Return(char, nil)
 				out, err := server.CreateCharacter(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 
 				req.Owner.Target = &pb.UserTarget_Username{Username: *admin.Username}
-				mockCharService.EXPECT().Create(gomock.Any(), *admin.ID, req.Name, req.Gender, req.Realm).Return(character, nil)
+				mockCharService.EXPECT().Create(gomock.Any(), *admin.ID, req.Name, req.Gender, req.Realm).Return(char, nil)
 				out, err = server.CreateCharacter(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 			})
 
 			It("should work for admins creating for others", func() {
-				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(character, nil)
+				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(char, nil)
 				out, err := server.CreateCharacter(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 
 				req.Owner.Target = &pb.UserTarget_Username{Username: *player.Username}
-				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(character, nil)
+				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(char, nil)
 				out, err = server.CreateCharacter(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
@@ -242,7 +243,7 @@ var _ = Describe("Character server", func() {
 			})
 
 			It("should error if creating fails", func() {
-				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(character, fakeErr)
+				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(char, fakeErr)
 				out, err := server.CreateCharacter(incPlayerCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
@@ -260,23 +261,23 @@ var _ = Describe("Character server", func() {
 		BeforeEach(func() {
 			req = &pb.CharacterTarget{
 				Type: &pb.CharacterTarget_Id{
-					Id: uint64(character.ID),
+					Id: uint64(char.ID),
 				},
 			}
 		})
 		When("Given invalid input", func() {
 			It("should work given", func() {
-				mockCharService.EXPECT().Delete(gomock.Any(), character.ID).Return(nil)
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(character, nil)
+				mockCharService.EXPECT().Delete(gomock.Any(), char.ID).Return(nil)
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(char, nil)
 				out, err := server.DeleteCharacter(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 
 				req.Type = &pb.CharacterTarget_Name{
-					Name: character.Name,
+					Name: char.Name,
 				}
-				mockCharService.EXPECT().Delete(gomock.Any(), character.ID).Return(nil)
-				mockCharService.EXPECT().FindByName(gomock.Any(), character.Name).Return(character, nil)
+				mockCharService.EXPECT().Delete(gomock.Any(), char.ID).Return(nil)
+				mockCharService.EXPECT().FindByName(gomock.Any(), char.Name).Return(char, nil)
 				out, err = server.DeleteCharacter(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
@@ -297,22 +298,22 @@ var _ = Describe("Character server", func() {
 			})
 
 			It("should error if error finding by name", func() {
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(nil, nil)
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(nil, nil)
 				out, err := server.DeleteCharacter(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
 
 			It("should error if character not found", func() {
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(nil, nil)
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(nil, nil)
 				out, err := server.DeleteCharacter(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
 
 			It("should error if user has invalid permission for deleting other", func() {
-				character.OwnerId = *admin.ID
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(character, nil)
+				char.OwnerId = *admin.ID
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(char, nil)
 				out, err := server.DeleteCharacter(incPlayerCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
@@ -326,7 +327,7 @@ var _ = Describe("Character server", func() {
 			req = &pb.EditCharacterRequest{
 				Target: &pb.CharacterTarget{
 					Type: &pb.CharacterTarget_Id{
-						Id: uint64(character.ID),
+						Id: uint64(char.ID),
 					},
 				},
 				OptionalOwnerId:  nil,
@@ -339,7 +340,7 @@ var _ = Describe("Character server", func() {
 		})
 		When("Given invalid input (moderator+ permissions)", func() {
 			It("should work with id target", func() {
-				mockCharService.EXPECT().Edit(gomock.Any(), req).Return(character, nil)
+				mockCharService.EXPECT().Edit(gomock.Any(), req).Return(char, nil)
 				out, err := server.EditCharacter(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
@@ -347,9 +348,9 @@ var _ = Describe("Character server", func() {
 
 			It("should work with name target", func() {
 				req.Target.Type = &pb.CharacterTarget_Name{
-					Name: character.Name,
+					Name: char.Name,
 				}
-				mockCharService.EXPECT().Edit(gomock.Any(), req).Return(character, nil)
+				mockCharService.EXPECT().Edit(gomock.Any(), req).Return(char, nil)
 				out, err := server.EditCharacter(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
@@ -388,30 +389,30 @@ var _ = Describe("Character server", func() {
 		BeforeEach(func() {
 			req = &pb.CharacterTarget{
 				Type: &pb.CharacterTarget_Id{
-					Id: uint64(character.ID),
+					Id: uint64(char.ID),
 				},
 			}
 		})
 		When("given valid input", func() {
 			It("should work getting self by id (admin)", func() {
-				character.OwnerId = *admin.ID
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(character, nil)
+				char.OwnerId = *admin.ID
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(char, nil)
 				out, err := server.GetCharacter(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 			})
 
 			It("should work getting self by id (player)", func() {
-				character.OwnerId = *player.ID
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(character, nil)
+				char.OwnerId = *player.ID
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(char, nil)
 				out, err := server.GetCharacter(incPlayerCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 			})
 
 			It("should work getting other by id (admin)", func() {
-				character.OwnerId = *player.ID
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(character, nil)
+				char.OwnerId = *player.ID
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(char, nil)
 				out, err := server.GetCharacter(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
@@ -419,10 +420,10 @@ var _ = Describe("Character server", func() {
 
 			It("should work getting other by name (admin)", func() {
 				req.Type = &pb.CharacterTarget_Name{
-					Name: character.Name,
+					Name: char.Name,
 				}
-				character.OwnerId = *player.ID
-				mockCharService.EXPECT().FindByName(gomock.Any(), character.Name).Return(character, nil)
+				char.OwnerId = *player.ID
+				mockCharService.EXPECT().FindByName(gomock.Any(), char.Name).Return(char, nil)
 				out, err := server.GetCharacter(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
@@ -437,22 +438,22 @@ var _ = Describe("Character server", func() {
 			})
 
 			It("should error getting other (player)", func() {
-				character.OwnerId = *admin.ID
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(character, nil)
+				char.OwnerId = *admin.ID
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(char, nil)
 				out, err := server.GetCharacter(incPlayerCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
 
 			It("should error if getting character fails", func() {
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(nil, fakeErr)
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(nil, fakeErr)
 				out, err := server.GetCharacter(incPlayerCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
 
 			It("should error if no character exists", func() {
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(nil, nil)
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(nil, nil)
 				out, err := server.GetCharacter(incPlayerCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
@@ -462,14 +463,14 @@ var _ = Describe("Character server", func() {
 
 	Describe("GetAllCharactersForUser", func() {
 		var req *pb.UserTarget
-		var characters model.Characters
+		var characters character.Characters
 		BeforeEach(func() {
 			req = &pb.UserTarget{
 				Target: &pb.UserTarget_Id{
 					Id: *player.ID,
 				},
 			}
-			characters = []*model.Character{character}
+			characters = []*character.Character{char}
 		})
 
 		When("given valid input", func() {
@@ -544,10 +545,10 @@ var _ = Describe("Character server", func() {
 
 	Describe("GetCharacters", func() {
 		var req *emptypb.Empty
-		var characters model.Characters
+		var characters character.Characters
 		BeforeEach(func() {
 			req = &emptypb.Empty{}
-			characters = []*model.Character{character}
+			characters = []*character.Character{char}
 		})
 
 		When("given valid input", func() {
@@ -589,31 +590,31 @@ var _ = Describe("Character server", func() {
 
 	Describe("GetInventory", func() {
 		var req *pb.CharacterTarget
-		var inv *model.CharacterInventory
+		var inv *character.Inventory
 		BeforeEach(func() {
 			req = &pb.CharacterTarget{
 				Type: &pb.CharacterTarget_Id{
-					Id: uint64(character.ID),
+					Id: uint64(char.ID),
 				},
 			}
-			inv = &model.CharacterInventory{}
+			inv = &character.Inventory{}
 			Expect(faker.FakeData(inv)).To(Succeed())
 		})
 
 		When("given valid input", func() {
 			It("should work if no inventory exists yet (admin)", func() {
-				character.OwnerId = *admin.ID
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(character, nil)
-				mockInvService.EXPECT().GetInventory(gomock.Any(), character.ID).Return(nil, mongo.ErrNoDocuments)
+				char.OwnerId = *admin.ID
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(char, nil)
+				mockInvService.EXPECT().GetInventory(gomock.Any(), char.ID).Return(nil, mongo.ErrNoDocuments)
 				out, err := server.GetInventory(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 			})
 
 			It("should work getting self by id (admin)", func() {
-				character.OwnerId = *admin.ID
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(character, nil)
-				mockInvService.EXPECT().GetInventory(gomock.Any(), character.ID).Return(inv, nil)
+				char.OwnerId = *admin.ID
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(char, nil)
+				mockInvService.EXPECT().GetInventory(gomock.Any(), char.ID).Return(inv, nil)
 				out, err := server.GetInventory(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
@@ -621,11 +622,11 @@ var _ = Describe("Character server", func() {
 
 			It("should work getting other by name (admin)", func() {
 				req.Type = &pb.CharacterTarget_Name{
-					Name: character.Name,
+					Name: char.Name,
 				}
-				character.OwnerId = *player.ID
-				mockCharService.EXPECT().FindByName(gomock.Any(), character.Name).Return(character, nil)
-				mockInvService.EXPECT().GetInventory(gomock.Any(), character.ID).Return(inv, nil)
+				char.OwnerId = *player.ID
+				mockCharService.EXPECT().FindByName(gomock.Any(), char.Name).Return(char, nil)
+				mockInvService.EXPECT().GetInventory(gomock.Any(), char.ID).Return(inv, nil)
 				out, err := server.GetInventory(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
@@ -652,14 +653,14 @@ var _ = Describe("Character server", func() {
 			})
 
 			It("should error if getting character fails", func() {
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(nil, fakeErr)
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(nil, fakeErr)
 				out, err := server.GetInventory(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
 
 			It("should error if no character exists", func() {
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(nil, nil)
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(nil, nil)
 				out, err := server.GetInventory(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
@@ -669,12 +670,12 @@ var _ = Describe("Character server", func() {
 
 	Describe("SetInventory", func() {
 		var req *pb.UpdateInventoryRequest
-		var inv *model.CharacterInventory
+		var inv *character.Inventory
 		BeforeEach(func() {
 			req = &pb.UpdateInventoryRequest{
 				Target: &pb.CharacterTarget{
 					Type: &pb.CharacterTarget_Id{
-						Id: uint64(character.ID),
+						Id: uint64(char.ID),
 					},
 				},
 				InventoryItems: []*pb.InventoryItem{
@@ -702,13 +703,13 @@ var _ = Describe("Character server", func() {
 					},
 				},
 			}
-			inv = &model.CharacterInventory{}
+			inv = &character.Inventory{}
 			Expect(faker.FakeData(inv)).To(Succeed())
 		})
 
 		When("given valid input", func() {
 			It("should work if no inventory exists yet (admin)", func() {
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(character, nil)
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(char, nil)
 				mockInvService.EXPECT().UpdateInventory(gomock.Any(), gomock.Any()).Return(mongo.ErrNoDocuments)
 				out, err := server.SetInventory(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
@@ -716,7 +717,7 @@ var _ = Describe("Character server", func() {
 			})
 
 			It("should work getting self by id (admin)", func() {
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(character, nil)
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(char, nil)
 				mockInvService.EXPECT().UpdateInventory(gomock.Any(), gomock.Any()).Return(nil)
 				out, err := server.SetInventory(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
@@ -725,9 +726,9 @@ var _ = Describe("Character server", func() {
 
 			It("should work getting other by name (admin)", func() {
 				req.Target.Type = &pb.CharacterTarget_Name{
-					Name: character.Name,
+					Name: char.Name,
 				}
-				mockCharService.EXPECT().FindByName(gomock.Any(), character.Name).Return(character, nil)
+				mockCharService.EXPECT().FindByName(gomock.Any(), char.Name).Return(char, nil)
 				mockInvService.EXPECT().UpdateInventory(gomock.Any(), gomock.Any()).Return(nil)
 				out, err := server.SetInventory(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
@@ -755,21 +756,21 @@ var _ = Describe("Character server", func() {
 			})
 
 			It("should error if getting character fails", func() {
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(nil, fakeErr)
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(nil, fakeErr)
 				out, err := server.SetInventory(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
 
 			It("should error if no character exists", func() {
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(nil, nil)
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(nil, nil)
 				out, err := server.SetInventory(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
 
 			It("should error if update inventory fails", func() {
-				mockCharService.EXPECT().FindById(gomock.Any(), character.ID).Return(character, nil)
+				mockCharService.EXPECT().FindById(gomock.Any(), char.ID).Return(char, nil)
 				mockInvService.EXPECT().UpdateInventory(gomock.Any(), gomock.Any()).Return(fakeErr)
 				out, err := server.SetInventory(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())

@@ -2,21 +2,18 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/ShatteredRealms/go-backend/pkg/common"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/game"
+	"github.com/ShatteredRealms/go-backend/pkg/model/gamebackend"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
-	"go.opentelemetry.io/otel"
-)
-
-var (
-	gamebackendTracer = otel.Tracer("Inner-GamebackendService")
 )
 
 type dimensionService interface {
@@ -26,16 +23,16 @@ type dimensionService interface {
 		location string,
 		version string,
 		mapIds []*uuid.UUID,
-	) (*model.Dimension, error)
-	DuplicateDimension(ctx context.Context, target *pb.DimensionTarget, name string) (*model.Dimension, error)
-	FindDimensionByName(ctx context.Context, name string) (*model.Dimension, error)
-	FindDimensionById(ctx context.Context, id *uuid.UUID) (*model.Dimension, error)
-	FindDimension(ctx context.Context, target *pb.DimensionTarget) (*model.Dimension, error)
-	FindDimensionsByNames(ctx context.Context, names []string) (model.Dimensions, error)
-	FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error)
-	FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error)
-	FindAllDimensions(ctx context.Context) (model.Dimensions, error)
-	EditDimension(ctx context.Context, request *pb.EditDimensionRequest) (*model.Dimension, error)
+	) (*game.Dimension, error)
+	DuplicateDimension(ctx context.Context, target *pb.DimensionTarget, name string) (*game.Dimension, error)
+	FindDimensionByName(ctx context.Context, name string) (*game.Dimension, error)
+	FindDimensionById(ctx context.Context, id *uuid.UUID) (*game.Dimension, error)
+	FindDimension(ctx context.Context, target *pb.DimensionTarget) (*game.Dimension, error)
+	FindDimensionsByNames(ctx context.Context, names []string) (game.Dimensions, error)
+	FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (game.Dimensions, error)
+	FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (game.Dimensions, error)
+	FindAllDimensions(ctx context.Context) (game.Dimensions, error)
+	EditDimension(ctx context.Context, request *pb.EditDimensionRequest) (*game.Dimension, error)
 	DeleteDimensionByName(ctx context.Context, name string) error
 	DeleteDimensionById(ctx context.Context, id *uuid.UUID) error
 	DeleteDimension(ctx context.Context, target *pb.DimensionTarget) error
@@ -48,22 +45,22 @@ type mapService interface {
 		path string,
 		maxPlayers uint64,
 		instanced bool,
-	) (*model.Map, error)
-	FindMapByName(ctx context.Context, name string) (*model.Map, error)
-	FindMapById(ctx context.Context, id *uuid.UUID) (*model.Map, error)
-	FindMap(ctx context.Context, target *pb.MapTarget) (*model.Map, error)
-	FindMapsByNames(ctx context.Context, names []string) (model.Maps, error)
-	FindMapsByIds(ctx context.Context, ids []*uuid.UUID) (model.Maps, error)
-	FindAllMaps(ctx context.Context) (model.Maps, error)
-	EditMap(ctx context.Context, request *pb.EditMapRequest) (*model.Map, error)
+	) (*game.Map, error)
+	FindMapByName(ctx context.Context, name string) (*game.Map, error)
+	FindMapById(ctx context.Context, id *uuid.UUID) (*game.Map, error)
+	FindMap(ctx context.Context, target *pb.MapTarget) (*game.Map, error)
+	FindMapsByNames(ctx context.Context, names []string) (game.Maps, error)
+	FindMapsByIds(ctx context.Context, ids []*uuid.UUID) (game.Maps, error)
+	FindAllMaps(ctx context.Context) (game.Maps, error)
+	EditMap(ctx context.Context, request *pb.EditMapRequest) (*game.Map, error)
 	DeleteMapByName(ctx context.Context, name string) error
 	DeleteMapById(ctx context.Context, id *uuid.UUID) error
 	DeleteMap(ctx context.Context, target *pb.MapTarget) error
 }
 
 type connectionService interface {
-	CreatePendingConnection(ctx context.Context, character string, serverName string) (*model.PendingConnection, error)
-	CheckPlayerConnection(ctx context.Context, id *uuid.UUID, serverName string) (*model.PendingConnection, error)
+	CreatePendingConnection(ctx context.Context, character string, serverName string) (*gamebackend.PendingConnection, error)
+	CheckPlayerConnection(ctx context.Context, id *uuid.UUID, serverName string) (*gamebackend.PendingConnection, error)
 }
 
 type GamebackendService interface {
@@ -77,7 +74,7 @@ type gamebackendService struct {
 }
 
 // FindDimension implements GamebackendService.
-func (s *gamebackendService) FindDimension(ctx context.Context, target *pb.DimensionTarget) (*model.Dimension, error) {
+func (s *gamebackendService) FindDimension(ctx context.Context, target *pb.DimensionTarget) (*game.Dimension, error) {
 	switch t := target.FindBy.(type) {
 	case *pb.DimensionTarget_Name:
 		return s.gamebackendRepo.FindDimensionByName(ctx, t.Name)
@@ -91,13 +88,13 @@ func (s *gamebackendService) FindDimension(ctx context.Context, target *pb.Dimen
 
 	default:
 		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
-		return nil, model.ErrHandleRequest.Err()
+		return nil, common.ErrHandleRequest.Err()
 
 	}
 }
 
 // FindMap implements GamebackendService.
-func (s *gamebackendService) FindMap(ctx context.Context, target *pb.MapTarget) (*model.Map, error) {
+func (s *gamebackendService) FindMap(ctx context.Context, target *pb.MapTarget) (*game.Map, error) {
 	switch t := target.FindBy.(type) {
 	case *pb.MapTarget_Name:
 		return s.gamebackendRepo.FindMapByName(ctx, t.Name)
@@ -111,19 +108,19 @@ func (s *gamebackendService) FindMap(ctx context.Context, target *pb.MapTarget) 
 
 	default:
 		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
-		return nil, model.ErrHandleRequest.Err()
+		return nil, common.ErrHandleRequest.Err()
 
 	}
 }
 
 // DuplicateDimension implements GamebackendService.
-func (s *gamebackendService) DuplicateDimension(ctx context.Context, target *pb.DimensionTarget, name string) (*model.Dimension, error) {
+func (s *gamebackendService) DuplicateDimension(ctx context.Context, target *pb.DimensionTarget, name string) (*game.Dimension, error) {
 	dimension, err := s.FindDimension(ctx, target)
 	if err != nil {
 		return nil, err
 	}
 	if dimension == nil {
-		return nil, model.ErrDoesNotExist.Err()
+		return nil, common.ErrDoesNotExist.Err()
 
 	}
 
@@ -141,7 +138,7 @@ func NewGamebackendService(
 ) (GamebackendService, error) {
 	err := r.Migrate(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "migrate db")
+		return nil, fmt.Errorf("migrate db: %w", err)
 	}
 
 	return &gamebackendService{
@@ -154,12 +151,12 @@ func (s *gamebackendService) CreatePendingConnection(
 	ctx context.Context,
 	character string,
 	serverName string,
-) (*model.PendingConnection, error) {
+) (*gamebackend.PendingConnection, error) {
 	return s.gamebackendRepo.CreatePendingConnection(ctx, character, serverName)
 }
 
 // DeletePendingConnection implements GamebackendService.
-func (s *gamebackendService) CheckPlayerConnection(ctx context.Context, id *uuid.UUID, serverName string) (*model.PendingConnection, error) {
+func (s *gamebackendService) CheckPlayerConnection(ctx context.Context, id *uuid.UUID, serverName string) (*gamebackend.PendingConnection, error) {
 	pc := s.gamebackendRepo.FindPendingConnection(ctx, id)
 	if pc == nil {
 		return nil, fmt.Errorf("connection not found")
@@ -174,8 +171,8 @@ func (s *gamebackendService) CheckPlayerConnection(ctx context.Context, id *uuid
 	expireTime := pc.CreatedAt.Add(30 * time.Second)
 	if expireTime.Unix() < time.Now().Unix() {
 		log.Logger.WithContext(ctx).Infof("connection expired for %s", pc.Character)
-		s.gamebackendRepo.DeletePendingConnection(ctx, id)
-		return nil, fmt.Errorf("expired")
+		err := s.gamebackendRepo.DeletePendingConnection(ctx, id)
+		return nil, errors.Join(fmt.Errorf("expired"), err)
 	}
 
 	s.gamebackendRepo.DeletePendingConnection(ctx, id)
@@ -183,12 +180,12 @@ func (s *gamebackendService) CheckPlayerConnection(ctx context.Context, id *uuid
 }
 
 // CreateDimension implements GamebackendService.
-func (s *gamebackendService) CreateDimension(ctx context.Context, name string, location string, version string, mapIds []*uuid.UUID) (*model.Dimension, error) {
+func (s *gamebackendService) CreateDimension(ctx context.Context, name string, location string, version string, mapIds []*uuid.UUID) (*game.Dimension, error) {
 	return s.gamebackendRepo.CreateDimension(ctx, name, location, version, mapIds)
 }
 
 // CreateMap implements GamebackendService.
-func (s *gamebackendService) CreateMap(ctx context.Context, name string, path string, maxPlayers uint64, instanced bool) (*model.Map, error) {
+func (s *gamebackendService) CreateMap(ctx context.Context, name string, path string, maxPlayers uint64, instanced bool) (*game.Map, error) {
 	return s.gamebackendRepo.CreateMap(ctx, name, path, maxPlayers, instanced)
 }
 
@@ -213,7 +210,7 @@ func (s *gamebackendService) DeleteMapByName(ctx context.Context, name string) e
 }
 
 // EditDimension implements GamebackendService.
-func (s *gamebackendService) EditDimension(ctx context.Context, request *pb.EditDimensionRequest) (*model.Dimension, error) {
+func (s *gamebackendService) EditDimension(ctx context.Context, request *pb.EditDimensionRequest) (*game.Dimension, error) {
 	currentDimension, err := s.FindDimension(ctx, request.Target)
 
 	if err != nil {
@@ -221,7 +218,7 @@ func (s *gamebackendService) EditDimension(ctx context.Context, request *pb.Edit
 	}
 
 	if currentDimension == nil {
-		return nil, model.ErrDoesNotExist.Err()
+		return nil, common.ErrDoesNotExist.Err()
 
 	}
 
@@ -240,12 +237,12 @@ func (s *gamebackendService) EditDimension(ctx context.Context, request *pb.Edit
 	if request.EditMaps {
 		ids, err := helpers.ParseUUIDs(request.MapIds)
 		if err != nil {
-			return nil, errors.Wrap(err, "invalid map ids")
+			return nil, fmt.Errorf("invalid map ids: %w", err)
 		}
 
 		maps, err := s.gamebackendRepo.FindMapsByIds(ctx, ids)
 		if err != nil {
-			return nil, errors.Wrap(err, "getting maps")
+			return nil, fmt.Errorf("getting maps: %w", err)
 		}
 
 		if len(ids) != len(maps) {
@@ -271,8 +268,8 @@ func (s *gamebackendService) EditDimension(ctx context.Context, request *pb.Edit
 }
 
 // EditMap implements GamebackendService.
-func (s *gamebackendService) EditMap(ctx context.Context, request *pb.EditMapRequest) (*model.Map, error) {
-	var currentMap *model.Map
+func (s *gamebackendService) EditMap(ctx context.Context, request *pb.EditMapRequest) (*game.Map, error) {
+	var currentMap *game.Map
 	var err error
 
 	switch target := request.Target.FindBy.(type) {
@@ -286,7 +283,7 @@ func (s *gamebackendService) EditMap(ctx context.Context, request *pb.EditMapReq
 		currentMap, err = s.FindMapByName(ctx, target.Name)
 	default:
 		log.Logger.WithContext(ctx).Errorf("map target type unknown: %+v", request.Target)
-		err = model.ErrHandleRequest.Err()
+		err = common.ErrHandleRequest.Err()
 
 	}
 
@@ -295,7 +292,7 @@ func (s *gamebackendService) EditMap(ctx context.Context, request *pb.EditMapReq
 	}
 
 	if currentMap == nil {
-		return nil, model.ErrDoesNotExist.Err()
+		return nil, common.ErrDoesNotExist.Err()
 
 	}
 
@@ -319,57 +316,57 @@ func (s *gamebackendService) EditMap(ctx context.Context, request *pb.EditMapReq
 }
 
 // FindAllDimensions implements GamebackendService.
-func (s *gamebackendService) FindAllDimensions(ctx context.Context) (model.Dimensions, error) {
+func (s *gamebackendService) FindAllDimensions(ctx context.Context) (game.Dimensions, error) {
 	return s.gamebackendRepo.FindAllDimensions(ctx)
 }
 
 // FindAllMaps implements GamebackendService.
-func (s *gamebackendService) FindAllMaps(ctx context.Context) (model.Maps, error) {
+func (s *gamebackendService) FindAllMaps(ctx context.Context) (game.Maps, error) {
 	return s.gamebackendRepo.FindAllMaps(ctx)
 }
 
 // FindDimensionById implements GamebackendService.
-func (s *gamebackendService) FindDimensionById(ctx context.Context, id *uuid.UUID) (*model.Dimension, error) {
+func (s *gamebackendService) FindDimensionById(ctx context.Context, id *uuid.UUID) (*game.Dimension, error) {
 	return s.gamebackendRepo.FindDimensionById(ctx, id)
 }
 
 // FindDimensionByName implements GamebackendService.
-func (s *gamebackendService) FindDimensionByName(ctx context.Context, name string) (*model.Dimension, error) {
+func (s *gamebackendService) FindDimensionByName(ctx context.Context, name string) (*game.Dimension, error) {
 	return s.gamebackendRepo.FindDimensionByName(ctx, name)
 }
 
 // FindDimensionsByIds implements GamebackendService.
-func (s *gamebackendService) FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error) {
+func (s *gamebackendService) FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (game.Dimensions, error) {
 	return s.gamebackendRepo.FindDimensionsByIds(ctx, ids)
 }
 
 // FindDimensionsByNames implements GamebackendService.
-func (s *gamebackendService) FindDimensionsByNames(ctx context.Context, names []string) (model.Dimensions, error) {
+func (s *gamebackendService) FindDimensionsByNames(ctx context.Context, names []string) (game.Dimensions, error) {
 	return s.gamebackendRepo.FindDimensionsByNames(ctx, names)
 }
 
 // FindDimensionsWithMapIds implements GamebackendService.
-func (s *gamebackendService) FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error) {
+func (s *gamebackendService) FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (game.Dimensions, error) {
 	return s.gamebackendRepo.FindDimensionsWithMapIds(ctx, ids)
 }
 
 // FindMapById implements GamebackendService.
-func (s *gamebackendService) FindMapById(ctx context.Context, id *uuid.UUID) (*model.Map, error) {
+func (s *gamebackendService) FindMapById(ctx context.Context, id *uuid.UUID) (*game.Map, error) {
 	return s.gamebackendRepo.FindMapById(ctx, id)
 }
 
 // FindMapByName implements GamebackendService.
-func (s *gamebackendService) FindMapByName(ctx context.Context, name string) (*model.Map, error) {
+func (s *gamebackendService) FindMapByName(ctx context.Context, name string) (*game.Map, error) {
 	return s.gamebackendRepo.FindMapByName(ctx, name)
 }
 
 // FindMapsByIds implements GamebackendService.
-func (s *gamebackendService) FindMapsByIds(ctx context.Context, ids []*uuid.UUID) (model.Maps, error) {
+func (s *gamebackendService) FindMapsByIds(ctx context.Context, ids []*uuid.UUID) (game.Maps, error) {
 	return s.gamebackendRepo.FindMapsByIds(ctx, ids)
 }
 
 // FindMapsByNames implements GamebackendService.
-func (s *gamebackendService) FindMapsByNames(ctx context.Context, names []string) (model.Maps, error) {
+func (s *gamebackendService) FindMapsByNames(ctx context.Context, names []string) (game.Maps, error) {
 	return s.gamebackendRepo.FindMapsByNames(ctx, names)
 }
 
@@ -382,13 +379,13 @@ func (s *gamebackendService) DeleteDimension(ctx context.Context, target *pb.Dim
 	case *pb.DimensionTarget_Id:
 		id, err := uuid.Parse(t.Id)
 		if err != nil {
-			return errors.Errorf("invalid id: %s", t.Id)
+			return fmt.Errorf("invalid id: %s", t.Id)
 		}
 		return s.DeleteDimensionById(ctx, &id)
 
 	default:
 		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
-		return model.ErrHandleRequest.Err()
+		return common.ErrHandleRequest.Err()
 
 	}
 }
@@ -402,13 +399,13 @@ func (s *gamebackendService) DeleteMap(ctx context.Context, target *pb.MapTarget
 	case *pb.MapTarget_Id:
 		id, err := uuid.Parse(t.Id)
 		if err != nil {
-			return errors.Errorf("invalid id: %s", t.Id)
+			return fmt.Errorf("invalid id: %s", t.Id)
 		}
 		return s.DeleteMapById(ctx, &id)
 
 	default:
 		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
-		return model.ErrHandleRequest.Err()
+		return common.ErrHandleRequest.Err()
 
 	}
 }

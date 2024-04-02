@@ -9,10 +9,10 @@ import (
 	"agones.dev/agones/pkg/client/clientset/versioned"
 	"github.com/Nerzal/gocloak/v13"
 	gamebackend "github.com/ShatteredRealms/go-backend/cmd/gamebackend/app"
+	"github.com/ShatteredRealms/go-backend/pkg/auth"
+	"github.com/ShatteredRealms/go-backend/pkg/common"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
-	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
-	"github.com/ShatteredRealms/go-backend/pkg/model"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -51,20 +51,19 @@ func (s connectionServiceServer) ConnectGameServer(
 	ctx context.Context,
 	request *pb.CharacterTarget,
 ) (*pb.ConnectGameServerResponse, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
-	if err != nil {
-		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized.Err()
+	claims, ok := auth.RetrieveClaims(ctx)
+	if !ok {
+		return nil, common.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasResourceRole(RoleConnect, model.GamebackendClientId) {
-		return nil, errors.Wrapf(model.ErrUnauthorized.Err(), "no role %s", *RoleConnect.Name)
+	if !claims.HasResourceRole(RoleConnect, auth.GamebackendClientId) {
+		return nil, errors.Wrapf(common.ErrUnauthorized.Err(), "no role %s", *RoleConnect.Name)
 	}
 
 	// If the current user can't get the character, then deny the request
 	character, err := s.server.CharacterClient.GetCharacter(
-		helpers.PassAuthContext(ctx),
+		auth.PassOutgoing(ctx),
 		request,
 	)
 	if err != nil {
@@ -73,7 +72,7 @@ func (s connectionServiceServer) ConnectGameServer(
 	}
 	if character == nil {
 		log.Logger.WithContext(ctx).Warnf("%s requested character %v but does not exists", claims.Username, request.Type)
-		return nil, model.ErrDoesNotExist.Err()
+		return nil, common.ErrDoesNotExist.Err()
 	}
 
 	if s.server.GlobalConfig.GameBackend.Mode == config.LocalMode {
@@ -107,15 +106,14 @@ func (s connectionServiceServer) VerifyConnect(
 	ctx context.Context,
 	request *pb.VerifyConnectRequest,
 ) (*pb.CharacterDetails, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
-	if err != nil {
-		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized.Err()
+	claims, ok := auth.RetrieveClaims(ctx)
+	if !ok {
+		return nil, common.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasResourceRole(RoleManageConnections, model.GamebackendClientId) {
-		return nil, model.ErrUnauthorized.Err()
+	if !claims.HasResourceRole(RoleManageConnections, auth.GamebackendClientId) {
+		return nil, common.ErrUnauthorized.Err()
 	}
 
 	id, err := uuid.Parse(request.ConnectionId)
@@ -130,7 +128,7 @@ func (s connectionServiceServer) VerifyConnect(
 
 	// If the current user can't get the character, then deny the request
 	character, err := s.server.CharacterClient.GetCharacter(
-		helpers.PassAuthContext(ctx),
+		auth.PassOutgoing(ctx),
 		&pb.CharacterTarget{
 			Type: &pb.CharacterTarget_Name{
 				Name: pc.Character,
@@ -153,19 +151,18 @@ func (s connectionServiceServer) TransferPlayer(
 	ctx context.Context,
 	request *pb.TransferPlayerRequest,
 ) (*pb.ConnectGameServerResponse, error) {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
-	if err != nil {
-		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return nil, model.ErrUnauthorized.Err()
+	claims, ok := auth.RetrieveClaims(ctx)
+	if !ok {
+		return nil, common.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasResourceRole(RoleManageConnections, model.GamebackendClientId) {
-		return nil, model.ErrUnauthorized.Err()
+	if !claims.HasResourceRole(RoleManageConnections, auth.GamebackendClientId) {
+		return nil, common.ErrUnauthorized.Err()
 	}
 
 	character, err := s.server.CharacterClient.GetCharacter(
-		helpers.PassAuthContext(ctx),
+		auth.PassOutgoing(ctx),
 		&pb.CharacterTarget{
 			Type: &pb.CharacterTarget_Name{
 				Name: request.Character,
@@ -212,7 +209,7 @@ func (s connectionServiceServer) requestConnection(
 	srvCtx, err := s.serverContext(ctx)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
-		return nil, model.ErrHandleRequest.Err()
+		return nil, common.ErrHandleRequest.Err()
 	}
 
 	allocatedState := v1.GameServerStateAllocated
@@ -261,7 +258,7 @@ func (s connectionServiceServer) requestConnection(
 	if updateCharacter {
 		// Update the players location
 		_, err = s.server.CharacterClient.EditCharacter(
-			helpers.PassAuthContext(ctx),
+			auth.PassOutgoing(ctx),
 			&pb.EditCharacterRequest{
 				Target: &pb.CharacterTarget{
 					Type: &pb.CharacterTarget_Id{Id: character.Id},
@@ -352,7 +349,7 @@ func (s connectionServiceServer) serverContext(ctx context.Context) (context.Con
 		return nil, err
 	}
 
-	return helpers.ContextAddClientToken(
+	return auth.AddOutgoingToken(
 		ctx,
 		token.AccessToken,
 	), nil

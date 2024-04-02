@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ShatteredRealms/go-backend/pkg/log"
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/character"
 	"github.com/ShatteredRealms/go-backend/pkg/srospan"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
@@ -20,16 +20,16 @@ var (
 )
 
 type CharacterRepository interface {
-	Create(ctx context.Context, character *model.Character) (*model.Character, error)
-	Save(ctx context.Context, character *model.Character) (*model.Character, error)
-	Delete(ctx context.Context, character *model.Character) error
+	Create(ctx context.Context, char *character.Character) (*character.Character, error)
+	Save(ctx context.Context, char *character.Character) (*character.Character, error)
+	Delete(ctx context.Context, char *character.Character) error
 
-	FindById(ctx context.Context, id uint) (*model.Character, error)
-	FindByName(ctx context.Context, name string) (*model.Character, error)
+	FindById(ctx context.Context, id uint) (*character.Character, error)
+	FindByName(ctx context.Context, name string) (*character.Character, error)
 
-	FindAllByOwner(ctx context.Context, owner string) (model.Characters, error)
+	FindAllByOwner(ctx context.Context, owner string) (character.Characters, error)
 
-	FindAll(context.Context) ([]*model.Character, error)
+	FindAll(context.Context) ([]*character.Character, error)
 
 	WithTrx(trx *gorm.DB) CharacterRepository
 	Migrate(ctx context.Context) error
@@ -49,16 +49,16 @@ func NewCharacterRepository(db *gorm.DB) (repo CharacterRepository, err error) {
 	return
 }
 
-func (r characterRepository) FindByName(ctx context.Context, name string) (*model.Character, error) {
-	var character *model.Character
-	result := r.DB.WithContext(ctx).Where("name = ?", name).Find(&character)
+func (r characterRepository) FindByName(ctx context.Context, name string) (*character.Character, error) {
+	var char *character.Character
+	result := r.DB.WithContext(ctx).Where("name = ?", name).Find(&char)
 	if result.Error != nil {
 		log.Logger.WithContext(ctx).Debugf("find by name err: %v", result.Error)
 		return nil, result.Error
 	}
 
 	if result.RowsAffected == 0 {
-		log.Logger.WithContext(ctx).Debugf("find by name: no rows affected. character: %+v", character)
+		log.Logger.WithContext(ctx).Debugf("find by name: no rows affected. character: %+v", char)
 		return nil, nil
 	}
 
@@ -66,54 +66,54 @@ func (r characterRepository) FindByName(ctx context.Context, name string) (*mode
 
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(
-		srospan.TargetCharacterId(int(character.ID)),
-		srospan.TargetCharacterName(character.Name),
+		srospan.TargetCharacterId(int(char.ID)),
+		srospan.TargetCharacterName(char.Name),
 	)
-	return character, nil
+	return char, nil
 }
 
-func (r characterRepository) Create(ctx context.Context, character *model.Character) (*model.Character, error) {
+func (r characterRepository) Create(ctx context.Context, char *character.Character) (*character.Character, error) {
 	// Set the ID to zero so the database can generate the value
-	character.ID = 0
+	char.ID = 0
 
-	err := r.DB.WithContext(ctx).Create(&character).Error
+	err := r.DB.WithContext(ctx).Create(&char).Error
 	if err != nil {
-		log.Logger.WithContext(ctx).Debugf("create error: %+v", character)
+		log.Logger.WithContext(ctx).Debugf("create error: %+v", char)
 		return nil, err
 	}
 
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(
-		srospan.TargetCharacterId(int(character.ID)),
-		srospan.TargetCharacterName(character.Name),
+		srospan.TargetCharacterId(int(char.ID)),
+		srospan.TargetCharacterName(char.Name),
 	)
-	return character, nil
+	return char, nil
 }
 
-func (r characterRepository) Save(ctx context.Context, character *model.Character) (*model.Character, error) {
-	err := r.DB.WithContext(ctx).Save(&character).Error
+func (r characterRepository) Save(ctx context.Context, char *character.Character) (*character.Character, error) {
+	err := r.DB.WithContext(ctx).Save(&char).Error
 	if err != nil {
 		return nil, err
 	}
 
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(
-		srospan.TargetCharacterId(int(character.ID)),
-		srospan.TargetCharacterName(character.Name),
+		srospan.TargetCharacterId(int(char.ID)),
+		srospan.TargetCharacterName(char.Name),
 	)
-	return character, nil
+	return char, nil
 }
 
-func (r characterRepository) Delete(ctx context.Context, character *model.Character) error {
-	if character == nil {
+func (r characterRepository) Delete(ctx context.Context, char *character.Character) error {
+	if char == nil {
 		return fmt.Errorf("character is nil")
 	}
-	return r.DB.WithContext(ctx).Where("id = ?", character.ID).Delete(&character).Error
+	return r.DB.WithContext(ctx).Where("id = ?", char.ID).Delete(&char).Error
 }
 
-func (r characterRepository) FindById(ctx context.Context, id uint) (*model.Character, error) {
-	var character *model.Character
-	result := r.DB.WithContext(ctx).Where("id = ?", id).Find(&character)
+func (r characterRepository) FindById(ctx context.Context, id uint) (*character.Character, error) {
+	var char *character.Character
+	result := r.DB.WithContext(ctx).Where("id = ?", id).Find(&char)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -124,20 +124,20 @@ func (r characterRepository) FindById(ctx context.Context, id uint) (*model.Char
 
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(
-		srospan.TargetCharacterId(int(character.ID)),
-		srospan.TargetCharacterName(character.Name),
+		srospan.TargetCharacterId(int(char.ID)),
+		srospan.TargetCharacterName(char.Name),
 	)
-	return character, nil
+	return char, nil
 }
 
-func (r characterRepository) FindAll(ctx context.Context) ([]*model.Character, error) {
-	var characters []*model.Character
-	return characters, r.DB.WithContext(ctx).Find(&characters).Error
+func (r characterRepository) FindAll(ctx context.Context) ([]*character.Character, error) {
+	var chars []*character.Character
+	return chars, r.DB.WithContext(ctx).Find(&chars).Error
 }
 
-func (r characterRepository) FindAllByOwner(ctx context.Context, owner string) (model.Characters, error) {
-	var characters model.Characters
-	return characters, r.DB.WithContext(ctx).Where("owner_id = ?", owner).Find(&characters).Error
+func (r characterRepository) FindAllByOwner(ctx context.Context, owner string) (character.Characters, error) {
+	var chars character.Characters
+	return chars, r.DB.WithContext(ctx).Where("owner_id = ?", owner).Find(&chars).Error
 }
 
 func (r characterRepository) WithTrx(trx *gorm.DB) CharacterRepository {
@@ -150,5 +150,5 @@ func (r characterRepository) WithTrx(trx *gorm.DB) CharacterRepository {
 }
 
 func (r characterRepository) Migrate(ctx context.Context) error {
-	return r.DB.WithContext(ctx).AutoMigrate(&model.Character{})
+	return r.DB.WithContext(ctx).AutoMigrate(&character.Character{})
 }

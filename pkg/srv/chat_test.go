@@ -7,11 +7,14 @@ import (
 	"time"
 
 	app "github.com/ShatteredRealms/go-backend/cmd/chat/app"
+	"github.com/ShatteredRealms/go-backend/pkg/common"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/mocks"
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/character"
+	"github.com/ShatteredRealms/go-backend/pkg/model/chat"
+	"github.com/ShatteredRealms/go-backend/pkg/model/game"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/ShatteredRealms/go-backend/pkg/srv"
@@ -47,8 +50,8 @@ var _ = Describe("Chat", func() {
 		}
 		kafkaWriter *kafka.Writer
 
-		chatChannel *model.ChatChannel
-		character   *model.Character
+		chatChannel *chat.ChatChannel
+		char        *character.Character
 	)
 
 	BeforeEach(func() {
@@ -70,7 +73,7 @@ var _ = Describe("Chat", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(server).NotTo(BeNil())
 
-		character = &model.Character{
+		char = &character.Character{
 			ID:        0,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -80,7 +83,7 @@ var _ = Describe("Chat", func() {
 			Gender:    "Male",
 			Realm:     "Human",
 			PlayTime:  100,
-			Location: model.Location{
+			Location: game.Location{
 				World: faker.Username(),
 				X:     1.1,
 				Y:     1.2,
@@ -90,7 +93,7 @@ var _ = Describe("Chat", func() {
 				Yaw:   1.6,
 			},
 		}
-		chatChannel = &model.ChatChannel{
+		chatChannel = &chat.ChatChannel{
 			Model: gorm.Model{
 				ID:        1,
 				CreatedAt: time.Now(),
@@ -149,7 +152,7 @@ var _ = Describe("Chat", func() {
 			}).Within(time.Minute).Should(Succeed())
 			msg = &pb.ChatMessage{
 				Message:       faker.Username(),
-				CharacterName: character.Name,
+				CharacterName: char.Name,
 			}
 		})
 
@@ -176,8 +179,8 @@ var _ = Describe("Chat", func() {
 					mockChatService.EXPECT().ChannelMessagesReader(gomock.Any(), uint(req.Id)).Return(kafka.NewReader(readerConfig))
 					mockCharService.EXPECT().
 						GetAllCharactersForUser(gomock.Any(), gomock.Any()).
-						Return(&pb.CharactersDetails{Characters: []*pb.CharacterDetails{character.ToPb()}}, nil)
-					mockChatService.EXPECT().AuthorizedChannelsForCharacter(gomock.Any(), character.ID).Return(model.ChatChannels{chatChannel}, nil)
+						Return(&pb.CharactersDetails{Characters: []*pb.CharacterDetails{char.ToPb()}}, nil)
+					mockChatService.EXPECT().AuthorizedChannelsForCharacter(gomock.Any(), char.ID).Return(chat.ChatChannels{chatChannel}, nil)
 					mockInSrv.EXPECT().Context().Return(incPlayerCtx).AnyTimes()
 					mockInSrv.EXPECT().Send(gomock.Any()).Return(io.EOF)
 					Eventually(writeMessageFunc).Within(time.Second * 15).Should(Succeed())
@@ -188,21 +191,21 @@ var _ = Describe("Chat", func() {
 			When("given invalid input", func() {
 				It("should error on invalid claims", func() {
 					mockInSrv.EXPECT().Context().Return(nil).AnyTimes()
-					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(model.ErrUnauthorized.Err()))
+					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(common.ErrUnauthorized.Err()))
 				})
 
 				It("should error on no permissions (guest)", func() {
 					mockInSrv.EXPECT().Context().Return(incGuestCtx).AnyTimes()
-					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(model.ErrUnauthorized.Err()))
+					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(common.ErrUnauthorized.Err()))
 				})
 
 				It("should error on no permissions for chat channel (player)", func() {
 					mockCharService.EXPECT().
 						GetAllCharactersForUser(gomock.Any(), gomock.Any()).
-						Return(&pb.CharactersDetails{Characters: []*pb.CharacterDetails{character.ToPb()}}, nil)
-					mockChatService.EXPECT().AuthorizedChannelsForCharacter(gomock.Any(), character.ID).Return(model.ChatChannels{}, nil)
+						Return(&pb.CharactersDetails{Characters: []*pb.CharacterDetails{char.ToPb()}}, nil)
+					mockChatService.EXPECT().AuthorizedChannelsForCharacter(gomock.Any(), char.ID).Return(chat.ChatChannels{}, nil)
 					mockInSrv.EXPECT().Context().Return(incPlayerCtx).AnyTimes()
-					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(model.ErrUnauthorized.Err()))
+					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(common.ErrUnauthorized.Err()))
 				})
 
 				It("should error if getting characters has errors", func() {
@@ -210,16 +213,16 @@ var _ = Describe("Chat", func() {
 						GetAllCharactersForUser(gomock.Any(), gomock.Any()).
 						Return(nil, fakeErr)
 					mockInSrv.EXPECT().Context().Return(incPlayerCtx).AnyTimes()
-					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(model.ErrHandleRequest.Err()))
+					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(common.ErrHandleRequest.Err()))
 				})
 
 				It("should error if getting authorized channels for character has errors", func() {
 					mockCharService.EXPECT().
 						GetAllCharactersForUser(gomock.Any(), gomock.Any()).
-						Return(&pb.CharactersDetails{Characters: []*pb.CharacterDetails{character.ToPb()}}, nil)
-					mockChatService.EXPECT().AuthorizedChannelsForCharacter(gomock.Any(), character.ID).Return(nil, fakeErr)
+						Return(&pb.CharactersDetails{Characters: []*pb.CharacterDetails{char.ToPb()}}, nil)
+					mockChatService.EXPECT().AuthorizedChannelsForCharacter(gomock.Any(), char.ID).Return(nil, fakeErr)
 					mockInSrv.EXPECT().Context().Return(incPlayerCtx).AnyTimes()
-					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(model.ErrHandleRequest.Err()))
+					Expect(server.ConnectChannel(req, mockInSrv)).To(MatchError(common.ErrHandleRequest.Err()))
 				})
 			})
 		})
@@ -229,18 +232,18 @@ var _ = Describe("Chat", func() {
 			var mockInSrv *mocks.MockChatService_ConnectDirectMessageServer
 			BeforeEach(func() {
 				req = &pb.CharacterTarget{
-					Type: &pb.CharacterTarget_Id{Id: uint64(character.ID)},
+					Type: &pb.CharacterTarget_Id{Id: uint64(char.ID)},
 				}
 				mockInSrv = mocks.NewMockChatService_ConnectDirectMessageServer(mockController)
 			})
 
 			When("given valid input", func() {
 				It("should work for users with chat manager permissions (admin)", func() {
-					character.OwnerId = *admin.ID
-					mockChatService.EXPECT().DirectMessagesReader(gomock.Any(), character.Name).Return(kafka.NewReader(readerConfig))
+					char.OwnerId = *admin.ID
+					mockChatService.EXPECT().DirectMessagesReader(gomock.Any(), char.Name).Return(kafka.NewReader(readerConfig))
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					mockInSrv.EXPECT().Context().Return(incAdminCtx).AnyTimes()
 					mockInSrv.EXPECT().Send(gomock.Any()).Return(io.EOF)
 					Eventually(writeMessageFunc).Within(time.Second * 15).Should(Succeed())
@@ -248,10 +251,10 @@ var _ = Describe("Chat", func() {
 				})
 
 				It("should work for users with chat manager permissions (admin other)", func() {
-					mockChatService.EXPECT().DirectMessagesReader(gomock.Any(), character.Name).Return(kafka.NewReader(readerConfig))
+					mockChatService.EXPECT().DirectMessagesReader(gomock.Any(), char.Name).Return(kafka.NewReader(readerConfig))
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					mockInSrv.EXPECT().Context().Return(incAdminCtx).AnyTimes()
 					mockInSrv.EXPECT().Send(gomock.Any()).Return(io.EOF)
 					Eventually(writeMessageFunc).Within(time.Second * 15).Should(Succeed())
@@ -259,13 +262,10 @@ var _ = Describe("Chat", func() {
 				})
 
 				It("should work for users with chat permissions (player)", func() {
-					_, claims, err := helpers.VerifyClaims(incPlayerCtx, keycloak, conf.Keycloak.Realm)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(claims.Subject).To(Equal(character.OwnerId))
-					mockChatService.EXPECT().DirectMessagesReader(gomock.Any(), character.Name).Return(kafka.NewReader(readerConfig))
+					mockChatService.EXPECT().DirectMessagesReader(gomock.Any(), char.Name).Return(kafka.NewReader(readerConfig))
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					mockInSrv.EXPECT().Context().Return(incPlayerCtx).AnyTimes()
 					mockInSrv.EXPECT().Send(gomock.Any()).Return(io.EOF)
 					Eventually(writeMessageFunc).Within(time.Second * 15).Should(Succeed())
@@ -276,21 +276,21 @@ var _ = Describe("Chat", func() {
 			When("given invalid input", func() {
 				It("should error on invalid claims", func() {
 					mockInSrv.EXPECT().Context().Return(nil).AnyTimes()
-					Expect(server.ConnectDirectMessage(req, mockInSrv)).To(MatchError(model.ErrUnauthorized.Err()))
+					Expect(server.ConnectDirectMessage(req, mockInSrv)).To(MatchError(common.ErrUnauthorized.Err()))
 				})
 
 				It("should error on no permissions (guest)", func() {
 					mockInSrv.EXPECT().Context().Return(incGuestCtx).AnyTimes()
-					Expect(server.ConnectDirectMessage(req, mockInSrv)).To(MatchError(model.ErrUnauthorized.Err()))
+					Expect(server.ConnectDirectMessage(req, mockInSrv)).To(MatchError(common.ErrUnauthorized.Err()))
 				})
 
 				It("should error if not owner of character (player)", func() {
-					character.OwnerId = *admin.ID
+					char.OwnerId = *admin.ID
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					mockInSrv.EXPECT().Context().Return(incPlayerCtx).AnyTimes()
-					Expect(server.ConnectDirectMessage(req, mockInSrv)).To(MatchError(model.ErrUnauthorized.Err()))
+					Expect(server.ConnectDirectMessage(req, mockInSrv)).To(MatchError(common.ErrUnauthorized.Err()))
 				})
 
 				It("should error if getting characters has errors", func() {
@@ -324,10 +324,10 @@ var _ = Describe("Chat", func() {
 			})
 			When("given valid input", func() {
 				It("should work (admin)", func() {
-					character.OwnerId = *admin.ID
+					char.OwnerId = *admin.ID
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					mockChatService.EXPECT().
 						SendChannelMessage(gomock.Any(), gomock.Any(), gomock.Any(), uint(req.ChannelId)).
 						Return(nil)
@@ -337,13 +337,13 @@ var _ = Describe("Chat", func() {
 				})
 
 				It("should work (player)", func() {
-					Expect(character.OwnerId).To(Equal(*player.ID))
+					Expect(char.OwnerId).To(Equal(*player.ID))
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					mockChatService.EXPECT().
-						AuthorizedChannelsForCharacter(gomock.Any(), character.ID).
-						Return(model.ChatChannels{chatChannel}, nil)
+						AuthorizedChannelsForCharacter(gomock.Any(), char.ID).
+						Return(chat.ChatChannels{chatChannel}, nil)
 					mockChatService.EXPECT().
 						SendChannelMessage(gomock.Any(), gomock.Any(), gomock.Any(), uint(req.ChannelId)).
 						Return(nil)
@@ -355,7 +355,7 @@ var _ = Describe("Chat", func() {
 
 			When("given invalid input", func() {
 				It("should err on invalid context", func() {
-					out, err := server.SendChatMessage(nil, req)
+					out, err := server.SendChatMessage(context.TODO(), req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 
@@ -373,17 +373,17 @@ var _ = Describe("Chat", func() {
 				It("should err if not owner (admin)", func() {
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					out, err := server.SendChatMessage(incAdminCtx, req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 				})
 
 				It("should err if not owner (player)", func() {
-					character.OwnerId = *admin.ID
+					char.OwnerId = *admin.ID
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					out, err := server.SendChatMessage(incPlayerCtx, req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
@@ -392,10 +392,10 @@ var _ = Describe("Chat", func() {
 				It("should err if no channel permission (player)", func() {
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					mockChatService.EXPECT().
-						AuthorizedChannelsForCharacter(gomock.Any(), character.ID).
-						Return(model.ChatChannels{}, nil)
+						AuthorizedChannelsForCharacter(gomock.Any(), char.ID).
+						Return(chat.ChatChannels{}, nil)
 					out, err := server.SendChatMessage(incPlayerCtx, req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
@@ -413,9 +413,9 @@ var _ = Describe("Chat", func() {
 				It("should err if getting authorized channels fails", func() {
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					mockChatService.EXPECT().
-						AuthorizedChannelsForCharacter(gomock.Any(), character.ID).
+						AuthorizedChannelsForCharacter(gomock.Any(), char.ID).
 						Return(nil, fakeErr)
 					out, err := server.SendChatMessage(incPlayerCtx, req)
 					Expect(err).To(HaveOccurred())
@@ -425,10 +425,10 @@ var _ = Describe("Chat", func() {
 				It("should error if sending message fails", func() {
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					mockChatService.EXPECT().
-						AuthorizedChannelsForCharacter(gomock.Any(), character.ID).
-						Return(model.ChatChannels{chatChannel}, nil)
+						AuthorizedChannelsForCharacter(gomock.Any(), char.ID).
+						Return(chat.ChatChannels{chatChannel}, nil)
 					mockChatService.EXPECT().
 						SendChannelMessage(gomock.Any(), gomock.Any(), gomock.Any(), uint(req.ChannelId)).
 						Return(fakeErr)
@@ -447,7 +447,7 @@ var _ = Describe("Chat", func() {
 				req = &pb.SendDirectMessageRequest{
 					Target: &pb.CharacterTarget{
 						Type: &pb.CharacterTarget_Name{
-							Name: character.Name,
+							Name: char.Name,
 						},
 					},
 					ChatMessage: msg,
@@ -455,12 +455,12 @@ var _ = Describe("Chat", func() {
 			})
 			When("given valid input", func() {
 				It("should work (admin)", func() {
-					character.OwnerId = *admin.ID
+					char.OwnerId = *admin.ID
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					mockChatService.EXPECT().
-						SendDirectMessage(gomock.Any(), gomock.Any(), gomock.Any(), character.Name).
+						SendDirectMessage(gomock.Any(), gomock.Any(), gomock.Any(), char.Name).
 						Return(nil)
 					out, err := server.SendDirectMessage(incAdminCtx, req)
 					Expect(err).NotTo(HaveOccurred())
@@ -468,12 +468,12 @@ var _ = Describe("Chat", func() {
 				})
 
 				It("should work (player)", func() {
-					character.OwnerId = *player.ID
+					char.OwnerId = *player.ID
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					mockChatService.EXPECT().
-						SendDirectMessage(gomock.Any(), gomock.Any(), gomock.Any(), character.Name).
+						SendDirectMessage(gomock.Any(), gomock.Any(), gomock.Any(), char.Name).
 						Return(nil)
 					out, err := server.SendDirectMessage(incPlayerCtx, req)
 					Expect(err).NotTo(HaveOccurred())
@@ -501,17 +501,17 @@ var _ = Describe("Chat", func() {
 				It("should err if not owner (admin)", func() {
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					out, err := server.SendDirectMessage(incAdminCtx, req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 				})
 
 				It("should err if not owner (player)", func() {
-					character.OwnerId = *admin.ID
+					char.OwnerId = *admin.ID
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					out, err := server.SendDirectMessage(incPlayerCtx, req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
@@ -529,9 +529,9 @@ var _ = Describe("Chat", func() {
 				It("should error if sending message fails", func() {
 					mockCharService.EXPECT().
 						GetCharacter(gomock.Any(), gomock.Any()).
-						Return(character.ToPb(), nil)
+						Return(char.ToPb(), nil)
 					mockChatService.EXPECT().
-						SendDirectMessage(gomock.Any(), gomock.Any(), gomock.Any(), character.Name).
+						SendDirectMessage(gomock.Any(), gomock.Any(), gomock.Any(), char.Name).
 						Return(fakeErr)
 					out, err := server.SendDirectMessage(incPlayerCtx, req)
 					Expect(err).To(HaveOccurred())
@@ -613,7 +613,7 @@ var _ = Describe("Chat", func() {
 		When("given valid input", func() {
 			It("should work (admin)", func() {
 				mockChatService.EXPECT().
-					CreateChannel(gomock.Any(), gomock.Eq(&model.ChatChannel{Name: req.Name, Dimension: req.Dimension})).
+					CreateChannel(gomock.Any(), gomock.Eq(&chat.ChatChannel{Name: req.Name, Dimension: req.Dimension})).
 					Return(nil, nil)
 				out, err := server.CreateChannel(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
@@ -648,7 +648,7 @@ var _ = Describe("Chat", func() {
 
 			It("should error if error during creation", func() {
 				mockChatService.EXPECT().
-					CreateChannel(gomock.Any(), gomock.Eq(&model.ChatChannel{Name: req.Name, Dimension: req.Dimension})).
+					CreateChannel(gomock.Any(), gomock.Eq(&chat.ChatChannel{Name: req.Name, Dimension: req.Dimension})).
 					Return(nil, fakeErr)
 				out, err := server.CreateChannel(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
@@ -657,7 +657,7 @@ var _ = Describe("Chat", func() {
 
 			It("should unique error if name is taken", func() {
 				mockChatService.EXPECT().
-					CreateChannel(gomock.Any(), gomock.Eq(&model.ChatChannel{Name: req.Name, Dimension: req.Dimension})).
+					CreateChannel(gomock.Any(), gomock.Eq(&chat.ChatChannel{Name: req.Name, Dimension: req.Dimension})).
 					Return(nil, gorm.ErrDuplicatedKey)
 				out, err := server.CreateChannel(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
@@ -810,7 +810,7 @@ var _ = Describe("Chat", func() {
 			It("should work (admin)", func() {
 				mockChatService.EXPECT().
 					AllChannels(gomock.Any()).
-					Return(model.ChatChannels{chatChannel}, nil)
+					Return(chat.ChatChannels{chatChannel}, nil)
 				out, err := server.AllChatChannels(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
@@ -860,19 +860,19 @@ var _ = Describe("Chat", func() {
 		BeforeEach(func() {
 			req = &pb.CharacterTarget{
 				Type: &pb.CharacterTarget_Id{
-					Id: uint64(character.ID),
+					Id: uint64(char.ID),
 				},
 			}
 		})
 		When("given valid input", func() {
 			It("should work (admin self)", func() {
-				character.OwnerId = *admin.ID
+				char.OwnerId = *admin.ID
 				mockChatService.EXPECT().
-					AuthorizedChannelsForCharacter(gomock.Any(), character.ID).
-					Return(model.ChatChannels{chatChannel}, nil)
+					AuthorizedChannelsForCharacter(gomock.Any(), char.ID).
+					Return(chat.ChatChannels{chatChannel}, nil)
 				mockCharService.EXPECT().
 					GetCharacter(gomock.Any(), req).
-					Return(character.ToPb(), nil)
+					Return(char.ToPb(), nil)
 				out, err := server.GetAuthorizedChatChannels(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out.Channels).To(HaveLen(1))
@@ -880,11 +880,11 @@ var _ = Describe("Chat", func() {
 
 			It("should work (admin other)", func() {
 				mockChatService.EXPECT().
-					AuthorizedChannelsForCharacter(gomock.Any(), character.ID).
-					Return(model.ChatChannels{chatChannel}, nil)
+					AuthorizedChannelsForCharacter(gomock.Any(), char.ID).
+					Return(chat.ChatChannels{chatChannel}, nil)
 				mockCharService.EXPECT().
 					GetCharacter(gomock.Any(), req).
-					Return(character.ToPb(), nil)
+					Return(char.ToPb(), nil)
 				out, err := server.GetAuthorizedChatChannels(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out.Channels).To(HaveLen(1))
@@ -892,11 +892,11 @@ var _ = Describe("Chat", func() {
 
 			It("should work (player self)", func() {
 				mockChatService.EXPECT().
-					AuthorizedChannelsForCharacter(gomock.Any(), character.ID).
-					Return(model.ChatChannels{chatChannel}, nil)
+					AuthorizedChannelsForCharacter(gomock.Any(), char.ID).
+					Return(chat.ChatChannels{chatChannel}, nil)
 				mockCharService.EXPECT().
 					GetCharacter(gomock.Any(), req).
-					Return(character.ToPb(), nil)
+					Return(char.ToPb(), nil)
 				out, err := server.GetAuthorizedChatChannels(incPlayerCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out.Channels).To(HaveLen(1))
@@ -923,20 +923,20 @@ var _ = Describe("Chat", func() {
 			})
 
 			It("should error if invalid permission (player other)", func() {
-				character.OwnerId = *admin.ID
+				char.OwnerId = *admin.ID
 				mockChatService.EXPECT().
-					AuthorizedChannelsForCharacter(gomock.Any(), character.ID).
+					AuthorizedChannelsForCharacter(gomock.Any(), char.ID).
 					Return(nil, fakeErr)
 				mockCharService.EXPECT().
 					GetCharacter(gomock.Any(), gomock.Any()).
-					Return(character.ToPb(), nil)
+					Return(char.ToPb(), nil)
 				out, err := server.GetAuthorizedChatChannels(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
 
 			It("should error if getting character failed", func() {
-				character.OwnerId = *admin.ID
+				char.OwnerId = *admin.ID
 				mockCharService.EXPECT().
 					GetCharacter(gomock.Any(), req).
 					Return(nil, fakeErr)
@@ -946,7 +946,7 @@ var _ = Describe("Chat", func() {
 			})
 
 			It("should error if no character is found", func() {
-				character.OwnerId = *admin.ID
+				char.OwnerId = *admin.ID
 				mockCharService.EXPECT().
 					GetCharacter(gomock.Any(), req).
 					Return(nil, nil)
@@ -965,7 +965,7 @@ var _ = Describe("Chat", func() {
 			req = &pb.RequestChatChannelAuthChange{
 				Character: &pb.CharacterTarget{
 					Type: &pb.CharacterTarget_Id{
-						Id: uint64(character.ID),
+						Id: uint64(char.ID),
 					},
 				},
 				Add: true,
@@ -975,7 +975,7 @@ var _ = Describe("Chat", func() {
 		When("given valid input", func() {
 			It("should work (admin)", func() {
 				mockChatService.EXPECT().
-					ChangeAuthorizationForCharacter(gomock.Any(), character.ID, *helpers.ArrayOfUint64ToUint(&req.Ids), req.Add).
+					ChangeAuthorizationForCharacter(gomock.Any(), char.ID, *helpers.ArrayOfUint64ToUint(&req.Ids), req.Add).
 					Return(nil)
 				out, err := server.UpdateUserChatChannelAuthorizations(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
@@ -1017,7 +1017,7 @@ var _ = Describe("Chat", func() {
 
 			It("should error if error during update", func() {
 				mockChatService.EXPECT().
-					ChangeAuthorizationForCharacter(gomock.Any(), character.ID, *helpers.ArrayOfUint64ToUint(&req.Ids), req.Add).
+					ChangeAuthorizationForCharacter(gomock.Any(), char.ID, *helpers.ArrayOfUint64ToUint(&req.Ids), req.Add).
 					Return(fakeErr)
 				out, err := server.UpdateUserChatChannelAuthorizations(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
@@ -1026,7 +1026,7 @@ var _ = Describe("Chat", func() {
 
 			It("should unique error if conflict exists", func() {
 				mockChatService.EXPECT().
-					ChangeAuthorizationForCharacter(gomock.Any(), character.ID, *helpers.ArrayOfUint64ToUint(&req.Ids), req.Add).
+					ChangeAuthorizationForCharacter(gomock.Any(), char.ID, *helpers.ArrayOfUint64ToUint(&req.Ids), req.Add).
 					Return(gorm.ErrDuplicatedKey)
 				out, err := server.UpdateUserChatChannelAuthorizations(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())

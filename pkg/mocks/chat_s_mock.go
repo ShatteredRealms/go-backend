@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	model "github.com/ShatteredRealms/go-backend/pkg/model"
+	chat "github.com/ShatteredRealms/go-backend/pkg/model/chat"
 	pb "github.com/ShatteredRealms/go-backend/pkg/pb"
 	kafka "github.com/segmentio/kafka-go"
 	gomock "go.uber.org/mock/gomock"
@@ -43,10 +43,10 @@ func (m *MockChatService) EXPECT() *MockChatServiceMockRecorder {
 }
 
 // AllChannels mocks base method.
-func (m *MockChatService) AllChannels(ctx context.Context) (model.ChatChannels, error) {
+func (m *MockChatService) AllChannels(ctx context.Context) (chat.ChatChannels, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AllChannels", ctx)
-	ret0, _ := ret[0].(model.ChatChannels)
+	ret0, _ := ret[0].(chat.ChatChannels)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -58,10 +58,10 @@ func (mr *MockChatServiceMockRecorder) AllChannels(ctx any) *gomock.Call {
 }
 
 // AuthorizedChannelsForCharacter mocks base method.
-func (m *MockChatService) AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (model.ChatChannels, error) {
+func (m *MockChatService) AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (chat.ChatChannels, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AuthorizedChannelsForCharacter", ctx, characterId)
-	ret0, _ := ret[0].(model.ChatChannels)
+	ret0, _ := ret[0].(chat.ChatChannels)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -101,10 +101,10 @@ func (mr *MockChatServiceMockRecorder) ChannelMessagesReader(ctx, channelId any)
 }
 
 // CreateChannel mocks base method.
-func (m *MockChatService) CreateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error) {
+func (m *MockChatService) CreateChannel(ctx context.Context, channel *chat.ChatChannel) (*chat.ChatChannel, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateChannel", ctx, channel)
-	ret0, _ := ret[0].(*model.ChatChannel)
+	ret0, _ := ret[0].(*chat.ChatChannel)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -116,7 +116,7 @@ func (mr *MockChatServiceMockRecorder) CreateChannel(ctx, channel any) *gomock.C
 }
 
 // DeleteChannel mocks base method.
-func (m *MockChatService) DeleteChannel(ctx context.Context, channel *model.ChatChannel) error {
+func (m *MockChatService) DeleteChannel(ctx context.Context, channel *chat.ChatChannel) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteChannel", ctx, channel)
 	ret0, _ := ret[0].(error)
@@ -144,10 +144,10 @@ func (mr *MockChatServiceMockRecorder) DirectMessagesReader(ctx, username any) *
 }
 
 // GetChannel mocks base method.
-func (m *MockChatService) GetChannel(ctx context.Context, id uint) (*model.ChatChannel, error) {
+func (m *MockChatService) GetChannel(ctx context.Context, id uint) (*chat.ChatChannel, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetChannel", ctx, id)
-	ret0, _ := ret[0].(*model.ChatChannel)
+	ret0, _ := ret[0].(*chat.ChatChannel)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -201,10 +201,10 @@ func (mr *MockChatServiceMockRecorder) SendDirectMessage(ctx, senderCharacter, m
 }
 
 // UpdateChannel mocks base method.
-func (m *MockChatService) UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) (*model.ChatChannel, error) {
+func (m *MockChatService) UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) (*chat.ChatChannel, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateChannel", ctx, pb)
-	ret0, _ := ret[0].(*model.ChatChannel)
+	ret0, _ := ret[0].(*chat.ChatChannel)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/srv"
+	"github.com/ShatteredRealms/go-backend/pkg/telemetry"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -22,7 +23,6 @@ var (
 )
 
 func init() {
-	helpers.SetupLogger(character.ServiceName)
 	conf = config.NewGlobalConfig(context.Background())
 }
 
@@ -30,7 +30,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	otelShutdown, err := helpers.SetupOTelSDK(ctx, character.ServiceName, config.Version, conf.OpenTelemetry.Addr)
+	otelShutdown, err := telemetry.SetupOTelSDK(ctx, character.ServiceName, conf.Version, conf.OpenTelemetry.Addr)
 	defer func() {
 		err = errors.Join(err, otelShutdown(context.Background()))
 		if err != nil {
@@ -43,7 +43,7 @@ func main() {
 	}
 
 	server := character.NewServerContext(ctx, conf)
-	grpcServer, gwmux := helpers.InitServerDefaults()
+	grpcServer, gwmux := helpers.InitServerDefaults(server.KeycloakClient, server.GlobalConfig.Keycloak.Realm)
 	address := server.GlobalConfig.Character.Local.Address()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
@@ -52,10 +52,10 @@ func main() {
 	helpers.Check(ctx, err, "register health service handler endpoint")
 
 	css, err := srv.NewCharacterServiceServer(ctx, server)
-	helpers.Check(ctx, err, "create characters service server")
+	helpers.Check(ctx, err, "create character service server")
 	pb.RegisterCharacterServiceServer(grpcServer, css)
 	err = pb.RegisterCharacterServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
-	helpers.Check(ctx, err, "registering characters service handler endpoint")
+	helpers.Check(ctx, err, "registering character service handler endpoint")
 
 	srvErr := make(chan error, 1)
 	go func() {
@@ -64,7 +64,7 @@ func main() {
 
 	select {
 	case err = <-srvErr:
-		log.Logger.Fatalf("listen server: %v", err)
+		log.Logger.Errorf("listen server: %v", err)
 
 	case <-ctx.Done():
 		log.Logger.Info("Server canceled by user input.")

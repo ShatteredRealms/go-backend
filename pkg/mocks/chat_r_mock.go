@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	model "github.com/ShatteredRealms/go-backend/pkg/model"
+	chat "github.com/ShatteredRealms/go-backend/pkg/model/chat"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,10 +41,10 @@ func (m *MockChatRepository) EXPECT() *MockChatRepositoryMockRecorder {
 }
 
 // AllChannels mocks base method.
-func (m *MockChatRepository) AllChannels(ctx context.Context) (model.ChatChannels, error) {
+func (m *MockChatRepository) AllChannels(ctx context.Context) (chat.ChatChannels, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AllChannels", ctx)
-	ret0, _ := ret[0].(model.ChatChannels)
+	ret0, _ := ret[0].(chat.ChatChannels)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -56,10 +56,10 @@ func (mr *MockChatRepositoryMockRecorder) AllChannels(ctx any) *gomock.Call {
 }
 
 // AuthorizedChannelsForCharacter mocks base method.
-func (m *MockChatRepository) AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (model.ChatChannels, error) {
+func (m *MockChatRepository) AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (chat.ChatChannels, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AuthorizedChannelsForCharacter", ctx, characterId)
-	ret0, _ := ret[0].(model.ChatChannels)
+	ret0, _ := ret[0].(chat.ChatChannels)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -85,10 +85,10 @@ func (mr *MockChatRepositoryMockRecorder) ChangeAuthorizationForCharacter(ctx, c
 }
 
 // CreateChannel mocks base method.
-func (m *MockChatRepository) CreateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error) {
+func (m *MockChatRepository) CreateChannel(ctx context.Context, channel *chat.ChatChannel) (*chat.ChatChannel, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateChannel", ctx, channel)
-	ret0, _ := ret[0].(*model.ChatChannel)
+	ret0, _ := ret[0].(*chat.ChatChannel)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -100,7 +100,7 @@ func (mr *MockChatRepositoryMockRecorder) CreateChannel(ctx, channel any) *gomoc
 }
 
 // DeleteChannel mocks base method.
-func (m *MockChatRepository) DeleteChannel(ctx context.Context, channel *model.ChatChannel) error {
+func (m *MockChatRepository) DeleteChannel(ctx context.Context, channel *chat.ChatChannel) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteChannel", ctx, channel)
 	ret0, _ := ret[0].(error)
@@ -114,10 +114,10 @@ func (mr *MockChatRepositoryMockRecorder) DeleteChannel(ctx, channel any) *gomoc
 }
 
 // FindChannelById mocks base method.
-func (m *MockChatRepository) FindChannelById(ctx context.Context, id uint) (*model.ChatChannel, error) {
+func (m *MockChatRepository) FindChannelById(ctx context.Context, id uint) (*chat.ChatChannel, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindChannelById", ctx, id)
-	ret0, _ := ret[0].(*model.ChatChannel)
+	ret0, _ := ret[0].(*chat.ChatChannel)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -129,10 +129,10 @@ func (mr *MockChatRepositoryMockRecorder) FindChannelById(ctx, id any) *gomock.C
 }
 
 // FindDeletedWithName mocks base method.
-func (m *MockChatRepository) FindDeletedWithName(ctx context.Context, name string) (*model.ChatChannel, error) {
+func (m *MockChatRepository) FindDeletedWithName(ctx context.Context, name string) (*chat.ChatChannel, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindDeletedWithName", ctx, name)
-	ret0, _ := ret[0].(*model.ChatChannel)
+	ret0, _ := ret[0].(*chat.ChatChannel)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -144,7 +144,7 @@ func (mr *MockChatRepositoryMockRecorder) FindDeletedWithName(ctx, name any) *go
 }
 
 // FullDeleteChannel mocks base method.
-func (m *MockChatRepository) FullDeleteChannel(ctx context.Context, channel *model.ChatChannel) error {
+func (m *MockChatRepository) FullDeleteChannel(ctx context.Context, channel *chat.ChatChannel) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FullDeleteChannel", ctx, channel)
 	ret0, _ := ret[0].(error)
@@ -172,10 +172,10 @@ func (mr *MockChatRepositoryMockRecorder) Migrate(ctx any) *gomock.Call {
 }
 
 // UpdateChannel mocks base method.
-func (m *MockChatRepository) UpdateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error) {
+func (m *MockChatRepository) UpdateChannel(ctx context.Context, channel *chat.ChatChannel) (*chat.ChatChannel, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateChannel", ctx, channel)
-	ret0, _ := ret[0].(*model.ChatChannel)
+	ret0, _ := ret[0].(*chat.ChatChannel)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

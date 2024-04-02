@@ -7,12 +7,12 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/character"
 )
 
 var _ = Describe("Inventory repository", func() {
-	createInventory := func() *model.CharacterInventory {
-		inv := &model.CharacterInventory{}
+	createInventory := func() *character.Inventory {
+		inv := &character.Inventory{}
 		Expect(faker.FakeData(&inv)).To(Succeed())
 		Expect(invRepo.UpdateInventory(nil, inv)).To(Succeed())
 		Expect(inv).NotTo(BeNil())
@@ -61,7 +61,7 @@ var _ = Describe("Inventory repository", func() {
 			It("should replace existing", func() {
 				inv := createInventory()
 
-				newInv := &model.CharacterInventory{}
+				newInv := &character.Inventory{}
 				Expect(faker.FakeData(newInv)).To(Succeed())
 				newInv.CharacterId = inv.CharacterId
 

@@ -13,7 +13,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	model "github.com/ShatteredRealms/go-backend/pkg/model"
+	game "github.com/ShatteredRealms/go-backend/pkg/model/game"
+	gamebackend "github.com/ShatteredRealms/go-backend/pkg/model/gamebackend"
 	pb "github.com/ShatteredRealms/go-backend/pkg/pb"
 	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
@@ -43,10 +44,10 @@ func (m *MockdimensionService) EXPECT() *MockdimensionServiceMockRecorder {
 }
 
 // CreateDimension mocks base method.
-func (m *MockdimensionService) CreateDimension(ctx context.Context, name, location, version string, mapIds []*uuid.UUID) (*model.Dimension, error) {
+func (m *MockdimensionService) CreateDimension(ctx context.Context, name, location, version string, mapIds []*uuid.UUID) (*game.Dimension, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateDimension", ctx, name, location, version, mapIds)
-	ret0, _ := ret[0].(*model.Dimension)
+	ret0, _ := ret[0].(*game.Dimension)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -100,10 +101,10 @@ func (mr *MockdimensionServiceMockRecorder) DeleteDimensionByName(ctx, name any)
 }
 
 // DuplicateDimension mocks base method.
-func (m *MockdimensionService) DuplicateDimension(ctx context.Context, target *pb.DimensionTarget, name string) (*model.Dimension, error) {
+func (m *MockdimensionService) DuplicateDimension(ctx context.Context, target *pb.DimensionTarget, name string) (*game.Dimension, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DuplicateDimension", ctx, target, name)
-	ret0, _ := ret[0].(*model.Dimension)
+	ret0, _ := ret[0].(*game.Dimension)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -115,10 +116,10 @@ func (mr *MockdimensionServiceMockRecorder) DuplicateDimension(ctx, target, name
 }
 
 // EditDimension mocks base method.
-func (m *MockdimensionService) EditDimension(ctx context.Context, request *pb.EditDimensionRequest) (*model.Dimension, error) {
+func (m *MockdimensionService) EditDimension(ctx context.Context, request *pb.EditDimensionRequest) (*game.Dimension, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EditDimension", ctx, request)
-	ret0, _ := ret[0].(*model.Dimension)
+	ret0, _ := ret[0].(*game.Dimension)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -130,10 +131,10 @@ func (mr *MockdimensionServiceMockRecorder) EditDimension(ctx, request any) *gom
 }
 
 // FindAllDimensions mocks base method.
-func (m *MockdimensionService) FindAllDimensions(ctx context.Context) (model.Dimensions, error) {
+func (m *MockdimensionService) FindAllDimensions(ctx context.Context) (game.Dimensions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindAllDimensions", ctx)
-	ret0, _ := ret[0].(model.Dimensions)
+	ret0, _ := ret[0].(game.Dimensions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -145,10 +146,10 @@ func (mr *MockdimensionServiceMockRecorder) FindAllDimensions(ctx any) *gomock.C
 }
 
 // FindDimension mocks base method.
-func (m *MockdimensionService) FindDimension(ctx context.Context, target *pb.DimensionTarget) (*model.Dimension, error) {
+func (m *MockdimensionService) FindDimension(ctx context.Context, target *pb.DimensionTarget) (*game.Dimension, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindDimension", ctx, target)
-	ret0, _ := ret[0].(*model.Dimension)
+	ret0, _ := ret[0].(*game.Dimension)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -160,10 +161,10 @@ func (mr *MockdimensionServiceMockRecorder) FindDimension(ctx, target any) *gomo
 }
 
 // FindDimensionById mocks base method.
-func (m *MockdimensionService) FindDimensionById(ctx context.Context, id *uuid.UUID) (*model.Dimension, error) {
+func (m *MockdimensionService) FindDimensionById(ctx context.Context, id *uuid.UUID) (*game.Dimension, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindDimensionById", ctx, id)
-	ret0, _ := ret[0].(*model.Dimension)
+	ret0, _ := ret[0].(*game.Dimension)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -175,10 +176,10 @@ func (mr *MockdimensionServiceMockRecorder) FindDimensionById(ctx, id any) *gomo
 }
 
 // FindDimensionByName mocks base method.
-func (m *MockdimensionService) FindDimensionByName(ctx context.Context, name string) (*model.Dimension, error) {
+func (m *MockdimensionService) FindDimensionByName(ctx context.Context, name string) (*game.Dimension, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindDimensionByName", ctx, name)
-	ret0, _ := ret[0].(*model.Dimension)
+	ret0, _ := ret[0].(*game.Dimension)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -190,10 +191,10 @@ func (mr *MockdimensionServiceMockRecorder) FindDimensionByName(ctx, name any) *
 }
 
 // FindDimensionsByIds mocks base method.
-func (m *MockdimensionService) FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error) {
+func (m *MockdimensionService) FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (game.Dimensions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindDimensionsByIds", ctx, ids)
-	ret0, _ := ret[0].(model.Dimensions)
+	ret0, _ := ret[0].(game.Dimensions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -205,10 +206,10 @@ func (mr *MockdimensionServiceMockRecorder) FindDimensionsByIds(ctx, ids any) *g
 }
 
 // FindDimensionsByNames mocks base method.
-func (m *MockdimensionService) FindDimensionsByNames(ctx context.Context, names []string) (model.Dimensions, error) {
+func (m *MockdimensionService) FindDimensionsByNames(ctx context.Context, names []string) (game.Dimensions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindDimensionsByNames", ctx, names)
-	ret0, _ := ret[0].(model.Dimensions)
+	ret0, _ := ret[0].(game.Dimensions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -220,10 +221,10 @@ func (mr *MockdimensionServiceMockRecorder) FindDimensionsByNames(ctx, names any
 }
 
 // FindDimensionsWithMapIds mocks base method.
-func (m *MockdimensionService) FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error) {
+func (m *MockdimensionService) FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (game.Dimensions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindDimensionsWithMapIds", ctx, ids)
-	ret0, _ := ret[0].(model.Dimensions)
+	ret0, _ := ret[0].(game.Dimensions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -258,10 +259,10 @@ func (m *MockmapService) EXPECT() *MockmapServiceMockRecorder {
 }
 
 // CreateMap mocks base method.
-func (m *MockmapService) CreateMap(ctx context.Context, name, path string, maxPlayers uint64, instanced bool) (*model.Map, error) {
+func (m *MockmapService) CreateMap(ctx context.Context, name, path string, maxPlayers uint64, instanced bool) (*game.Map, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateMap", ctx, name, path, maxPlayers, instanced)
-	ret0, _ := ret[0].(*model.Map)
+	ret0, _ := ret[0].(*game.Map)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -315,10 +316,10 @@ func (mr *MockmapServiceMockRecorder) DeleteMapByName(ctx, name any) *gomock.Cal
 }
 
 // EditMap mocks base method.
-func (m *MockmapService) EditMap(ctx context.Context, request *pb.EditMapRequest) (*model.Map, error) {
+func (m *MockmapService) EditMap(ctx context.Context, request *pb.EditMapRequest) (*game.Map, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EditMap", ctx, request)
-	ret0, _ := ret[0].(*model.Map)
+	ret0, _ := ret[0].(*game.Map)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -330,10 +331,10 @@ func (mr *MockmapServiceMockRecorder) EditMap(ctx, request any) *gomock.Call {
 }
 
 // FindAllMaps mocks base method.
-func (m *MockmapService) FindAllMaps(ctx context.Context) (model.Maps, error) {
+func (m *MockmapService) FindAllMaps(ctx context.Context) (game.Maps, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindAllMaps", ctx)
-	ret0, _ := ret[0].(model.Maps)
+	ret0, _ := ret[0].(game.Maps)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -345,10 +346,10 @@ func (mr *MockmapServiceMockRecorder) FindAllMaps(ctx any) *gomock.Call {
 }
 
 // FindMap mocks base method.
-func (m *MockmapService) FindMap(ctx context.Context, target *pb.MapTarget) (*model.Map, error) {
+func (m *MockmapService) FindMap(ctx context.Context, target *pb.MapTarget) (*game.Map, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindMap", ctx, target)
-	ret0, _ := ret[0].(*model.Map)
+	ret0, _ := ret[0].(*game.Map)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -360,10 +361,10 @@ func (mr *MockmapServiceMockRecorder) FindMap(ctx, target any) *gomock.Call {
 }
 
 // FindMapById mocks base method.
-func (m *MockmapService) FindMapById(ctx context.Context, id *uuid.UUID) (*model.Map, error) {
+func (m *MockmapService) FindMapById(ctx context.Context, id *uuid.UUID) (*game.Map, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindMapById", ctx, id)
-	ret0, _ := ret[0].(*model.Map)
+	ret0, _ := ret[0].(*game.Map)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -375,10 +376,10 @@ func (mr *MockmapServiceMockRecorder) FindMapById(ctx, id any) *gomock.Call {
 }
 
 // FindMapByName mocks base method.
-func (m *MockmapService) FindMapByName(ctx context.Context, name string) (*model.Map, error) {
+func (m *MockmapService) FindMapByName(ctx context.Context, name string) (*game.Map, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindMapByName", ctx, name)
-	ret0, _ := ret[0].(*model.Map)
+	ret0, _ := ret[0].(*game.Map)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -390,10 +391,10 @@ func (mr *MockmapServiceMockRecorder) FindMapByName(ctx, name any) *gomock.Call 
 }
 
 // FindMapsByIds mocks base method.
-func (m *MockmapService) FindMapsByIds(ctx context.Context, ids []*uuid.UUID) (model.Maps, error) {
+func (m *MockmapService) FindMapsByIds(ctx context.Context, ids []*uuid.UUID) (game.Maps, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindMapsByIds", ctx, ids)
-	ret0, _ := ret[0].(model.Maps)
+	ret0, _ := ret[0].(game.Maps)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -405,10 +406,10 @@ func (mr *MockmapServiceMockRecorder) FindMapsByIds(ctx, ids any) *gomock.Call {
 }
 
 // FindMapsByNames mocks base method.
-func (m *MockmapService) FindMapsByNames(ctx context.Context, names []string) (model.Maps, error) {
+func (m *MockmapService) FindMapsByNames(ctx context.Context, names []string) (game.Maps, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindMapsByNames", ctx, names)
-	ret0, _ := ret[0].(model.Maps)
+	ret0, _ := ret[0].(game.Maps)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -443,10 +444,10 @@ func (m *MockconnectionService) EXPECT() *MockconnectionServiceMockRecorder {
 }
 
 // CheckPlayerConnection mocks base method.
-func (m *MockconnectionService) CheckPlayerConnection(ctx context.Context, id *uuid.UUID, serverName string) (*model.PendingConnection, error) {
+func (m *MockconnectionService) CheckPlayerConnection(ctx context.Context, id *uuid.UUID, serverName string) (*gamebackend.PendingConnection, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckPlayerConnection", ctx, id, serverName)
-	ret0, _ := ret[0].(*model.PendingConnection)
+	ret0, _ := ret[0].(*gamebackend.PendingConnection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -458,10 +459,10 @@ func (mr *MockconnectionServiceMockRecorder) CheckPlayerConnection(ctx, id, serv
 }
 
 // CreatePendingConnection mocks base method.
-func (m *MockconnectionService) CreatePendingConnection(ctx context.Context, character, serverName string) (*model.PendingConnection, error) {
+func (m *MockconnectionService) CreatePendingConnection(ctx context.Context, character, serverName string) (*gamebackend.PendingConnection, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePendingConnection", ctx, character, serverName)
-	ret0, _ := ret[0].(*model.PendingConnection)
+	ret0, _ := ret[0].(*gamebackend.PendingConnection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -496,10 +497,10 @@ func (m *MockGamebackendService) EXPECT() *MockGamebackendServiceMockRecorder {
 }
 
 // CheckPlayerConnection mocks base method.
-func (m *MockGamebackendService) CheckPlayerConnection(ctx context.Context, id *uuid.UUID, serverName string) (*model.PendingConnection, error) {
+func (m *MockGamebackendService) CheckPlayerConnection(ctx context.Context, id *uuid.UUID, serverName string) (*gamebackend.PendingConnection, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckPlayerConnection", ctx, id, serverName)
-	ret0, _ := ret[0].(*model.PendingConnection)
+	ret0, _ := ret[0].(*gamebackend.PendingConnection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -511,10 +512,10 @@ func (mr *MockGamebackendServiceMockRecorder) CheckPlayerConnection(ctx, id, ser
 }
 
 // CreateDimension mocks base method.
-func (m *MockGamebackendService) CreateDimension(ctx context.Context, name, location, version string, mapIds []*uuid.UUID) (*model.Dimension, error) {
+func (m *MockGamebackendService) CreateDimension(ctx context.Context, name, location, version string, mapIds []*uuid.UUID) (*game.Dimension, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateDimension", ctx, name, location, version, mapIds)
-	ret0, _ := ret[0].(*model.Dimension)
+	ret0, _ := ret[0].(*game.Dimension)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -526,10 +527,10 @@ func (mr *MockGamebackendServiceMockRecorder) CreateDimension(ctx, name, locatio
 }
 
 // CreateMap mocks base method.
-func (m *MockGamebackendService) CreateMap(ctx context.Context, name, path string, maxPlayers uint64, instanced bool) (*model.Map, error) {
+func (m *MockGamebackendService) CreateMap(ctx context.Context, name, path string, maxPlayers uint64, instanced bool) (*game.Map, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateMap", ctx, name, path, maxPlayers, instanced)
-	ret0, _ := ret[0].(*model.Map)
+	ret0, _ := ret[0].(*game.Map)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -541,10 +542,10 @@ func (mr *MockGamebackendServiceMockRecorder) CreateMap(ctx, name, path, maxPlay
 }
 
 // CreatePendingConnection mocks base method.
-func (m *MockGamebackendService) CreatePendingConnection(ctx context.Context, character, serverName string) (*model.PendingConnection, error) {
+func (m *MockGamebackendService) CreatePendingConnection(ctx context.Context, character, serverName string) (*gamebackend.PendingConnection, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePendingConnection", ctx, character, serverName)
-	ret0, _ := ret[0].(*model.PendingConnection)
+	ret0, _ := ret[0].(*gamebackend.PendingConnection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -640,10 +641,10 @@ func (mr *MockGamebackendServiceMockRecorder) DeleteMapByName(ctx, name any) *go
 }
 
 // DuplicateDimension mocks base method.
-func (m *MockGamebackendService) DuplicateDimension(ctx context.Context, target *pb.DimensionTarget, name string) (*model.Dimension, error) {
+func (m *MockGamebackendService) DuplicateDimension(ctx context.Context, target *pb.DimensionTarget, name string) (*game.Dimension, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DuplicateDimension", ctx, target, name)
-	ret0, _ := ret[0].(*model.Dimension)
+	ret0, _ := ret[0].(*game.Dimension)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -655,10 +656,10 @@ func (mr *MockGamebackendServiceMockRecorder) DuplicateDimension(ctx, target, na
 }
 
 // EditDimension mocks base method.
-func (m *MockGamebackendService) EditDimension(ctx context.Context, request *pb.EditDimensionRequest) (*model.Dimension, error) {
+func (m *MockGamebackendService) EditDimension(ctx context.Context, request *pb.EditDimensionRequest) (*game.Dimension, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EditDimension", ctx, request)
-	ret0, _ := ret[0].(*model.Dimension)
+	ret0, _ := ret[0].(*game.Dimension)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -670,10 +671,10 @@ func (mr *MockGamebackendServiceMockRecorder) EditDimension(ctx, request any) *g
 }
 
 // EditMap mocks base method.
-func (m *MockGamebackendService) EditMap(ctx context.Context, request *pb.EditMapRequest) (*model.Map, error) {
+func (m *MockGamebackendService) EditMap(ctx context.Context, request *pb.EditMapRequest) (*game.Map, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EditMap", ctx, request)
-	ret0, _ := ret[0].(*model.Map)
+	ret0, _ := ret[0].(*game.Map)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -685,10 +686,10 @@ func (mr *MockGamebackendServiceMockRecorder) EditMap(ctx, request any) *gomock.
 }
 
 // FindAllDimensions mocks base method.
-func (m *MockGamebackendService) FindAllDimensions(ctx context.Context) (model.Dimensions, error) {
+func (m *MockGamebackendService) FindAllDimensions(ctx context.Context) (game.Dimensions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindAllDimensions", ctx)
-	ret0, _ := ret[0].(model.Dimensions)
+	ret0, _ := ret[0].(game.Dimensions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -700,10 +701,10 @@ func (mr *MockGamebackendServiceMockRecorder) FindAllDimensions(ctx any) *gomock
 }
 
 // FindAllMaps mocks base method.
-func (m *MockGamebackendService) FindAllMaps(ctx context.Context) (model.Maps, error) {
+func (m *MockGamebackendService) FindAllMaps(ctx context.Context) (game.Maps, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindAllMaps", ctx)
-	ret0, _ := ret[0].(model.Maps)
+	ret0, _ := ret[0].(game.Maps)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -715,10 +716,10 @@ func (mr *MockGamebackendServiceMockRecorder) FindAllMaps(ctx any) *gomock.Call 
 }
 
 // FindDimension mocks base method.
-func (m *MockGamebackendService) FindDimension(ctx context.Context, target *pb.DimensionTarget) (*model.Dimension, error) {
+func (m *MockGamebackendService) FindDimension(ctx context.Context, target *pb.DimensionTarget) (*game.Dimension, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindDimension", ctx, target)
-	ret0, _ := ret[0].(*model.Dimension)
+	ret0, _ := ret[0].(*game.Dimension)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -730,10 +731,10 @@ func (mr *MockGamebackendServiceMockRecorder) FindDimension(ctx, target any) *go
 }
 
 // FindDimensionById mocks base method.
-func (m *MockGamebackendService) FindDimensionById(ctx context.Context, id *uuid.UUID) (*model.Dimension, error) {
+func (m *MockGamebackendService) FindDimensionById(ctx context.Context, id *uuid.UUID) (*game.Dimension, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindDimensionById", ctx, id)
-	ret0, _ := ret[0].(*model.Dimension)
+	ret0, _ := ret[0].(*game.Dimension)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -745,10 +746,10 @@ func (mr *MockGamebackendServiceMockRecorder) FindDimensionById(ctx, id any) *go
 }
 
 // FindDimensionByName mocks base method.
-func (m *MockGamebackendService) FindDimensionByName(ctx context.Context, name string) (*model.Dimension, error) {
+func (m *MockGamebackendService) FindDimensionByName(ctx context.Context, name string) (*game.Dimension, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindDimensionByName", ctx, name)
-	ret0, _ := ret[0].(*model.Dimension)
+	ret0, _ := ret[0].(*game.Dimension)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -760,10 +761,10 @@ func (mr *MockGamebackendServiceMockRecorder) FindDimensionByName(ctx, name any)
 }
 
 // FindDimensionsByIds mocks base method.
-func (m *MockGamebackendService) FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error) {
+func (m *MockGamebackendService) FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (game.Dimensions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindDimensionsByIds", ctx, ids)
-	ret0, _ := ret[0].(model.Dimensions)
+	ret0, _ := ret[0].(game.Dimensions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -775,10 +776,10 @@ func (mr *MockGamebackendServiceMockRecorder) FindDimensionsByIds(ctx, ids any) 
 }
 
 // FindDimensionsByNames mocks base method.
-func (m *MockGamebackendService) FindDimensionsByNames(ctx context.Context, names []string) (model.Dimensions, error) {
+func (m *MockGamebackendService) FindDimensionsByNames(ctx context.Context, names []string) (game.Dimensions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindDimensionsByNames", ctx, names)
-	ret0, _ := ret[0].(model.Dimensions)
+	ret0, _ := ret[0].(game.Dimensions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -790,10 +791,10 @@ func (mr *MockGamebackendServiceMockRecorder) FindDimensionsByNames(ctx, names a
 }
 
 // FindDimensionsWithMapIds mocks base method.
-func (m *MockGamebackendService) FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error) {
+func (m *MockGamebackendService) FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (game.Dimensions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindDimensionsWithMapIds", ctx, ids)
-	ret0, _ := ret[0].(model.Dimensions)
+	ret0, _ := ret[0].(game.Dimensions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -805,10 +806,10 @@ func (mr *MockGamebackendServiceMockRecorder) FindDimensionsWithMapIds(ctx, ids 
 }
 
 // FindMap mocks base method.
-func (m *MockGamebackendService) FindMap(ctx context.Context, target *pb.MapTarget) (*model.Map, error) {
+func (m *MockGamebackendService) FindMap(ctx context.Context, target *pb.MapTarget) (*game.Map, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindMap", ctx, target)
-	ret0, _ := ret[0].(*model.Map)
+	ret0, _ := ret[0].(*game.Map)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -820,10 +821,10 @@ func (mr *MockGamebackendServiceMockRecorder) FindMap(ctx, target any) *gomock.C
 }
 
 // FindMapById mocks base method.
-func (m *MockGamebackendService) FindMapById(ctx context.Context, id *uuid.UUID) (*model.Map, error) {
+func (m *MockGamebackendService) FindMapById(ctx context.Context, id *uuid.UUID) (*game.Map, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindMapById", ctx, id)
-	ret0, _ := ret[0].(*model.Map)
+	ret0, _ := ret[0].(*game.Map)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -835,10 +836,10 @@ func (mr *MockGamebackendServiceMockRecorder) FindMapById(ctx, id any) *gomock.C
 }
 
 // FindMapByName mocks base method.
-func (m *MockGamebackendService) FindMapByName(ctx context.Context, name string) (*model.Map, error) {
+func (m *MockGamebackendService) FindMapByName(ctx context.Context, name string) (*game.Map, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindMapByName", ctx, name)
-	ret0, _ := ret[0].(*model.Map)
+	ret0, _ := ret[0].(*game.Map)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -850,10 +851,10 @@ func (mr *MockGamebackendServiceMockRecorder) FindMapByName(ctx, name any) *gomo
 }
 
 // FindMapsByIds mocks base method.
-func (m *MockGamebackendService) FindMapsByIds(ctx context.Context, ids []*uuid.UUID) (model.Maps, error) {
+func (m *MockGamebackendService) FindMapsByIds(ctx context.Context, ids []*uuid.UUID) (game.Maps, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindMapsByIds", ctx, ids)
-	ret0, _ := ret[0].(model.Maps)
+	ret0, _ := ret[0].(game.Maps)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -865,10 +866,10 @@ func (mr *MockGamebackendServiceMockRecorder) FindMapsByIds(ctx, ids any) *gomoc
 }
 
 // FindMapsByNames mocks base method.
-func (m *MockGamebackendService) FindMapsByNames(ctx context.Context, names []string) (model.Maps, error) {
+func (m *MockGamebackendService) FindMapsByNames(ctx context.Context, names []string) (game.Maps, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindMapsByNames", ctx, names)
-	ret0, _ := ret[0].(model.Maps)
+	ret0, _ := ret[0].(game.Maps)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/mocks"
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/chat"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/service"
 	testdb "github.com/ShatteredRealms/go-backend/test/db"
@@ -35,7 +35,7 @@ var _ = Describe("Chat service", Ordered, func() {
 
 		err       error
 		fakeError = fmt.Errorf("error")
-		channels  = []*model.ChatChannel{
+		channels  = []*chat.ChatChannel{
 			{
 				Model: gorm.Model{
 					ID:        1,
@@ -91,7 +91,7 @@ var _ = Describe("Chat service", Ordered, func() {
 
 			It("should fail if kafka all channels", func() {
 				mockRepository.EXPECT().Migrate(gomock.Any()).Return(nil)
-				mockRepository.EXPECT().AllChannels(gomock.Any()).Return(model.ChatChannels{}, fakeError)
+				mockRepository.EXPECT().AllChannels(gomock.Any()).Return(chat.ChatChannels{}, fakeError)
 				chatService, err = service.NewChatService(context.Background(), mockRepository, config.ServerAddress{
 					Port: kafkaPort,
 					Host: "127.0.0.1",
@@ -152,7 +152,7 @@ var _ = Describe("Chat service", Ordered, func() {
 						Dimension: faker.Username(),
 					},
 				}
-				expectedUpdate := &model.ChatChannel{}
+				expectedUpdate := &chat.ChatChannel{}
 				*expectedUpdate = *channels[0]
 				expectedUpdate.Name = req.GetName()
 				expectedUpdate.Dimension = req.GetDimension()

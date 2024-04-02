@@ -1,7 +1,7 @@
 package srospan
 
 import (
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/chat"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -37,7 +37,7 @@ func TargetCharacterName(val string) attribute.KeyValue {
 	return attribute.String("sro.target.character.username", val)
 }
 
-func ChatChannelAttributes(channel *model.ChatChannel) []attribute.KeyValue {
+func ChatChannelAttributes(channel *chat.ChatChannel) []attribute.KeyValue {
 	return []attribute.KeyValue{
 		attribute.Int("sro.chat.id", int(channel.ID)),
 		attribute.String("sro.chat.name", channel.Name),

@@ -6,12 +6,12 @@ import (
 	"os"
 	"os/signal"
 
-	character "github.com/ShatteredRealms/go-backend/cmd/character/app"
 	chat "github.com/ShatteredRealms/go-backend/cmd/chat/app"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/srv"
+	"github.com/ShatteredRealms/go-backend/pkg/telemetry"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -23,7 +23,6 @@ var (
 )
 
 func init() {
-	helpers.SetupLogger(chat.ServiceName)
 	conf = config.NewGlobalConfig(context.Background())
 }
 
@@ -31,7 +30,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	otelShutdown, err := helpers.SetupOTelSDK(ctx, character.ServiceName, config.Version, conf.OpenTelemetry.Addr)
+	otelShutdown, err := telemetry.SetupOTelSDK(ctx, chat.ServiceName, config.Version, conf.OpenTelemetry.Addr)
 	defer func() {
 		err = errors.Join(err, otelShutdown(context.Background()))
 		if err != nil {
@@ -44,7 +43,7 @@ func main() {
 	}
 
 	server := chat.NewServerContext(ctx, conf)
-	grpcServer, gwmux := helpers.InitServerDefaults()
+	grpcServer, gwmux := helpers.InitServerDefaults(server.KeycloakClient, server.GlobalConfig.Keycloak.Realm)
 	address := server.GlobalConfig.Chat.Local.Address()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 

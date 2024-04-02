@@ -7,12 +7,13 @@ import (
 	. "github.com/onsi/gomega"
 	"gorm.io/gorm"
 
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/game"
+	"github.com/ShatteredRealms/go-backend/pkg/model/gamebackend"
 )
 
 var _ = Describe("Gamebackend repository", func() {
 	var (
-		createModels = func() (*model.Map, *model.Dimension, *model.PendingConnection) {
+		createModels = func() (*game.Map, *game.Dimension, *gamebackend.PendingConnection) {
 			m, err := gamebackendRepo.CreateMap(nil, faker.Username(), faker.Username(), 4, false)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(m).NotTo(BeNil())

@@ -8,7 +8,9 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/mocks"
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/character"
+	"github.com/ShatteredRealms/go-backend/pkg/model/game"
+	"github.com/ShatteredRealms/go-backend/pkg/model/gamebackend"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/srv"
 	"github.com/bxcodec/faker/v4"
@@ -33,8 +35,8 @@ var _ = Describe("Connection server (local)", func() {
 		mockService    *mocks.MockGamebackendService
 		server         pb.ConnectionServiceServer
 
-		character   *model.Character
-		pendingConn *model.PendingConnection
+		char        *character.Character
+		pendingConn *gamebackend.PendingConnection
 	)
 
 	BeforeEach(func() {
@@ -62,7 +64,7 @@ var _ = Describe("Connection server (local)", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(server).NotTo(BeNil())
 
-		character = &model.Character{
+		char = &character.Character{
 			ID:        0,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -72,7 +74,7 @@ var _ = Describe("Connection server (local)", func() {
 			Gender:    "Male",
 			Realm:     "Human",
 			PlayTime:  100,
-			Location: model.Location{
+			Location: game.Location{
 				World: faker.Username(),
 				X:     1.1,
 				Y:     1.2,
@@ -84,9 +86,9 @@ var _ = Describe("Connection server (local)", func() {
 		}
 
 		id := uuid.New()
-		pendingConn = &model.PendingConnection{
+		pendingConn = &gamebackend.PendingConnection{
 			Id:         &id,
-			Character:  character.Name,
+			Character:  char.Name,
 			ServerName: faker.Username(),
 			CreatedAt:  time.Now(),
 		}
@@ -101,15 +103,15 @@ var _ = Describe("Connection server (local)", func() {
 		BeforeEach(func() {
 			req = &pb.CharacterTarget{
 				Type: &pb.CharacterTarget_Id{
-					Id: uint64(character.ID),
+					Id: uint64(char.ID),
 				},
 			}
 		})
 
 		When("given valid input", func() {
 			It("should work (admin)", func() {
-				mockCharClient.EXPECT().GetCharacter(gomock.Any(), req).Return(character.ToPb(), nil)
-				mockService.EXPECT().CreatePendingConnection(gomock.Any(), character.Name, "localhost").Return(pendingConn, nil)
+				mockCharClient.EXPECT().GetCharacter(gomock.Any(), req).Return(char.ToPb(), nil)
+				mockService.EXPECT().CreatePendingConnection(gomock.Any(), char.Name, "localhost").Return(pendingConn, nil)
 				out, err := server.ConnectGameServer(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out.Address).To(Equal("127.0.0.1"))
@@ -118,8 +120,8 @@ var _ = Describe("Connection server (local)", func() {
 			})
 
 			It("should work (player)", func() {
-				mockCharClient.EXPECT().GetCharacter(gomock.Any(), req).Return(character.ToPb(), nil)
-				mockService.EXPECT().CreatePendingConnection(gomock.Any(), character.Name, "localhost").Return(pendingConn, nil)
+				mockCharClient.EXPECT().GetCharacter(gomock.Any(), req).Return(char.ToPb(), nil)
+				mockService.EXPECT().CreatePendingConnection(gomock.Any(), char.Name, "localhost").Return(pendingConn, nil)
 				out, err := server.ConnectGameServer(incPlayerCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out.Address).To(Equal("127.0.0.1"))
@@ -148,7 +150,7 @@ var _ = Describe("Connection server (local)", func() {
 			})
 
 			It("should error on get character err", func() {
-				mockCharClient.EXPECT().GetCharacter(gomock.Any(), req).Return(character.ToPb(), fakeErr)
+				mockCharClient.EXPECT().GetCharacter(gomock.Any(), req).Return(char.ToPb(), fakeErr)
 				out, err := server.ConnectGameServer(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
@@ -162,8 +164,8 @@ var _ = Describe("Connection server (local)", func() {
 			})
 
 			It("should error on creating pending connection error", func() {
-				mockCharClient.EXPECT().GetCharacter(gomock.Any(), req).Return(character.ToPb(), nil)
-				mockService.EXPECT().CreatePendingConnection(gomock.Any(), character.Name, "localhost").Return(nil, fakeErr)
+				mockCharClient.EXPECT().GetCharacter(gomock.Any(), req).Return(char.ToPb(), nil)
+				mockService.EXPECT().CreatePendingConnection(gomock.Any(), char.Name, "localhost").Return(nil, fakeErr)
 				out, err := server.ConnectGameServer(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
@@ -185,10 +187,10 @@ var _ = Describe("Connection server (local)", func() {
 		When("given valid input", func() {
 			It("should work (server)", func() {
 				mockService.EXPECT().CheckPlayerConnection(gomock.Any(), pendingConn.Id, req.ServerName).Return(pendingConn, nil)
-				mockCharClient.EXPECT().GetCharacter(gomock.Any(), gomock.Any()).Return(character.ToPb(), nil)
+				mockCharClient.EXPECT().GetCharacter(gomock.Any(), gomock.Any()).Return(char.ToPb(), nil)
 				out, err := server.VerifyConnect(incClientCtx, req)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(out).To(Equal(character.ToPb()))
+				Expect(out).To(Equal(char.ToPb()))
 			})
 		})
 
@@ -255,15 +257,15 @@ var _ = Describe("Connection server (local)", func() {
 		)
 		BeforeEach(func() {
 			req = &pb.TransferPlayerRequest{
-				Character: character.Name,
-				Location:  character.Location.ToPb(),
+				Character: char.Name,
+				Location:  char.Location.ToPb(),
 			}
 		})
 
 		When("given valid input", func() {
 			It("should work (client)", func() {
-				mockCharClient.EXPECT().GetCharacter(gomock.Any(), gomock.Any()).Return(character.ToPb(), nil)
-				mockService.EXPECT().CreatePendingConnection(gomock.Any(), character.Name, "localhost").Return(pendingConn, nil)
+				mockCharClient.EXPECT().GetCharacter(gomock.Any(), gomock.Any()).Return(char.ToPb(), nil)
+				mockService.EXPECT().CreatePendingConnection(gomock.Any(), char.Name, "localhost").Return(pendingConn, nil)
 				out, err := server.TransferPlayer(incClientCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out.Address).To(Equal("127.0.0.1"))
@@ -298,7 +300,7 @@ var _ = Describe("Connection server (local)", func() {
 			})
 
 			It("should error on get character err", func() {
-				mockCharClient.EXPECT().GetCharacter(gomock.Any(), gomock.Any()).Return(character.ToPb(), fakeErr)
+				mockCharClient.EXPECT().GetCharacter(gomock.Any(), gomock.Any()).Return(char.ToPb(), fakeErr)
 				out, err := server.TransferPlayer(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
@@ -312,8 +314,8 @@ var _ = Describe("Connection server (local)", func() {
 			})
 
 			It("should error on creating pending connection error", func() {
-				mockCharClient.EXPECT().GetCharacter(gomock.Any(), gomock.Any()).Return(character.ToPb(), nil)
-				mockService.EXPECT().CreatePendingConnection(gomock.Any(), character.Name, "localhost").Return(nil, fakeErr)
+				mockCharClient.EXPECT().GetCharacter(gomock.Any(), gomock.Any()).Return(char.ToPb(), nil)
+				mockService.EXPECT().CreatePendingConnection(gomock.Any(), char.Name, "localhost").Return(nil, fakeErr)
 				out, err := server.TransferPlayer(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())

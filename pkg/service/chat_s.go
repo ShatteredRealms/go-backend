@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/ShatteredRealms/go-backend/pkg/config"
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/chat"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/segmentio/kafka-go"
@@ -23,11 +23,11 @@ var (
 )
 
 type ChatService interface {
-	AllChannels(ctx context.Context) (model.ChatChannels, error)
-	GetChannel(ctx context.Context, id uint) (*model.ChatChannel, error)
-	UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) (*model.ChatChannel, error)
-	CreateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error)
-	DeleteChannel(ctx context.Context, channel *model.ChatChannel) error
+	AllChannels(ctx context.Context) (chat.ChatChannels, error)
+	GetChannel(ctx context.Context, id uint) (*chat.ChatChannel, error)
+	UpdateChannel(ctx context.Context, pb *pb.UpdateChatChannelRequest) (*chat.ChatChannel, error)
+	CreateChannel(ctx context.Context, channel *chat.ChatChannel) (*chat.ChatChannel, error)
+	DeleteChannel(ctx context.Context, channel *chat.ChatChannel) error
 
 	RegisterCharacterChatTopic(ctx context.Context, username string) error
 
@@ -37,7 +37,7 @@ type ChatService interface {
 	ChannelMessagesReader(ctx context.Context, channelId uint) *kafka.Reader
 	DirectMessagesReader(ctx context.Context, username string) *kafka.Reader
 
-	AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (model.ChatChannels, error)
+	AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (chat.ChatChannels, error)
 	ChangeAuthorizationForCharacter(ctx context.Context, characterId uint, channelIds []uint, addAuth bool) error
 	// SetAuthorizationForCharacter(ctx context.Context, characterId uint, channelsIds []uint) error
 }
@@ -54,11 +54,11 @@ func (s chatService) ChangeAuthorizationForCharacter(ctx context.Context, charac
 	return s.chatRepo.ChangeAuthorizationForCharacter(ctx, characterId, channelIds, addAuth)
 }
 
-func (s chatService) AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (model.ChatChannels, error) {
+func (s chatService) AuthorizedChannelsForCharacter(ctx context.Context, characterId uint) (chat.ChatChannels, error) {
 	return s.chatRepo.AuthorizedChannelsForCharacter(ctx, characterId)
 }
 
-func (s chatService) UpdateChannel(ctx context.Context, request *pb.UpdateChatChannelRequest) (*model.ChatChannel, error) {
+func (s chatService) UpdateChannel(ctx context.Context, request *pb.UpdateChatChannelRequest) (*chat.ChatChannel, error) {
 	ctx, span := tracer.Start(ctx, "UpdateChannel")
 	defer span.End()
 
@@ -78,7 +78,7 @@ func (s chatService) UpdateChannel(ctx context.Context, request *pb.UpdateChatCh
 	return s.chatRepo.UpdateChannel(ctx, channel)
 }
 
-func (s chatService) GetChannel(ctx context.Context, id uint) (*model.ChatChannel, error) {
+func (s chatService) GetChannel(ctx context.Context, id uint) (*chat.ChatChannel, error) {
 	return s.chatRepo.FindChannelById(ctx, id)
 }
 
@@ -146,11 +146,11 @@ func (s chatService) SendDirectMessage(ctx context.Context, characterName string
 	)
 }
 
-func (s chatService) AllChannels(ctx context.Context) (model.ChatChannels, error) {
+func (s chatService) AllChannels(ctx context.Context) (chat.ChatChannels, error) {
 	return s.chatRepo.AllChannels(ctx)
 }
 
-func (s chatService) CreateChannel(ctx context.Context, channel *model.ChatChannel) (*model.ChatChannel, error) {
+func (s chatService) CreateChannel(ctx context.Context, channel *chat.ChatChannel) (*chat.ChatChannel, error) {
 	newChannel, err := s.chatRepo.CreateChannel(ctx, channel)
 	if err != nil {
 		return nil, err
@@ -160,7 +160,7 @@ func (s chatService) CreateChannel(ctx context.Context, channel *model.ChatChann
 	return newChannel, nil
 }
 
-func (s chatService) DeleteChannel(ctx context.Context, channel *model.ChatChannel) error {
+func (s chatService) DeleteChannel(ctx context.Context, channel *chat.ChatChannel) error {
 	err := s.chatRepo.DeleteChannel(ctx, channel)
 	if err != nil {
 		return err
@@ -216,7 +216,7 @@ func (service chatService) RegisterCharacterChatTopic(ctx context.Context, usern
 	return service.kafkaConn.CreateTopics(createTopicConfigFromCharacter(username))
 }
 
-func createTopicConfigFromChannel(channel *model.ChatChannel) kafka.TopicConfig {
+func createTopicConfigFromChannel(channel *chat.ChatChannel) kafka.TopicConfig {
 	return kafka.TopicConfig{
 		Topic:             topicNameFromChannel(channel.ID),
 		NumPartitions:     1,

@@ -12,10 +12,12 @@ import (
 	autoscalingv1 "agones.dev/agones/pkg/apis/autoscaling/v1"
 	"github.com/Nerzal/gocloak/v13"
 	gamebackend "github.com/ShatteredRealms/go-backend/cmd/gamebackend/app"
+	"github.com/ShatteredRealms/go-backend/pkg/auth"
+	"github.com/ShatteredRealms/go-backend/pkg/common"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/game"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
@@ -127,7 +129,7 @@ func (s *serverManagerServiceServer) DeleteDimension(
 		return nil, err
 	}
 	if dimension == nil {
-		return nil, model.ErrDoesNotExist.Err()
+		return nil, common.ErrDoesNotExist.Err()
 	}
 
 	err = s.server.GamebackendService.DeleteDimensionById(ctx, dimension.Id)
@@ -176,6 +178,9 @@ func (s *serverManagerServiceServer) DeleteMap(
 	var errs error
 	if s.server.GlobalConfig.GameBackend.Mode != config.LocalMode {
 		dimensions, err := s.server.GamebackendService.FindDimensionsWithMapIds(ctx, []*uuid.UUID{m.Id})
+		if err != nil {
+			errs = joinErrorAndLog(errs, "finding map ids: %w", err)
+		}
 		for _, dimension := range dimensions {
 			log.Logger.Infof("Deleting gameserver dimension %s map %s", dimension.Name, m.Name)
 			err = s.deleteGameServers(ctx, dimension, m)
@@ -235,7 +240,7 @@ func (s *serverManagerServiceServer) EditDimension(
 		return nil, err
 	}
 	if originalDimension == nil {
-		return nil, model.ErrDoesNotExist.Err()
+		return nil, common.ErrDoesNotExist.Err()
 	}
 
 	newDimension, err := s.server.GamebackendService.EditDimension(ctx, request)
@@ -261,7 +266,7 @@ func (s *serverManagerServiceServer) EditDimension(
 			}
 		} else {
 			if request.EditMaps {
-				currentMaps := make(map[*uuid.UUID]*model.Map, len(request.MapIds))
+				currentMaps := make(map[*uuid.UUID]*game.Map, len(request.MapIds))
 				for _, m := range newDimension.Maps {
 					currentMaps[m.Id] = m
 				}
@@ -323,7 +328,7 @@ func (s *serverManagerServiceServer) EditMap(
 		return nil, err
 	}
 	if originalMap == nil {
-		return nil, model.ErrDoesNotExist.Err()
+		return nil, common.ErrDoesNotExist.Err()
 	}
 
 	newMap, err := s.server.GamebackendService.EditMap(ctx, request)
@@ -416,7 +421,7 @@ func (s *serverManagerServiceServer) GetDimension(
 	}
 
 	if dimension == nil {
-		return nil, model.ErrDoesNotExist.Err()
+		return nil, common.ErrDoesNotExist.Err()
 	}
 
 	return dimension.ToPb(), nil
@@ -439,7 +444,7 @@ func (s *serverManagerServiceServer) GetMap(
 	}
 
 	if m == nil {
-		return nil, model.ErrDoesNotExist.Err()
+		return nil, common.ErrDoesNotExist.Err()
 	}
 
 	return m.ToPb(), nil
@@ -475,33 +480,15 @@ func NewServerManagerServiceServer(
 	}, nil
 }
 
-func (s serverManagerServiceServer) serverContext(ctx context.Context) (context.Context, error) {
-	token, err := s.server.KeycloakClient.LoginClient(
-		ctx,
-		s.server.GlobalConfig.GameBackend.Keycloak.ClientId,
-		s.server.GlobalConfig.GameBackend.Keycloak.ClientSecret,
-		s.server.GlobalConfig.Keycloak.Realm,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return helpers.ContextAddClientToken(
-		ctx,
-		token.AccessToken,
-	), nil
-}
-
 func (s serverManagerServiceServer) hasServerManagerRole(ctx context.Context) error {
-	_, claims, err := helpers.VerifyClaims(ctx, s.server.KeycloakClient, s.server.GlobalConfig.Keycloak.Realm)
-	if err != nil {
-		log.Logger.WithContext(ctx).Errorf("verify claims: %v", err)
-		return model.ErrUnauthorized.Err()
+	claims, ok := auth.RetrieveClaims(ctx)
+	if !ok {
+		return common.ErrUnauthorized.Err()
 	}
 
 	// Validate requester has correct permission
-	if !claims.HasResourceRole(RoleServerManager, model.GamebackendClientId) {
-		return model.ErrUnauthorized.Err()
+	if !claims.HasResourceRole(RoleServerManager, auth.GamebackendClientId) {
+		return common.ErrUnauthorized.Err()
 	}
 
 	return nil
@@ -509,8 +496,8 @@ func (s serverManagerServiceServer) hasServerManagerRole(ctx context.Context) er
 
 func (s serverManagerServiceServer) createGameServers(
 	ctx context.Context,
-	dimension *model.Dimension,
-	m *model.Map,
+	dimension *game.Dimension,
+	m *game.Map,
 ) error {
 	if s.server.AgonesClient == nil {
 		return ErrNoAgonesConnect
@@ -541,8 +528,8 @@ func (s serverManagerServiceServer) createGameServers(
 
 func (s serverManagerServiceServer) deleteGameServers(
 	ctx context.Context,
-	dimension *model.Dimension,
-	m *model.Map,
+	dimension *game.Dimension,
+	m *game.Map,
 ) error {
 	if s.server.AgonesClient == nil {
 		return ErrNoAgonesConnect
@@ -578,8 +565,8 @@ func (s serverManagerServiceServer) deleteGameServers(
 
 func (s serverManagerServiceServer) updateGameServers(
 	ctx context.Context,
-	dimension *model.Dimension,
-	m *model.Map,
+	dimension *game.Dimension,
+	m *game.Map,
 ) error {
 	if s.server.AgonesClient == nil {
 		return ErrNoAgonesConnect
@@ -606,7 +593,7 @@ func (s serverManagerServiceServer) updateGameServers(
 	return nil
 }
 
-func buildAutoscalingFleet(dimension *model.Dimension, m *model.Map, namespace string) *autoscalingv1.FleetAutoscaler {
+func buildAutoscalingFleet(dimension *game.Dimension, m *game.Map, namespace string) *autoscalingv1.FleetAutoscaler {
 	return &autoscalingv1.FleetAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      getFleetAutoscalerName(dimension, m),
@@ -629,7 +616,7 @@ func buildAutoscalingFleet(dimension *model.Dimension, m *model.Map, namespace s
 	}
 }
 
-func buildFleet(dimension *model.Dimension, m *model.Map, namespace string) *v1.Fleet {
+func buildFleet(dimension *game.Dimension, m *game.Map, namespace string) *v1.Fleet {
 	return &v1.Fleet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -698,22 +685,22 @@ func buildFleet(dimension *model.Dimension, m *model.Map, namespace string) *v1.
 	}
 }
 
-func getBaseFleetName(dimension *model.Dimension, m *model.Map) string {
+func getBaseFleetName(dimension *game.Dimension, m *game.Map) string {
 	return fmt.Sprintf("%s-%s",
 		strings.ToLower(dimension.Name),
 		strings.ToLower(m.Name),
 	)
 }
 
-func getFleetName(dimension *model.Dimension, m *model.Map) string {
+func getFleetName(dimension *game.Dimension, m *game.Map) string {
 	return fmt.Sprintf("fleet-%s", getBaseFleetName(dimension, m))
 }
 
-func getFleetAutoscalerName(dimension *model.Dimension, m *model.Map) string {
+func getFleetAutoscalerName(dimension *game.Dimension, m *game.Map) string {
 	return fmt.Sprintf("fleet-autoscaler-%s", getBaseFleetName(dimension, m))
 }
 
-func (s serverManagerServiceServer) setupNewDimension(ctx context.Context, dimension *model.Dimension) error {
+func (s serverManagerServiceServer) setupNewDimension(ctx context.Context, dimension *game.Dimension) error {
 
 	var errs error
 	for _, m := range dimension.Maps {
@@ -729,7 +716,7 @@ func (s serverManagerServiceServer) setupNewDimension(ctx context.Context, dimen
 func (s serverManagerServiceServer) findMapByNameOrId(
 	ctx context.Context,
 	requestTarget *pb.MapTarget,
-) (out *model.Map, err error) {
+) (out *game.Map, err error) {
 	switch target := requestTarget.FindBy.(type) {
 	case *pb.MapTarget_Id:
 		id, err := uuid.Parse(target.Id)
@@ -743,14 +730,15 @@ func (s serverManagerServiceServer) findMapByNameOrId(
 
 	default:
 		log.Logger.WithContext(ctx).Errorf("target type unknown: %v", requestTarget)
-		return nil, model.ErrHandleRequest.Err()
+		return nil, common.ErrHandleRequest.Err()
 	}
 
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
 	if out == nil {
-		return nil, model.ErrDoesNotExist.Err()
+		return nil, common.ErrDoesNotExist.Err()
 	}
 
 	return out, nil
