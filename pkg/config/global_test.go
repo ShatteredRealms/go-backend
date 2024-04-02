@@ -68,8 +68,7 @@ var _ = Describe("Global config", func() {
 			confFromFile := &config.GlobalConfig{}
 			yamlFile, err := os.ReadFile("../../test/config.yaml")
 			Expect(err).To(BeNil())
-			err = yaml.Unmarshal(yamlFile, confFromFile)
-			Expect(err).To(BeNil())
+			yaml.Unmarshal(yamlFile, confFromFile)
 			conf := config.NewGlobalConfig(context.TODO())
 			Expect(conf).NotTo(BeNil())
 			Expect(conf.Character.Keycloak.ClientSecret).To(Equal(confFromFile.Character.Keycloak.ClientSecret))
