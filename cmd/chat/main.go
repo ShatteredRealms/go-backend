@@ -23,7 +23,11 @@ var (
 )
 
 func init() {
-	conf = config.NewGlobalConfig(context.Background())
+	var err error
+	conf, err = config.NewGlobalConfig(context.Background())
+	if err != nil {
+		log.Logger.Fatalf("initialization: %v", err)
+	}
 }
 
 func main() {
@@ -39,23 +43,37 @@ func main() {
 	}()
 
 	if err != nil {
-		log.Logger.Fatal(err)
+		log.Logger.Errorf("connecting to otel: %w", err)
+		return
 	}
 
-	server := chat.NewServerContext(ctx, conf)
+	server, err := chat.NewServerContext(ctx, conf)
+	if err != nil {
+		log.Logger.Errorf("creating server context: %w", err)
+		return
+	}
 	grpcServer, gwmux := helpers.InitServerDefaults(server.KeycloakClient, server.GlobalConfig.Keycloak.Realm)
 	address := server.GlobalConfig.Chat.Local.Address()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
 	pb.RegisterHealthServiceServer(grpcServer, srv.NewHealthServiceServer())
 	err = pb.RegisterHealthServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
-	helpers.Check(ctx, err, "register health service handler endpoint")
+	if err != nil {
+		log.Logger.Errorf("register health service handler endpoint: %w", err)
+		return
+	}
 
 	srvService, err := srv.NewChatServiceServer(ctx, server)
-	helpers.Check(ctx, err, "create chat service")
+	if err != nil {
+		log.Logger.Errorf("create chat service: %w", err)
+		return
+	}
 	pb.RegisterChatServiceServer(grpcServer, srvService)
 	err = pb.RegisterChatServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
-	helpers.Check(ctx, err, "register chat service handler endpoint")
+	if err != nil {
+		log.Logger.Errorf("register chat service handler endpoint: %w", err)
+		return
+	}
 
 	srvErr := make(chan error, 1)
 	go func() {
@@ -64,7 +82,7 @@ func main() {
 
 	select {
 	case err = <-srvErr:
-		log.Logger.Fatalf("listen server: %v", err)
+		log.Logger.Errorf("listen server: %v", err)
 
 	case <-ctx.Done():
 		log.Logger.Info("Server canceled by user input.")

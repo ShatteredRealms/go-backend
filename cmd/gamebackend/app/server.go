@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"os"
 
 	"agones.dev/agones/pkg/client/clientset/versioned"
@@ -35,7 +36,7 @@ type GameBackendServerContext struct {
 	Tracer             trace.Tracer
 }
 
-func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *GameBackendServerContext {
+func NewServerContext(ctx context.Context, conf *config.GlobalConfig) (*GameBackendServerContext, error) {
 	server := &GameBackendServerContext{
 		GlobalConfig:   conf,
 		Tracer:         otel.Tracer("GameBackendService"),
@@ -43,51 +44,64 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *GameBacke
 	}
 
 	charactersService, err := helpers.GrpcClientWithOtel(conf.Character.Remote.Address())
-	helpers.Check(ctx, err, "connecting to characters")
+	if err != nil {
+		return nil, fmt.Errorf("connecting to characters service: %w", err)
+	}
 	server.CharacterClient = pb.NewCharacterServiceClient(charactersService)
 
 	chatService, err := helpers.GrpcClientWithOtel(conf.Chat.Remote.Address())
-	helpers.Check(ctx, err, "connecting to chat")
+	if err != nil {
+		return nil, fmt.Errorf("connecting to chat service: %w", err)
+	}
+
 	server.ChatClient = pb.NewChatServiceClient(chatService)
 
 	if server.GlobalConfig.GameBackend.Mode != config.LocalMode {
 		conf, err := rest.InClusterConfig()
-		helpers.Check(ctx, err, "creating config")
+		if err != nil {
+			return nil, fmt.Errorf("creating k8s config: %w", err)
+		}
 
 		server.AgonesClient, err = versioned.NewForConfig(conf)
-		helpers.Check(ctx, err, "creating agones connection")
+		if err != nil {
+			return nil, fmt.Errorf("connecting to agones: %w", err)
+		}
 	}
 
 	db, err := repository.ConnectDB(conf.GameBackend.Postgres)
-	helpers.Check(ctx, err, "connecting to database")
+	if err != nil {
+		return nil, fmt.Errorf("connecting to postgres database: %w", err)
+	}
 
 	repo := repository.NewGamebackendRepository(db)
 	gamebackendService, err := service.NewGamebackendService(ctx, repo)
-	helpers.Check(ctx, err, "gamebackend service")
+	if err != nil {
+		return nil, fmt.Errorf("creating gamebackend service: %w", err)
+	}
 	server.GamebackendService = gamebackendService
 
-	return server
+	return server, nil
 }
 
 func (s *GameBackendServerContext) dialAgonesAllocatorServer() (*grpc.ClientConn, error) {
 	clientKey, err := os.ReadFile(s.GlobalConfig.Agones.KeyFile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading agones key: %w", err)
 	}
 
 	clientCert, err := os.ReadFile(s.GlobalConfig.Agones.CertFile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading agones cert: %w", err)
 	}
 
 	caCert, err := os.ReadFile(s.GlobalConfig.Agones.CaCertFile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading agones ca cert: %w", err)
 	}
 
 	opt, err := createRemoteClusterDialOption(clientCert, clientKey, caCert)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("creating agones dial option: %w", err)
 	}
 
 	return grpc.Dial(s.GlobalConfig.Agones.Allocator.Address(), opt)

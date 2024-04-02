@@ -43,7 +43,7 @@ var _ = Describe("Character server", func() {
 		mockInvService = mocks.NewMockInventoryService(mockController)
 
 		charCtx = &characterApp.CharactersServerContext{
-			GlobalConfig:     conf,
+			GlobalConfig:     globalConfig,
 			CharacterService: mockCharService,
 			InventoryService: mockInvService,
 			KeycloakClient:   keycloak,

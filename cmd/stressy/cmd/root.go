@@ -36,14 +36,20 @@ Tasks:
 			ctx, stop = signal.NotifyContext(ctx, os.Interrupt)
 			defer stop()
 
-			conf = config.NewGlobalConfig(context.Background())
-			b, err := json.MarshalIndent(conf, "", " ")
+			var err error
+			conf, err = config.NewGlobalConfig(context.Background())
 			if err != nil {
 				fmt.Print("Error: unable to decode config")
 				os.Exit(1)
 			}
 
 			if showCfg {
+				b, err := json.MarshalIndent(conf, "", " ")
+				if err != nil {
+					fmt.Print("Error: unable to decode config")
+					os.Exit(1)
+				}
+
 				fmt.Printf("Using config:\n%s", string(b))
 			}
 

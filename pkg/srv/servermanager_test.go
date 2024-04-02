@@ -35,7 +35,6 @@ var _ = Describe("Servermanager server", func() {
 		mockController *gomock.Controller
 		ctx            context.Context
 
-		globalConfig   *config.GlobalConfig
 		conf           *app.GameBackendServerContext
 		mockCharClient *mocks.MockCharacterServiceClient
 		mockChatClient *mocks.MockChatServiceClient
@@ -51,7 +50,6 @@ var _ = Describe("Servermanager server", func() {
 		var err error
 		ctx = context.Background()
 		log.Logger, hook = test.NewNullLogger()
-		globalConfig = config.NewGlobalConfig(ctx)
 		mockController = gomock.NewController(GinkgoT())
 		mockCharClient = mocks.NewMockCharacterServiceClient(mockController)
 		mockChatClient = mocks.NewMockChatServiceClient(mockController)

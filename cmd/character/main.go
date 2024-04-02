@@ -23,7 +23,11 @@ var (
 )
 
 func init() {
-	conf = config.NewGlobalConfig(context.Background())
+	var err error
+	conf, err = config.NewGlobalConfig(context.Background())
+	if err != nil {
+		log.Logger.Fatalf("initialization: %v", err)
+	}
 }
 
 func main() {
@@ -39,23 +43,37 @@ func main() {
 	}()
 
 	if err != nil {
-		log.Logger.Fatal(err)
+		log.Logger.Errorf("connecting to otel: %w", err)
+		return
 	}
 
-	server := character.NewServerContext(ctx, conf)
+	server, err := character.NewServerContext(ctx, conf)
+	if err != nil {
+		log.Logger.Errorf("creating server context: %w", err)
+		return
+	}
 	grpcServer, gwmux := helpers.InitServerDefaults(server.KeycloakClient, server.GlobalConfig.Keycloak.Realm)
 	address := server.GlobalConfig.Character.Local.Address()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
 	pb.RegisterHealthServiceServer(grpcServer, srv.NewHealthServiceServer())
 	err = pb.RegisterHealthServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
-	helpers.Check(ctx, err, "register health service handler endpoint")
+	if err != nil {
+		log.Logger.Errorf("register health service handler endpoint: %w", err)
+		return
+	}
 
 	css, err := srv.NewCharacterServiceServer(ctx, server)
-	helpers.Check(ctx, err, "create character service server")
+	if err != nil {
+		log.Logger.Errorf("create character service server: %w", err)
+		return
+	}
 	pb.RegisterCharacterServiceServer(grpcServer, css)
 	err = pb.RegisterCharacterServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
-	helpers.Check(ctx, err, "registering character service handler endpoint")
+	if err != nil {
+		log.Logger.Errorf("registering character service handler endpoint: %w", err)
+		return
+	}
 
 	srvErr := make(chan error, 1)
 	go func() {

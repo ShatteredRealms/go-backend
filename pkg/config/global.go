@@ -78,7 +78,7 @@ type AgonesConfig struct {
 	Allocator  ServerAddress `yaml:"allocator"`
 }
 
-func NewGlobalConfig(ctx context.Context) *GlobalConfig {
+func NewGlobalConfig(ctx context.Context) (*GlobalConfig, error) {
 	config := &GlobalConfig{
 		Character: CharacterServer{
 			SROServer: SROServer{
@@ -206,11 +206,13 @@ func NewGlobalConfig(ctx context.Context) *GlobalConfig {
 	viper.AddConfigPath(".")
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigParseError); ok {
-			log.Logger.WithContext(ctx).Fatalf("read app config parse error: %v", err)
+			log.Logger.WithContext(ctx).Errorf("read app config parse error: %v", err)
+			return nil, err
 		} else if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Logger.WithContext(ctx).Warnf("no config found, using default: %v", err)
+			log.Logger.WithContext(ctx).Infof("Using default config: %v", err)
 		} else {
-			log.Logger.WithContext(ctx).Fatalf("unknown error prasing config : %v", err)
+			log.Logger.WithContext(ctx).Errorf("unknown error prasing config : %v", err)
+			return nil, err
 		}
 	}
 
@@ -220,10 +222,11 @@ func NewGlobalConfig(ctx context.Context) *GlobalConfig {
 
 	// Save to struct
 	if err := viper.Unmarshal(&config); err != nil {
-		log.Logger.WithContext(ctx).Fatalf("unmarshal appConfig: %v", err)
+		log.Logger.WithContext(ctx).Errorf("unmarshal appConfig: %v", err)
+		return nil, err
 	}
 
-	return config
+	return config, nil
 }
 
 func BindEnvsToStruct(obj interface{}) {

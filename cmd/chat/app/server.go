@@ -2,6 +2,7 @@ package chat
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
@@ -25,7 +26,7 @@ type ChatServerContext struct {
 	Tracer           trace.Tracer
 }
 
-func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *ChatServerContext {
+func NewServerContext(ctx context.Context, conf *config.GlobalConfig) (*ChatServerContext, error) {
 	server := &ChatServerContext{
 		GlobalConfig:   conf,
 		Tracer:         otel.Tracer("ChatService"),
@@ -33,16 +34,22 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *ChatServe
 	}
 
 	db, err := repository.ConnectDB(conf.Chat.Postgres)
-	helpers.Check(ctx, err, "connecting to database")
+	if err != nil {
+		return nil, fmt.Errorf("connecting to postgres database: %w", err)
+	}
 
 	repo := repository.NewChatRepository(db)
 	chatService, err := service.NewChatService(ctx, repo, conf.Chat.Kafka)
-	helpers.Check(ctx, err, "chat service")
+	if err != nil {
+		return nil, fmt.Errorf("creating chat service: %w", err)
+	}
 	server.ChatService = chatService
 
 	charactersConn, err := helpers.GrpcClientWithOtel(conf.Character.Remote.Address())
-	helpers.Check(ctx, err, "connect characters service")
+	if err != nil {
+		return nil, fmt.Errorf("connecting characters service: %w", err)
+	}
 	server.CharacterService = pb.NewCharacterServiceClient(charactersConn)
 
-	return server
+	return server, nil
 }

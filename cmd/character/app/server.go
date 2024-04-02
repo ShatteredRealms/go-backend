@@ -2,10 +2,10 @@ package character
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
-	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/ShatteredRealms/go-backend/pkg/service"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -27,7 +27,7 @@ type CharactersServerContext struct {
 	Tracer           trace.Tracer
 }
 
-func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *CharactersServerContext {
+func NewServerContext(ctx context.Context, conf *config.GlobalConfig) (*CharactersServerContext, error) {
 	server := &CharactersServerContext{
 		GlobalConfig:   conf,
 		Tracer:         otel.Tracer("CharactersService"),
@@ -35,21 +35,29 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *Character
 	}
 
 	postgres, err := repository.ConnectDB(server.GlobalConfig.Character.Postgres)
-	helpers.Check(ctx, err, "connecting to postgres database")
+	if err != nil {
+		return nil, fmt.Errorf("connecting to postgres: %w", err)
+	}
 
 	characterRepo, err := repository.NewCharacterRepository(postgres)
-	helpers.Check(ctx, err, "character repo")
+	if err != nil {
+		return nil, fmt.Errorf("postgres: %w", err)
+	}
 	characterService, err := service.NewCharacterService(ctx, characterRepo)
-	helpers.Check(ctx, err, "character serivce")
+	if err != nil {
+		return nil, fmt.Errorf("character service: %w", err)
+	}
 	server.CharacterService = characterService
 
 	opts := options.Client()
 	opts.Monitor = otelmongo.NewMonitor()
 	opts.ApplyURI(server.GlobalConfig.Character.Mongo.Master.MongoDSN())
 	mongoDb, err := mongo.Connect(ctx, opts)
-	helpers.Check(ctx, err, "connecting to mongo database")
+	if err != nil {
+		return nil, fmt.Errorf("connecting to mongo database: %w", err)
+	}
 	invRepo := repository.NewInventoryRepository(mongoDb.Database(server.GlobalConfig.Character.Mongo.Master.Name))
 	server.InventoryService = service.NewInventoryService(invRepo)
 
-	return server
+	return server, nil
 }

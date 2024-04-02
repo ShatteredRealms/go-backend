@@ -61,7 +61,7 @@ var _ = Describe("Chat", func() {
 		mockChatService = mocks.NewMockChatService(mockController)
 
 		chatCtx = &app.ChatServerContext{
-			GlobalConfig:     conf,
+			GlobalConfig:     globalConfig,
 			ChatService:      mockChatService,
 			CharacterService: mockCharService,
 			KeycloakClient:   keycloak,

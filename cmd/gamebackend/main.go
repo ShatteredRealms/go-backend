@@ -23,7 +23,11 @@ var (
 )
 
 func init() {
-	conf = config.NewGlobalConfig(context.Background())
+	var err error
+	conf, err = config.NewGlobalConfig(context.Background())
+	if err != nil {
+		log.Logger.Fatalf("initialization: %v", err)
+	}
 }
 
 func main() {
@@ -39,28 +43,49 @@ func main() {
 	}()
 
 	if err != nil {
-		log.Logger.Fatal(err)
+		log.Logger.Errorf("connecting to otel: %w", err)
+		return
 	}
-	server := gamebackend.NewServerContext(ctx, conf)
+
+	server, err := gamebackend.NewServerContext(ctx, conf)
+	if err != nil {
+		log.Logger.Errorf("creating server context: %w", err)
+		return
+	}
 	grpcServer, gwmux := helpers.InitServerDefaults(server.KeycloakClient, server.GlobalConfig.Keycloak.Realm)
 	address := server.GlobalConfig.GameBackend.Local.Address()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
 	pb.RegisterHealthServiceServer(grpcServer, srv.NewHealthServiceServer())
 	err = pb.RegisterHealthServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
-	helpers.Check(ctx, err, "register health service handler endpoint")
+	if err != nil {
+		log.Logger.Errorf("register health service handler endpoint: %w", err)
+		return
+	}
 
 	connServer, err := srv.NewConnectionServiceServer(ctx, server)
-	helpers.Check(ctx, err, "creating connection service server")
+	if err != nil {
+		log.Logger.Errorf("creating connection service server: %w", err)
+		return
+	}
 	pb.RegisterConnectionServiceServer(grpcServer, connServer)
 	err = pb.RegisterConnectionServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
-	helpers.Check(ctx, err, "register connection service handler endpoint")
+	if err != nil {
+		log.Logger.Errorf("register connection service handler endpoint: %w", err)
+		return
+	}
 
 	serverManagerServer, err := srv.NewServerManagerServiceServer(ctx, server)
-	helpers.Check(ctx, err, "creating server manager service server")
+	if err != nil {
+		log.Logger.Errorf("creating server manager service server: %w", err)
+		return
+	}
 	pb.RegisterServerManagerServiceServer(grpcServer, serverManagerServer)
 	err = pb.RegisterServerManagerServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
-	helpers.Check(ctx, err, "register server manager service handler endpoint")
+	if err != nil {
+		log.Logger.Errorf("register server manager service handler endpoint: %w", err)
+		return
+	}
 
 	srvErr := make(chan error, 1)
 	go func() {
@@ -69,7 +94,7 @@ func main() {
 
 	select {
 	case err = <-srvErr:
-		log.Logger.Fatalf("listen server: %v", err)
+		log.Logger.Errorf("listen server: %v", err)
 
 	case <-ctx.Done():
 		log.Logger.Info("Server canceled by user input.")
