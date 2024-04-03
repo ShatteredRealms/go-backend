@@ -6,6 +6,7 @@ import (
 
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
+	"github.com/go-gorm/caches/v4"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/lib/pq"
@@ -55,10 +56,24 @@ func ConnectDB(pool config.DBPoolConfig) (*gorm.DB, error) {
 			Replicas: replicas,
 			Policy:   dbresolver.RandomPolicy{},
 		}))
+
+		if err != nil {
+			return nil, fmt.Errorf("db replica resolver: %w", err)
+		}
 	}
 
 	if err := db.Use(otelgorm.NewPlugin(otelgorm.WithDBName(pool.Master.Name))); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("opentelemetry: %w", err)
+	}
+
+	cachesPlugin := caches.Caches{
+		Conf: &caches.Config{
+			Easer:  true,
+			Cacher: NewMemoryCacher(),
+		},
+	}
+	if err = db.Use(&cachesPlugin); err != nil {
+		return nil, fmt.Errorf("memory cacher: %w", err)
 	}
 
 	return db, err

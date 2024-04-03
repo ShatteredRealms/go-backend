@@ -2,8 +2,9 @@ package repository
 
 import (
 	"context"
-	"github.com/go-gorm/caches/v4"
 	"sync"
+
+	"github.com/go-gorm/caches/v4"
 )
 
 type memoryCacher struct {
@@ -14,6 +15,12 @@ func (c *memoryCacher) init() {
 	if c.store == nil {
 		c.store = &sync.Map{}
 	}
+}
+
+func NewMemoryCacher() caches.Cacher {
+	cacher := &memoryCacher{}
+	cacher.init()
+	return cacher
 }
 
 func (c *memoryCacher) Get(ctx context.Context, key string, q *caches.Query[any]) (*caches.Query[any], error) {
