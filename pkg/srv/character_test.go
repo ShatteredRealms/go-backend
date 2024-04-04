@@ -5,6 +5,7 @@ import (
 	"time"
 
 	characterApp "github.com/ShatteredRealms/go-backend/cmd/character/app"
+	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/mocks"
 	"github.com/ShatteredRealms/go-backend/pkg/model/character"
@@ -27,7 +28,7 @@ var _ = Describe("Character server", func() {
 		mockController  *gomock.Controller
 		mockCharService *mocks.MockCharacterService
 		mockInvService  *mocks.MockInventoryService
-		charCtx         *characterApp.CharactersServerContext
+		charCtx         *characterApp.CharacterServerContext
 
 		server pb.CharacterServiceServer
 		ctx    = context.Background()
@@ -42,12 +43,15 @@ var _ = Describe("Character server", func() {
 		mockCharService = mocks.NewMockCharacterService(mockController)
 		mockInvService = mocks.NewMockInventoryService(mockController)
 
-		charCtx = &characterApp.CharactersServerContext{
-			GlobalConfig:     globalConfig,
+		charCtx = &characterApp.CharacterServerContext{
+			ServerContext: &config.ServerContext{
+				GlobalConfig:   globalConfig,
+				KeycloakClient: keycloak,
+				Tracer:         otel.Tracer("test-character"),
+				RefSROServer:   &globalConfig.Character.SROServer,
+			},
 			CharacterService: mockCharService,
 			InventoryService: mockInvService,
-			KeycloakClient:   keycloak,
-			Tracer:           otel.Tracer("test-character"),
 		}
 
 		var err error

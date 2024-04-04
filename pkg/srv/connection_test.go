@@ -49,13 +49,16 @@ var _ = Describe("Connection server (local)", func() {
 
 		globalConfig.GameBackend.Mode = config.LocalMode
 		conf = &app.GameBackendServerContext{
-			GlobalConfig:       globalConfig,
+			ServerContext: &config.ServerContext{
+				GlobalConfig:   globalConfig,
+				KeycloakClient: keycloak,
+				Tracer:         otel.Tracer("test-connection"),
+				RefSROServer:   &globalConfig.GameBackend.SROServer,
+			},
 			CharacterClient:    mockCharClient,
 			ChatClient:         mockChatClient,
 			GamebackendService: mockService,
 			AgonesClient:       nil,
-			KeycloakClient:     keycloak,
-			Tracer:             otel.Tracer("test-connection"),
 		}
 
 		server, err = srv.NewConnectionServiceServer(ctx, conf)

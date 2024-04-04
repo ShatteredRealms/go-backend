@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/ShatteredRealms/go-backend/pkg/service"
-	"go.opentelemetry.io/otel"
+	"github.com/WilSimpson/gocloak/v13"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -19,19 +18,26 @@ var (
 )
 
 type ChatServerContext struct {
-	GlobalConfig     *config.GlobalConfig
+	*config.ServerContext
 	ChatService      service.ChatService
 	CharacterService pb.CharacterServiceClient
-	KeycloakClient   *gocloak.GoCloak
-	Tracer           trace.Tracer
 }
 
-func NewServerContext(ctx context.Context, conf *config.GlobalConfig) (*ChatServerContext, error) {
+func NewServerContext(ctx context.Context, conf *config.GlobalConfig, tracer trace.Tracer) (*ChatServerContext, error) {
 	server := &ChatServerContext{
-		GlobalConfig:   conf,
-		Tracer:         otel.Tracer("ChatService"),
-		KeycloakClient: gocloak.NewClient(conf.Keycloak.BaseURL),
+		ServerContext: &config.ServerContext{
+			GlobalConfig:   conf,
+			Tracer:         tracer,
+			KeycloakClient: gocloak.NewClient(conf.Keycloak.BaseURL),
+			RefSROServer:   &conf.Chat.SROServer,
+		},
+		ChatService:      nil,
+		CharacterService: nil,
 	}
+	ctx, span := server.Tracer.Start(ctx, "server.connect")
+	defer span.End()
+
+	server.KeycloakClient.RegisterMiddlewares(gocloak.OpenTelemetryMiddleware)
 
 	db, err := repository.ConnectDB(conf.Chat.Postgres)
 	if err != nil {

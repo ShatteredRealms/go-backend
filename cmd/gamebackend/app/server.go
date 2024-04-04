@@ -9,13 +9,12 @@ import (
 	"os"
 
 	"agones.dev/agones/pkg/client/clientset/versioned"
-	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/ShatteredRealms/go-backend/pkg/service"
-	"go.opentelemetry.io/otel"
+	"github.com/WilSimpson/gocloak/v13"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -27,21 +26,30 @@ var (
 )
 
 type GameBackendServerContext struct {
-	GlobalConfig       *config.GlobalConfig
+	*config.ServerContext
 	CharacterClient    pb.CharacterServiceClient
 	ChatClient         pb.ChatServiceClient
 	GamebackendService service.GamebackendService
-	KeycloakClient     *gocloak.GoCloak
 	AgonesClient       versioned.Interface
-	Tracer             trace.Tracer
 }
 
-func NewServerContext(ctx context.Context, conf *config.GlobalConfig) (*GameBackendServerContext, error) {
+func NewServerContext(ctx context.Context, conf *config.GlobalConfig, tracer trace.Tracer) (*GameBackendServerContext, error) {
 	server := &GameBackendServerContext{
-		GlobalConfig:   conf,
-		Tracer:         otel.Tracer("GameBackendService"),
-		KeycloakClient: gocloak.NewClient(conf.Keycloak.BaseURL),
+		ServerContext: &config.ServerContext{
+			GlobalConfig:   conf,
+			Tracer:         tracer,
+			KeycloakClient: gocloak.NewClient(conf.Keycloak.BaseURL),
+			RefSROServer:   &conf.GameBackend.SROServer,
+		},
+		CharacterClient:    nil,
+		ChatClient:         nil,
+		GamebackendService: nil,
+		AgonesClient:       nil,
 	}
+	ctx, span := server.Tracer.Start(ctx, "server.new")
+	defer span.End()
+
+	server.KeycloakClient.RegisterMiddlewares(gocloak.OpenTelemetryMiddleware)
 
 	charactersService, err := helpers.GrpcClientWithOtel(conf.Character.Remote.Address())
 	if err != nil {

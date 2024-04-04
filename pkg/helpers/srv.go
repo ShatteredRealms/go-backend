@@ -5,6 +5,7 @@ import (
 
 	sroauth "github.com/ShatteredRealms/go-backend/pkg/auth"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
+	"github.com/WilSimpson/gocloak/v13"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
@@ -28,9 +29,8 @@ func GrpcClientWithOtel(address string) (*grpc.ClientConn, error) {
 	return grpc.Dial(address, GrpcDialOpts()...)
 }
 
-func InitServerDefaults(kcClient sroauth.KeycloakClient, realm string) (*grpc.Server, *runtime.ServeMux) {
+func InitServerDefaults(kcClient gocloak.KeycloakClient, realm string) (*grpc.Server, *runtime.ServeMux) {
 	opts := []logging.Option{
-		// logging.WithLogOnEvents(logging.StartCall),
 		logging.WithCodes(logging.DefaultErrorToCode),
 		logging.WithFieldsFromContextAndCallMeta(logSroData),
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/srv"
 	"github.com/ShatteredRealms/go-backend/pkg/telemetry"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -43,13 +44,17 @@ func main() {
 	}()
 
 	if err != nil {
-		log.Logger.Errorf("connecting to otel: %w", err)
+		log.Logger.WithContext(ctx).Errorf("connecting to otel: %v", err)
 		return
 	}
 
-	server, err := gamebackend.NewServerContext(ctx, conf)
+	tracer := otel.Tracer("GameBackendService")
+	ctx, span := tracer.Start(ctx, "initialize")
+	defer span.End()
+
+	server, err := gamebackend.NewServerContext(ctx, conf, tracer)
 	if err != nil {
-		log.Logger.Errorf("creating server context: %w", err)
+		log.Logger.WithContext(ctx).Errorf("creating server context: %v", err)
 		return
 	}
 	grpcServer, gwmux := helpers.InitServerDefaults(server.KeycloakClient, server.GlobalConfig.Keycloak.Realm)
@@ -59,34 +64,35 @@ func main() {
 	pb.RegisterHealthServiceServer(grpcServer, srv.NewHealthServiceServer())
 	err = pb.RegisterHealthServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
 	if err != nil {
-		log.Logger.Errorf("register health service handler endpoint: %w", err)
+		log.Logger.WithContext(ctx).Errorf("register health service handler endpoint: %v", err)
 		return
 	}
 
 	connServer, err := srv.NewConnectionServiceServer(ctx, server)
 	if err != nil {
-		log.Logger.Errorf("creating connection service server: %w", err)
+		log.Logger.WithContext(ctx).Errorf("creating connection service server: %v", err)
 		return
 	}
 	pb.RegisterConnectionServiceServer(grpcServer, connServer)
 	err = pb.RegisterConnectionServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
 	if err != nil {
-		log.Logger.Errorf("register connection service handler endpoint: %w", err)
+		log.Logger.WithContext(ctx).Errorf("register connection service handler endpoint: %v", err)
 		return
 	}
 
 	serverManagerServer, err := srv.NewServerManagerServiceServer(ctx, server)
 	if err != nil {
-		log.Logger.Errorf("creating server manager service server: %w", err)
+		log.Logger.WithContext(ctx).Errorf("creating server manager service server: %v", err)
 		return
 	}
 	pb.RegisterServerManagerServiceServer(grpcServer, serverManagerServer)
 	err = pb.RegisterServerManagerServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
 	if err != nil {
-		log.Logger.Errorf("register server manager service handler endpoint: %w", err)
+		log.Logger.WithContext(ctx).Errorf("register server manager service handler endpoint: %v", err)
 		return
 	}
 
+	span.End()
 	srvErr := make(chan error, 1)
 	go func() {
 		srvErr <- helpers.StartServer(ctx, grpcServer, gwmux, server.GlobalConfig.GameBackend.Local.Address())
@@ -94,7 +100,7 @@ func main() {
 
 	select {
 	case err = <-srvErr:
-		log.Logger.Errorf("listen server: %v", err)
+		log.Logger.WithContext(ctx).Errorf("listen server: %v", err)
 
 	case <-ctx.Done():
 		log.Logger.Info("Server canceled by user input.")

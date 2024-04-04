@@ -61,11 +61,14 @@ var _ = Describe("Chat", func() {
 		mockChatService = mocks.NewMockChatService(mockController)
 
 		chatCtx = &app.ChatServerContext{
-			GlobalConfig:     globalConfig,
+			ServerContext: &config.ServerContext{
+				GlobalConfig:   globalConfig,
+				KeycloakClient: keycloak,
+				Tracer:         otel.Tracer("test-chat"),
+				RefSROServer:   &globalConfig.Chat.SROServer,
+			},
 			ChatService:      mockChatService,
 			CharacterService: mockCharService,
-			KeycloakClient:   keycloak,
-			Tracer:           otel.Tracer("test-character"),
 		}
 
 		var err error

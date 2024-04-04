@@ -5,6 +5,7 @@ import (
 
 	"github.com/ShatteredRealms/go-backend/pkg/common"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
+	"github.com/WilSimpson/gocloak/v13"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 )
@@ -25,7 +26,7 @@ func RegisterPublicServiceMethods(methods ...string) {
 	}
 }
 
-func AuthFunc(kcClient KeycloakClient, realm string) auth.AuthFunc {
+func AuthFunc(kcClient gocloak.KeycloakClient, realm string) auth.AuthFunc {
 	return func(ctx context.Context) (context.Context, error) {
 		_, claims, err := verifyClaims(ctx, kcClient, realm)
 

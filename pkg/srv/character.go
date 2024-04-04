@@ -2,13 +2,12 @@ package srv
 
 import (
 	context "context"
-	"fmt"
 	"reflect"
 
-	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/auth"
 	"github.com/ShatteredRealms/go-backend/pkg/common"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
+	"github.com/WilSimpson/gocloak/v13"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -21,7 +20,7 @@ import (
 
 type charactersServiceServer struct {
 	pb.UnimplementedCharacterServiceServer
-	server *characterApp.CharactersServerContext
+	server *characterApp.CharacterServerContext
 }
 
 var (
@@ -365,23 +364,10 @@ func (s *charactersServiceServer) SetInventory(
 
 func NewCharacterServiceServer(
 	ctx context.Context,
-	server *characterApp.CharactersServerContext,
+	server *characterApp.CharacterServerContext,
 ) (pb.CharacterServiceServer, error) {
-	token, err := server.KeycloakClient.LoginClient(
-		ctx,
-		server.GlobalConfig.Character.Keycloak.ClientId,
-		server.GlobalConfig.Character.Keycloak.ClientSecret,
-		server.GlobalConfig.Keycloak.Realm,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("login keycloak: %v", err)
-	}
-
-	err = createRoles(ctx,
-		server.KeycloakClient,
-		token.AccessToken,
-		server.GlobalConfig.Keycloak.Realm,
-		server.GlobalConfig.Character.Keycloak.Id,
+	err := createRoles(ctx,
+		server.ServerContext,
 		&CharacterRoles,
 	)
 	if err != nil {
@@ -391,23 +377,6 @@ func NewCharacterServiceServer(
 	return &charactersServiceServer{
 		server: server,
 	}, nil
-}
-
-func (s charactersServiceServer) serverContext(ctx context.Context) (context.Context, error) {
-	token, err := s.server.KeycloakClient.LoginClient(
-		ctx,
-		s.server.GlobalConfig.Character.Keycloak.ClientId,
-		s.server.GlobalConfig.Character.Keycloak.ClientSecret,
-		s.server.GlobalConfig.Keycloak.Realm,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return auth.AddOutgoingToken(
-		ctx,
-		token.AccessToken,
-	), nil
 }
 
 func (s charactersServiceServer) getCharacterTargetId(

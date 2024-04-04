@@ -3,9 +3,7 @@ package srv
 import (
 	"context"
 	"errors"
-	"fmt"
 
-	"github.com/Nerzal/gocloak/v13"
 	chatApp "github.com/ShatteredRealms/go-backend/cmd/chat/app"
 	"github.com/ShatteredRealms/go-backend/pkg/auth"
 	"github.com/ShatteredRealms/go-backend/pkg/common"
@@ -14,6 +12,7 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/model/character"
 	"github.com/ShatteredRealms/go-backend/pkg/model/chat"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/WilSimpson/gocloak/v13"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -459,21 +458,8 @@ func NewChatServiceServer(
 	ctx context.Context,
 	server *chatApp.ChatServerContext,
 ) (pb.ChatServiceServer, error) {
-	token, err := server.KeycloakClient.LoginClient(
-		ctx,
-		server.GlobalConfig.Chat.Keycloak.ClientId,
-		server.GlobalConfig.Chat.Keycloak.ClientSecret,
-		server.GlobalConfig.Keycloak.Realm,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("login keycloak: %v", err)
-	}
-
-	err = createRoles(ctx,
-		server.KeycloakClient,
-		token.AccessToken,
-		server.GlobalConfig.Keycloak.Realm,
-		server.GlobalConfig.Chat.Keycloak.Id,
+	err := createRoles(ctx,
+		server.ServerContext,
 		&ChatRoles,
 	)
 	if err != nil {

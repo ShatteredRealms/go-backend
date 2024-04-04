@@ -3,8 +3,8 @@ package auth_test
 import (
 	"context"
 
-	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/auth"
+	"github.com/WilSimpson/gocloak/v13"
 	"github.com/bxcodec/faker/v4"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	. "github.com/onsi/ginkgo/v2"

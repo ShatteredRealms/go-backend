@@ -57,13 +57,16 @@ var _ = Describe("Servermanager server", func() {
 		mockAgones = testing.NewMocks()
 
 		conf = &app.GameBackendServerContext{
-			GlobalConfig:       globalConfig,
+			ServerContext: &config.ServerContext{
+				GlobalConfig:   globalConfig,
+				KeycloakClient: keycloak,
+				Tracer:         otel.Tracer("test-servermanager"),
+				RefSROServer:   &globalConfig.GameBackend.SROServer,
+			},
 			CharacterClient:    mockCharClient,
 			ChatClient:         mockChatClient,
 			GamebackendService: mockService,
 			AgonesClient:       mockAgones.AgonesClient,
-			KeycloakClient:     keycloak,
-			Tracer:             otel.Tracer("test-servermanager"),
 		}
 		conf.GlobalConfig.GameBackend.Mode = config.LocalMode
 

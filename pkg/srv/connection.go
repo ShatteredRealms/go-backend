@@ -7,13 +7,13 @@ import (
 	v1 "agones.dev/agones/pkg/apis/agones/v1"
 	aav1 "agones.dev/agones/pkg/apis/allocation/v1"
 	"agones.dev/agones/pkg/client/clientset/versioned"
-	"github.com/Nerzal/gocloak/v13"
 	gamebackend "github.com/ShatteredRealms/go-backend/cmd/gamebackend/app"
 	"github.com/ShatteredRealms/go-backend/pkg/auth"
 	"github.com/ShatteredRealms/go-backend/pkg/common"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
+	"github.com/WilSimpson/gocloak/v13"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
@@ -293,21 +293,8 @@ func NewConnectionServiceServer(
 	ctx context.Context,
 	server *gamebackend.GameBackendServerContext,
 ) (pb.ConnectionServiceServer, error) {
-	token, err := server.KeycloakClient.LoginClient(
-		ctx,
-		server.GlobalConfig.GameBackend.Keycloak.ClientId,
-		server.GlobalConfig.GameBackend.Keycloak.ClientSecret,
-		server.GlobalConfig.Keycloak.Realm,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("login keycloak: %v", err)
-	}
-
-	err = createRoles(ctx,
-		server.KeycloakClient,
-		token.AccessToken,
-		server.GlobalConfig.Keycloak.Realm,
-		server.GlobalConfig.GameBackend.Keycloak.Id,
+	err := createRoles(ctx,
+		server.ServerContext,
 		&ConnectionRoles,
 	)
 	if err != nil {

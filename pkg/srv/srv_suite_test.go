@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/auth"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	testdb "github.com/ShatteredRealms/go-backend/test/db"
+	"github.com/WilSimpson/gocloak/v13"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus/hooks/test"

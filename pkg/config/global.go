@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -76,6 +77,11 @@ type AgonesConfig struct {
 	CaCertFile string        `yaml:"caCertFile"`
 	Namespace  string        `yaml:"namespace"`
 	Allocator  ServerAddress `yaml:"allocator"`
+}
+
+type ServerAddress struct {
+	Port uint   `yaml:"port"`
+	Host string `yaml:"host"`
 }
 
 func NewGlobalConfig(ctx context.Context) (*GlobalConfig, error) {
@@ -265,4 +271,8 @@ func bindRecursive(key string, val reflect.Value) {
 
 		bindRecursive(key+newKey, val.Field(i))
 	}
+}
+
+func (s *ServerAddress) Address() string {
+	return fmt.Sprintf("%s:%d", s.Host, s.Port)
 }
