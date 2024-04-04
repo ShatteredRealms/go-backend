@@ -44,7 +44,7 @@ func main() {
 	}()
 
 	if err != nil {
-		log.Logger.WithContext(ctx).Errorf("connecting to otel: %w", err)
+		log.Logger.WithContext(ctx).Errorf("connecting to otel: %v", err)
 		return
 	}
 
@@ -54,7 +54,7 @@ func main() {
 
 	server, err := chat.NewServerContext(ctx, conf, tracer)
 	if err != nil {
-		log.Logger.WithContext(ctx).Errorf("creating server context: %w", err)
+		log.Logger.WithContext(ctx).Errorf("creating server context: %v", err)
 		return
 	}
 	grpcServer, gwmux := helpers.InitServerDefaults(server.KeycloakClient, server.GlobalConfig.Keycloak.Realm)
@@ -64,19 +64,19 @@ func main() {
 	pb.RegisterHealthServiceServer(grpcServer, srv.NewHealthServiceServer())
 	err = pb.RegisterHealthServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
 	if err != nil {
-		log.Logger.WithContext(ctx).Errorf("register health service handler endpoint: %w", err)
+		log.Logger.WithContext(ctx).Errorf("register health service handler endpoint: %v", err)
 		return
 	}
 
 	srvService, err := srv.NewChatServiceServer(ctx, server)
 	if err != nil {
-		log.Logger.WithContext(ctx).Errorf("create chat service: %w", err)
+		log.Logger.WithContext(ctx).Errorf("create chat service: %v", err)
 		return
 	}
 	pb.RegisterChatServiceServer(grpcServer, srvService)
 	err = pb.RegisterChatServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
 	if err != nil {
-		log.Logger.WithContext(ctx).Errorf("register chat service handler endpoint: %w", err)
+		log.Logger.WithContext(ctx).Errorf("register chat service handler endpoint: %v", err)
 		return
 	}
 

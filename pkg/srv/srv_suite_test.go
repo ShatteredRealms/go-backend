@@ -39,7 +39,7 @@ var (
 		LastName:      gocloak.StringP("adminlastname"),
 		Email:         gocloak.StringP("admin@example.com"),
 		Credentials: &[]gocloak.CredentialRepresentation{
-			gocloak.CredentialRepresentation{
+			{
 				Temporary: gocloak.BoolP(false),
 				Type:      gocloak.StringP("password"),
 				Value:     gocloak.StringP("Password1!"),
@@ -56,7 +56,7 @@ var (
 		LastName:      gocloak.StringP("playerlastname"),
 		Email:         gocloak.StringP("player@example.com"),
 		Credentials: &[]gocloak.CredentialRepresentation{
-			gocloak.CredentialRepresentation{
+			{
 				Temporary: gocloak.BoolP(false),
 				Type:      gocloak.StringP("password"),
 				Value:     gocloak.StringP("Password1!"),
@@ -73,7 +73,7 @@ var (
 		LastName:      gocloak.StringP("guestlastname"),
 		Email:         gocloak.StringP("guest@example.com"),
 		Credentials: &[]gocloak.CredentialRepresentation{
-			gocloak.CredentialRepresentation{
+			{
 				Temporary: gocloak.BoolP(false),
 				Type:      gocloak.StringP("password"),
 				Value:     gocloak.StringP("Password1!"),
