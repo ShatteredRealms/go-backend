@@ -7,10 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Nerzal/gocloak/v13"
+	"github.com/ShatteredRealms/go-backend/pkg/auth"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	testdb "github.com/ShatteredRealms/go-backend/test/db"
+	"github.com/WilSimpson/gocloak/v13"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -23,8 +24,8 @@ const (
 
 var (
 	// Global
-	conf    *config.GlobalConfig
-	fakeErr = fmt.Errorf("error")
+	globalConfig *config.GlobalConfig
+	fakeErr      = fmt.Errorf("error")
 
 	// Keycloak
 	keycloak *gocloak.GoCloak
@@ -38,7 +39,7 @@ var (
 		LastName:      gocloak.StringP("adminlastname"),
 		Email:         gocloak.StringP("admin@example.com"),
 		Credentials: &[]gocloak.CredentialRepresentation{
-			gocloak.CredentialRepresentation{
+			{
 				Temporary: gocloak.BoolP(false),
 				Type:      gocloak.StringP("password"),
 				Value:     gocloak.StringP("Password1!"),
@@ -55,7 +56,7 @@ var (
 		LastName:      gocloak.StringP("playerlastname"),
 		Email:         gocloak.StringP("player@example.com"),
 		Credentials: &[]gocloak.CredentialRepresentation{
-			gocloak.CredentialRepresentation{
+			{
 				Temporary: gocloak.BoolP(false),
 				Type:      gocloak.StringP("password"),
 				Value:     gocloak.StringP("Password1!"),
@@ -72,7 +73,7 @@ var (
 		LastName:      gocloak.StringP("guestlastname"),
 		Email:         gocloak.StringP("guest@example.com"),
 		Credentials: &[]gocloak.CredentialRepresentation{
-			gocloak.CredentialRepresentation{
+			{
 				Temporary: gocloak.BoolP(false),
 				Type:      gocloak.StringP("password"),
 				Value:     gocloak.StringP("Password1!"),
@@ -107,33 +108,34 @@ func TestSrv(t *testing.T) {
 
 		keycloak = gocloak.NewClient(string(host))
 
-		conf = config.NewGlobalConfig(context.Background())
+		globalConfig, err = config.NewGlobalConfig(context.Background())
+		Expect(err).NotTo(HaveOccurred())
 		clientToken, err = keycloak.LoginClient(
 			context.Background(),
-			conf.Character.Keycloak.ClientId,
-			conf.Character.Keycloak.ClientSecret,
-			conf.Keycloak.Realm,
+			globalConfig.Character.Keycloak.ClientId,
+			globalConfig.Character.Keycloak.ClientSecret,
+			globalConfig.Keycloak.Realm,
 		)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Eventually(func() error {
-		*admin.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, conf.Keycloak.Realm, admin)
+		*admin.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, globalConfig.Keycloak.Realm, admin)
 		Expect(err).NotTo(HaveOccurred())
 		// }).Within(time.Minute).ProbeEvery(time.Second).ShouldNot(HaveOccurred())
-		*player.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, conf.Keycloak.Realm, player)
+		*player.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, globalConfig.Keycloak.Realm, player)
 		Expect(err).NotTo(HaveOccurred())
-		*guest.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, conf.Keycloak.Realm, guest)
+		*guest.ID, err = keycloak.CreateUser(context.Background(), clientToken.AccessToken, globalConfig.Keycloak.Realm, guest)
 		Expect(err).NotTo(HaveOccurred())
 
-		saRole, err := keycloak.GetRealmRole(context.Background(), clientToken.AccessToken, conf.Keycloak.Realm, "super admin")
+		saRole, err := keycloak.GetRealmRole(context.Background(), clientToken.AccessToken, globalConfig.Keycloak.Realm, "super admin")
 		Expect(err).NotTo(HaveOccurred())
-		userRole, err := keycloak.GetRealmRole(context.Background(), clientToken.AccessToken, conf.Keycloak.Realm, "user")
+		userRole, err := keycloak.GetRealmRole(context.Background(), clientToken.AccessToken, globalConfig.Keycloak.Realm, "user")
 		Expect(err).NotTo(HaveOccurred())
 
 		err = keycloak.AddRealmRoleToUser(
 			context.Background(),
 			clientToken.AccessToken,
-			conf.Keycloak.Realm,
+			globalConfig.Keycloak.Realm,
 			*admin.ID,
 			[]gocloak.Role{*saRole},
 		)
@@ -141,7 +143,7 @@ func TestSrv(t *testing.T) {
 		err = keycloak.AddRealmRoleToUser(
 			context.Background(),
 			clientToken.AccessToken,
-			conf.Keycloak.Realm,
+			globalConfig.Keycloak.Realm,
 			*player.ID,
 			[]gocloak.Role{*userRole},
 		)
@@ -164,34 +166,35 @@ func TestSrv(t *testing.T) {
 		kafkaPort = uint(kafkaPort64)
 
 		keycloak = gocloak.NewClient(string(host))
-		conf = config.NewGlobalConfig(context.Background())
+		globalConfig, err = config.NewGlobalConfig(context.Background())
+		Expect(err).NotTo(HaveOccurred())
 
 		clientToken, err = keycloak.LoginClient(
 			context.Background(),
-			conf.Character.Keycloak.ClientId,
-			conf.Character.Keycloak.ClientSecret,
-			conf.Keycloak.Realm,
+			globalConfig.Character.Keycloak.ClientId,
+			globalConfig.Character.Keycloak.ClientSecret,
+			globalConfig.Keycloak.Realm,
 		)
 		Expect(err).NotTo(HaveOccurred())
-		adminToken, err = keycloak.GetToken(context.Background(), conf.Keycloak.Realm, gocloak.TokenOptions{
-			ClientID:     &conf.Character.Keycloak.ClientId,
-			ClientSecret: &conf.Character.Keycloak.ClientSecret,
+		adminToken, err = keycloak.GetToken(context.Background(), globalConfig.Keycloak.Realm, gocloak.TokenOptions{
+			ClientID:     &globalConfig.Character.Keycloak.ClientId,
+			ClientSecret: &globalConfig.Character.Keycloak.ClientSecret,
 			GrantType:    gocloak.StringP("password"),
 			Username:     admin.Username,
 			Password:     gocloak.StringP("Password1!"),
 		})
 		Expect(err).NotTo(HaveOccurred())
-		playerToken, err = keycloak.GetToken(context.Background(), conf.Keycloak.Realm, gocloak.TokenOptions{
-			ClientID:     &conf.Character.Keycloak.ClientId,
-			ClientSecret: &conf.Character.Keycloak.ClientSecret,
+		playerToken, err = keycloak.GetToken(context.Background(), globalConfig.Keycloak.Realm, gocloak.TokenOptions{
+			ClientID:     &globalConfig.Character.Keycloak.ClientId,
+			ClientSecret: &globalConfig.Character.Keycloak.ClientSecret,
 			GrantType:    gocloak.StringP("password"),
 			Username:     player.Username,
 			Password:     gocloak.StringP("Password1!"),
 		})
 		Expect(err).NotTo(HaveOccurred())
-		guestToken, err = keycloak.GetToken(context.Background(), conf.Keycloak.Realm, gocloak.TokenOptions{
-			ClientID:     &conf.Character.Keycloak.ClientId,
-			ClientSecret: &conf.Character.Keycloak.ClientSecret,
+		guestToken, err = keycloak.GetToken(context.Background(), globalConfig.Keycloak.Realm, gocloak.TokenOptions{
+			ClientID:     &globalConfig.Character.Keycloak.ClientId,
+			ClientSecret: &globalConfig.Character.Keycloak.ClientSecret,
 			GrantType:    gocloak.StringP("password"),
 			Username:     guest.Username,
 			Password:     gocloak.StringP("Password1!"),
@@ -201,7 +204,7 @@ func TestSrv(t *testing.T) {
 		admins, err := keycloak.GetUsers(
 			context.Background(),
 			clientToken.AccessToken,
-			conf.Keycloak.Realm,
+			globalConfig.Keycloak.Realm,
 			gocloak.GetUsersParams{Username: admin.Username},
 		)
 		Expect(err).NotTo(HaveOccurred())
@@ -211,7 +214,7 @@ func TestSrv(t *testing.T) {
 		players, err := keycloak.GetUsers(
 			context.Background(),
 			clientToken.AccessToken,
-			conf.Keycloak.Realm,
+			globalConfig.Keycloak.Realm,
 			gocloak.GetUsersParams{Username: player.Username},
 		)
 		Expect(err).NotTo(HaveOccurred())
@@ -221,7 +224,7 @@ func TestSrv(t *testing.T) {
 		guests, err := keycloak.GetUsers(
 			context.Background(),
 			clientToken.AccessToken,
-			conf.Keycloak.Realm,
+			globalConfig.Keycloak.Realm,
 			gocloak.GetUsersParams{Username: guest.Username},
 		)
 		Expect(err).NotTo(HaveOccurred())
@@ -239,18 +242,27 @@ func TestSrv(t *testing.T) {
 				"authorization": "Bearer " + playerToken.AccessToken,
 			},
 		)
+		incAdminCtx, err = auth.AuthFunc(keycloak, globalConfig.Keycloak.Realm)(incAdminCtx)
+		Expect(err).NotTo(HaveOccurred())
+
 		incPlayerCtx = metadata.NewIncomingContext(context.Background(), md)
 		md = metadata.New(
 			map[string]string{
 				"authorization": "Bearer " + clientToken.AccessToken,
 			},
 		)
+		incPlayerCtx, err = auth.AuthFunc(keycloak, globalConfig.Keycloak.Realm)(incPlayerCtx)
+		Expect(err).NotTo(HaveOccurred())
+
 		incClientCtx = metadata.NewIncomingContext(context.Background(), md)
 		md = metadata.New(
 			map[string]string{
 				"authorization": "Bearer " + guestToken.AccessToken,
 			},
 		)
+		incClientCtx, err = auth.AuthFunc(keycloak, globalConfig.Keycloak.Realm)(incClientCtx)
+		Expect(err).NotTo(HaveOccurred())
+
 		incGuestCtx = metadata.NewIncomingContext(context.Background(), md)
 	})
 

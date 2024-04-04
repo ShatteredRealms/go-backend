@@ -13,6 +13,7 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/mocks"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/game"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/srv"
 	"github.com/bxcodec/faker/v4"
@@ -34,7 +35,6 @@ var _ = Describe("Servermanager server", func() {
 		mockController *gomock.Controller
 		ctx            context.Context
 
-		globalConfig   *config.GlobalConfig
 		conf           *app.GameBackendServerContext
 		mockCharClient *mocks.MockCharacterServiceClient
 		mockChatClient *mocks.MockChatServiceClient
@@ -42,15 +42,14 @@ var _ = Describe("Servermanager server", func() {
 		mockAgones     testing.Mocks
 		server         pb.ServerManagerServiceServer
 
-		dimension *model.Dimension
-		m         *model.Map
+		dimension *game.Dimension
+		m         *game.Map
 	)
 
 	BeforeEach(func() {
 		var err error
 		ctx = context.Background()
 		log.Logger, hook = test.NewNullLogger()
-		globalConfig = config.NewGlobalConfig(ctx)
 		mockController = gomock.NewController(GinkgoT())
 		mockCharClient = mocks.NewMockCharacterServiceClient(mockController)
 		mockChatClient = mocks.NewMockChatServiceClient(mockController)
@@ -58,13 +57,16 @@ var _ = Describe("Servermanager server", func() {
 		mockAgones = testing.NewMocks()
 
 		conf = &app.GameBackendServerContext{
-			GlobalConfig:       globalConfig,
+			ServerContext: &config.ServerContext{
+				GlobalConfig:   globalConfig,
+				KeycloakClient: keycloak,
+				Tracer:         otel.Tracer("test-servermanager"),
+				RefSROServer:   &globalConfig.GameBackend.SROServer,
+			},
 			CharacterClient:    mockCharClient,
 			ChatClient:         mockChatClient,
 			GamebackendService: mockService,
 			AgonesClient:       mockAgones.AgonesClient,
-			KeycloakClient:     keycloak,
-			Tracer:             otel.Tracer("test-servermanager"),
 		}
 		conf.GlobalConfig.GameBackend.Mode = config.LocalMode
 
@@ -74,7 +76,7 @@ var _ = Describe("Servermanager server", func() {
 
 		mapId := uuid.New()
 		dimensionId := uuid.New()
-		m = &model.Map{
+		m = &game.Map{
 			Model: model.Model{
 				Id:        &mapId,
 				CreatedAt: time.Now(),
@@ -86,7 +88,7 @@ var _ = Describe("Servermanager server", func() {
 			MaxPlayers: 40,
 			Instanced:  false,
 		}
-		dimension = &model.Dimension{
+		dimension = &game.Dimension{
 			Model: model.Model{
 				Id:        &dimensionId,
 				CreatedAt: time.Now(),
@@ -96,9 +98,9 @@ var _ = Describe("Servermanager server", func() {
 			Name:     faker.Username(),
 			Location: "us-central",
 			Version:  faker.Username(),
-			Maps:     []*model.Map{m},
+			Maps:     []*game.Map{m},
 		}
-		m.Dimensions = []*model.Dimension{dimension}
+		m.Dimensions = []*game.Dimension{dimension}
 
 		hook.Reset()
 	})
@@ -129,7 +131,7 @@ var _ = Describe("Servermanager server", func() {
 
 			When("given invalid input", func() {
 				It("should error for invalid ctx (nil)", func() {
-					out, err := server.CreateDimension(nil, req)
+					out, err := server.CreateDimension(context.TODO(), req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 				})
@@ -280,7 +282,7 @@ var _ = Describe("Servermanager server", func() {
 
 		When("given invalid input", func() {
 			It("should error for invalid ctx (nil)", func() {
-				out, err := server.CreateMap(nil, req)
+				out, err := server.CreateMap(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -356,7 +358,7 @@ var _ = Describe("Servermanager server", func() {
 
 			When("given invalid input", func() {
 				It("should error for invalid ctx (nil)", func() {
-					out, err := server.DeleteDimension(nil, req)
+					out, err := server.DeleteDimension(context.TODO(), req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 				})
@@ -554,7 +556,7 @@ var _ = Describe("Servermanager server", func() {
 
 			When("given invalid input", func() {
 				It("should error for invalid ctx (nil)", func() {
-					out, err := server.DeleteMap(nil, req)
+					out, err := server.DeleteMap(context.TODO(), req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 				})
@@ -676,7 +678,7 @@ var _ = Describe("Servermanager server", func() {
 					Return(nil)
 				mockService.EXPECT().
 					FindDimensionsWithMapIds(gomock.Any(), gomock.Any()).
-					Return(model.Dimensions{dimension}, nil)
+					Return(game.Dimensions{dimension}, nil)
 				out, err := server.DeleteMap(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).NotTo(BeNil())
@@ -718,7 +720,7 @@ var _ = Describe("Servermanager server", func() {
 
 			When("given invalid input", func() {
 				It("should error for invalid ctx (nil)", func() {
-					out, err := server.DuplicateDimension(nil, req)
+					out, err := server.DuplicateDimension(context.TODO(), req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 				})
@@ -834,7 +836,7 @@ var _ = Describe("Servermanager server", func() {
 
 			When("given invalid input", func() {
 				It("should error for invalid ctx (nil)", func() {
-					out, err := server.EditDimension(nil, req)
+					out, err := server.EditDimension(context.TODO(), req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 				})
@@ -887,9 +889,9 @@ var _ = Describe("Servermanager server", func() {
 				createdFleetAutoscaler *autoscalingv1.FleetAutoscaler
 				deletedFleet           string
 				deletedFleetAutoscaler string
-				m2                     *model.Map
-				m3                     *model.Map
-				newDimension           *model.Dimension
+				m2                     *game.Map
+				m3                     *game.Map
+				newDimension           *game.Dimension
 			)
 			BeforeEach(func() {
 				conf.GlobalConfig.GameBackend.Mode = config.ModeProduction
@@ -899,7 +901,7 @@ var _ = Describe("Servermanager server", func() {
 					Version: "v2",
 				}
 				m2Id := uuid.New()
-				m2 = &model.Map{
+				m2 = &game.Map{
 					Model: model.Model{
 						Id:        &m2Id,
 						CreatedAt: time.Now(),
@@ -911,9 +913,9 @@ var _ = Describe("Servermanager server", func() {
 					MaxPlayers: 40,
 					Instanced:  false,
 				}
-				m2.Dimensions = []*model.Dimension{dimension}
+				m2.Dimensions = []*game.Dimension{dimension}
 				m3Id := uuid.New()
-				m3 = &model.Map{
+				m3 = &game.Map{
 					Model: model.Model{
 						Id:        &m3Id,
 						CreatedAt: time.Now(),
@@ -925,9 +927,9 @@ var _ = Describe("Servermanager server", func() {
 					MaxPlayers: 40,
 					Instanced:  false,
 				}
-				m3.Dimensions = []*model.Dimension{dimension}
-				dimension.Maps = model.Maps{m, m2}
-				newDimension = &model.Dimension{
+				m3.Dimensions = []*game.Dimension{dimension}
+				dimension.Maps = game.Maps{m, m2}
+				newDimension = &game.Dimension{
 					Model: model.Model{
 						Id:        dimension.Id,
 						CreatedAt: time.Now(),
@@ -936,7 +938,7 @@ var _ = Describe("Servermanager server", func() {
 					Name:     dimension.Name,
 					Location: req.GetLocation(),
 					Version:  req.GetVersion(),
-					Maps:     []*model.Map{m2, m3},
+					Maps:     []*game.Map{m2, m3},
 				}
 				req.MapIds = []string{m2.Id.String(), m3.Id.String()}
 				mockService.EXPECT().FindDimension(gomock.Any(), req.Target).Return(dimension, nil)
@@ -1046,7 +1048,7 @@ var _ = Describe("Servermanager server", func() {
 
 				It("should update correctly given only a version change", func() {
 					req.EditMaps = false
-					newDimension.Maps = model.Maps{m, m2}
+					newDimension.Maps = game.Maps{m, m2}
 					mockAgones.AgonesClient.AddReactor("update", "fleets", func(action k8stesting.Action) (bool, k8sruntime.Object, error) {
 						ca := action.(k8stesting.UpdateAction)
 						updatedFleet = ca.GetObject().(*agonesv1.Fleet)
@@ -1180,7 +1182,7 @@ var _ = Describe("Servermanager server", func() {
 
 			When("given invalid input", func() {
 				It("should error for invalid ctx (nil)", func() {
-					out, err := server.EditMap(nil, req)
+					out, err := server.EditMap(context.TODO(), req)
 					Expect(err).To(HaveOccurred())
 					Expect(out).To(BeNil())
 				})
@@ -1233,11 +1235,11 @@ var _ = Describe("Servermanager server", func() {
 				createdFleetAutoscaler *autoscalingv1.FleetAutoscaler
 				deletedFleet           string
 				deletedFleetAutoscaler string
-				m2                     *model.Map
+				m2                     *game.Map
 			)
 			BeforeEach(func() {
 				conf.GlobalConfig.GameBackend.Mode = config.ModeProduction
-				m2 = &model.Map{
+				m2 = &game.Map{
 					Model: model.Model{
 						Id:        m.Id,
 						CreatedAt: m.CreatedAt,
@@ -1247,7 +1249,7 @@ var _ = Describe("Servermanager server", func() {
 					Path:       req.GetPath(),
 					MaxPlayers: req.GetMaxPlayers(),
 					Instanced:  req.GetInstanced(),
-					Dimensions: []*model.Dimension{dimension},
+					Dimensions: []*game.Dimension{dimension},
 				}
 				mockService.EXPECT().FindMap(gomock.Any(), req.Target).Return(m, nil)
 				mockService.EXPECT().EditMap(gomock.Any(), req).Return(m2, nil)
@@ -1339,7 +1341,7 @@ var _ = Describe("Servermanager server", func() {
 		})
 		When("given valid input", func() {
 			It("should work (admin)", func() {
-				mockService.EXPECT().FindAllDimensions(gomock.Any()).Return(model.Dimensions{dimension}, nil)
+				mockService.EXPECT().FindAllDimensions(gomock.Any()).Return(game.Dimensions{dimension}, nil)
 				out, err := server.GetAllDimension(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out.Dimensions).To(HaveLen(1))
@@ -1348,7 +1350,7 @@ var _ = Describe("Servermanager server", func() {
 
 		When("given invalid input", func() {
 			It("should error for invalid ctx (nil)", func() {
-				out, err := server.GetAllDimension(nil, req)
+				out, err := server.GetAllDimension(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -1371,7 +1373,7 @@ var _ = Describe("Servermanager server", func() {
 			})
 
 			It("should error for FindAllDimensions error", func() {
-				mockService.EXPECT().FindAllDimensions(gomock.Any()).Return(model.Dimensions{}, fakeErr)
+				mockService.EXPECT().FindAllDimensions(gomock.Any()).Return(game.Dimensions{}, fakeErr)
 				out, err := server.GetAllDimension(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
@@ -1388,7 +1390,7 @@ var _ = Describe("Servermanager server", func() {
 		})
 		When("given valid input", func() {
 			It("should work (admin)", func() {
-				mockService.EXPECT().FindAllMaps(gomock.Any()).Return(model.Maps{m}, nil)
+				mockService.EXPECT().FindAllMaps(gomock.Any()).Return(game.Maps{m}, nil)
 				out, err := server.GetAllMaps(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out.Maps).To(HaveLen(1))
@@ -1397,7 +1399,7 @@ var _ = Describe("Servermanager server", func() {
 
 		When("given invalid input", func() {
 			It("should error for invalid ctx (nil)", func() {
-				out, err := server.GetAllMaps(nil, req)
+				out, err := server.GetAllMaps(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -1420,7 +1422,7 @@ var _ = Describe("Servermanager server", func() {
 			})
 
 			It("should error for FindAllMapss error", func() {
-				mockService.EXPECT().FindAllMaps(gomock.Any()).Return(model.Maps{}, fakeErr)
+				mockService.EXPECT().FindAllMaps(gomock.Any()).Return(game.Maps{}, fakeErr)
 				out, err := server.GetAllMaps(incAdminCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
@@ -1450,7 +1452,7 @@ var _ = Describe("Servermanager server", func() {
 
 		When("given invalid input", func() {
 			It("should error for invalid ctx (nil)", func() {
-				out, err := server.GetDimension(nil, req)
+				out, err := server.GetDimension(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})
@@ -1510,7 +1512,7 @@ var _ = Describe("Servermanager server", func() {
 
 		When("given invalid input", func() {
 			It("should error for invalid ctx (nil)", func() {
-				out, err := server.GetMap(nil, req)
+				out, err := server.GetMap(context.TODO(), req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})

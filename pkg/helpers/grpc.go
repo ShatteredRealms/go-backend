@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -40,7 +41,9 @@ func StartServer(
 ) error {
 	log.Logger.WithContext(ctx).Info("Starting server")
 	listen, err := net.Listen("tcp", address)
-	Check(ctx, err, "listen server")
+	if err != nil {
+		return fmt.Errorf("listen server: %w", err)
+	}
 
 	httpSrv := &http.Server{
 		Addr:    address,

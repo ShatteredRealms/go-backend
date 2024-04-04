@@ -11,9 +11,11 @@ import (
 	"github.com/sirupsen/logrus/hooks/test"
 	"go.uber.org/mock/gomock"
 
+	"github.com/ShatteredRealms/go-backend/pkg/common"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/mocks"
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/character"
+	"github.com/ShatteredRealms/go-backend/pkg/model/game"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/service"
 )
@@ -27,7 +29,7 @@ var _ = Describe("Character service", func() {
 		mockRepository *mocks.MockCharacterRepository
 		charService    service.CharacterService
 		ctx            context.Context
-		character      *model.Character
+		char           *character.Character
 
 		fakeError = fmt.Errorf("error")
 	)
@@ -44,7 +46,7 @@ var _ = Describe("Character service", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(charService).NotTo(BeNil())
 
-		character = &model.Character{
+		char = &character.Character{
 			ID:        0,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -54,7 +56,7 @@ var _ = Describe("Character service", func() {
 			Gender:    "Male",
 			Realm:     "Human",
 			PlayTime:  100,
-			Location: model.Location{
+			Location: game.Location{
 				World: faker.Username(),
 				X:     1.1,
 				Y:     1.2,
@@ -81,27 +83,27 @@ var _ = Describe("Character service", func() {
 
 	Describe("FindByName", func() {
 		It("should call repo directly", func() {
-			mockRepository.EXPECT().FindByName(ctx, character.Name).Return(character, fakeError)
-			out, err := charService.FindByName(ctx, character.Name)
+			mockRepository.EXPECT().FindByName(ctx, char.Name).Return(char, fakeError)
+			out, err := charService.FindByName(ctx, char.Name)
 			Expect(err).To(MatchError(fakeError))
-			Expect(out).To(Equal(character))
+			Expect(out).To(Equal(char))
 		})
 	})
 
 	Describe("Create", func() {
 		When("given valid input", func() {
 			It("should succeed", func() {
-				mockRepository.EXPECT().Create(ctx, gomock.Any()).Return(character, fakeError)
-				out, err := charService.Create(ctx, character.OwnerId, character.Name, character.Gender, character.Realm)
+				mockRepository.EXPECT().Create(ctx, gomock.Any()).Return(char, fakeError)
+				out, err := charService.Create(ctx, char.OwnerId, char.Name, char.Gender, char.Realm)
 				Expect(err).To(MatchError(fakeError))
-				Expect(out).To(Equal(character))
+				Expect(out).To(Equal(char))
 			})
 		})
 
 		When("given invalid input", func() {
 			It("should fail on invalid character", func() {
-				out, err := charService.Create(ctx, character.OwnerId, character.Name, "", character.Realm)
-				Expect(err).To(MatchError(model.ErrInvalidGender))
+				out, err := charService.Create(ctx, char.OwnerId, char.Name, "", char.Realm)
+				Expect(err).To(MatchError(common.ErrInvalidGender))
 				Expect(out).To(BeNil())
 			})
 		})
@@ -109,10 +111,10 @@ var _ = Describe("Character service", func() {
 
 	Describe("FindById", func() {
 		It("should call repo directly", func() {
-			mockRepository.EXPECT().FindById(ctx, character.ID).Return(character, fakeError)
-			out, err := charService.FindById(ctx, character.ID)
+			mockRepository.EXPECT().FindById(ctx, char.ID).Return(char, fakeError)
+			out, err := charService.FindById(ctx, char.ID)
 			Expect(err).To(MatchError(fakeError))
-			Expect(out).To(Equal(character))
+			Expect(out).To(Equal(char))
 		})
 	})
 
@@ -122,7 +124,7 @@ var _ = Describe("Character service", func() {
 				editReq := &pb.EditCharacterRequest{
 					Target: &pb.CharacterTarget{
 						Type: &pb.CharacterTarget_Name{
-							Name: character.Name,
+							Name: char.Name,
 						},
 					},
 					OptionalOwnerId: &pb.EditCharacterRequest_OwnerId{
@@ -152,27 +154,27 @@ var _ = Describe("Character service", func() {
 						},
 					},
 				}
-				expectCharacter := new(model.Character)
-				*expectCharacter = *character
+				expectCharacter := new(character.Character)
+				*expectCharacter = *char
 				expectCharacter.OwnerId = editReq.GetOwnerId()
 				expectCharacter.Name = editReq.GetNewName()
 				expectCharacter.Gender = editReq.GetGender()
 				expectCharacter.Realm = editReq.GetRealm()
 				expectCharacter.PlayTime = editReq.GetPlayTime()
-				expectCharacter.Location = *model.LocationFromPb(editReq.GetLocation())
-				mockRepository.EXPECT().FindByName(ctx, editReq.Target.GetName()).Return(character, nil)
-				mockRepository.EXPECT().Save(ctx, expectCharacter).Return(character, fakeError)
+				expectCharacter.Location = *game.LocationFromPb(editReq.GetLocation())
+				mockRepository.EXPECT().FindByName(ctx, editReq.Target.GetName()).Return(char, nil)
+				mockRepository.EXPECT().Save(ctx, expectCharacter).Return(char, fakeError)
 
 				out, err := charService.Edit(ctx, editReq)
 				Expect(err).To(MatchError(fakeError))
-				Expect(out).To(Equal(character))
+				Expect(out).To(Equal(char))
 			})
 
 			It("should be able to edit by di", func() {
 				editReq := &pb.EditCharacterRequest{
 					Target: &pb.CharacterTarget{
 						Type: &pb.CharacterTarget_Id{
-							Id: uint64(character.ID),
+							Id: uint64(char.ID),
 						},
 					},
 					OptionalOwnerId: &pb.EditCharacterRequest_OwnerId{
@@ -202,20 +204,20 @@ var _ = Describe("Character service", func() {
 						},
 					},
 				}
-				expectCharacter := new(model.Character)
-				*expectCharacter = *character
+				expectCharacter := new(character.Character)
+				*expectCharacter = *char
 				expectCharacter.OwnerId = editReq.GetOwnerId()
 				expectCharacter.Name = editReq.GetNewName()
 				expectCharacter.Gender = editReq.GetGender()
 				expectCharacter.Realm = editReq.GetRealm()
 				expectCharacter.PlayTime = editReq.GetPlayTime()
-				expectCharacter.Location = *model.LocationFromPb(editReq.GetLocation())
-				mockRepository.EXPECT().FindById(ctx, uint(editReq.Target.GetId())).Return(character, nil)
-				mockRepository.EXPECT().Save(ctx, expectCharacter).Return(character, fakeError)
+				expectCharacter.Location = *game.LocationFromPb(editReq.GetLocation())
+				mockRepository.EXPECT().FindById(ctx, uint(editReq.Target.GetId())).Return(char, nil)
+				mockRepository.EXPECT().Save(ctx, expectCharacter).Return(char, fakeError)
 
 				out, err := charService.Edit(ctx, editReq)
 				Expect(err).To(MatchError(fakeError))
-				Expect(out).To(Equal(character))
+				Expect(out).To(Equal(char))
 			})
 		})
 
@@ -224,7 +226,7 @@ var _ = Describe("Character service", func() {
 				editReq := &pb.EditCharacterRequest{
 					Target: &pb.CharacterTarget{
 						Type: &pb.CharacterTarget_Name{
-							Name: character.Name,
+							Name: char.Name,
 						},
 					},
 					OptionalOwnerId: &pb.EditCharacterRequest_OwnerId{
@@ -254,17 +256,17 @@ var _ = Describe("Character service", func() {
 						},
 					},
 				}
-				expectCharacter := new(model.Character)
-				*expectCharacter = *character
+				expectCharacter := new(character.Character)
+				*expectCharacter = *char
 				expectCharacter.OwnerId = editReq.GetOwnerId()
 				expectCharacter.Name = editReq.GetNewName()
 				expectCharacter.Gender = editReq.GetGender()
 				expectCharacter.Realm = editReq.GetRealm()
 				expectCharacter.PlayTime = editReq.GetPlayTime()
-				expectCharacter.Location = *model.LocationFromPb(editReq.GetLocation())
-				mockRepository.EXPECT().FindByName(ctx, editReq.Target.GetName()).Return(character, nil)
+				expectCharacter.Location = *game.LocationFromPb(editReq.GetLocation())
+				mockRepository.EXPECT().FindByName(ctx, editReq.Target.GetName()).Return(char, nil)
 				out, err := charService.Edit(ctx, editReq)
-				Expect(err).To(MatchError(model.ErrInvalidGender))
+				Expect(err).To(MatchError(common.ErrInvalidGender))
 				Expect(out).To(BeNil())
 			})
 
@@ -272,7 +274,7 @@ var _ = Describe("Character service", func() {
 				editReq := &pb.EditCharacterRequest{
 					Target: &pb.CharacterTarget{
 						Type: &pb.CharacterTarget_Id{
-							Id: uint64(character.ID),
+							Id: uint64(char.ID),
 						},
 					},
 					OptionalOwnerId: &pb.EditCharacterRequest_OwnerId{
@@ -302,15 +304,15 @@ var _ = Describe("Character service", func() {
 						},
 					},
 				}
-				expectCharacter := new(model.Character)
-				*expectCharacter = *character
+				expectCharacter := new(character.Character)
+				*expectCharacter = *char
 				expectCharacter.OwnerId = editReq.GetOwnerId()
 				expectCharacter.Name = editReq.GetNewName()
 				expectCharacter.Gender = editReq.GetGender()
 				expectCharacter.Realm = editReq.GetRealm()
 				expectCharacter.PlayTime = editReq.GetPlayTime()
-				expectCharacter.Location = *model.LocationFromPb(editReq.GetLocation())
-				mockRepository.EXPECT().FindById(ctx, uint(editReq.Target.GetId())).Return(character, fakeError)
+				expectCharacter.Location = *game.LocationFromPb(editReq.GetLocation())
+				mockRepository.EXPECT().FindById(ctx, uint(editReq.Target.GetId())).Return(char, fakeError)
 				out, err := charService.Edit(ctx, editReq)
 				Expect(err).To(MatchError(fakeError))
 				Expect(out).To(BeNil())
@@ -321,7 +323,7 @@ var _ = Describe("Character service", func() {
 					Target: &pb.CharacterTarget{},
 				}
 				out, err := charService.Edit(ctx, editReq)
-				Expect(err).To(MatchError(model.ErrHandleRequest.Err()))
+				Expect(err).To(MatchError(common.ErrHandleRequest.Err()))
 				Expect(out).To(BeNil())
 			})
 		})
@@ -330,23 +332,23 @@ var _ = Describe("Character service", func() {
 	Describe("Delete", func() {
 		When("given valid input", func() {
 			It("should try to delete", func() {
-				mockRepository.EXPECT().FindById(ctx, character.ID).Return(character, nil)
-				mockRepository.EXPECT().Delete(ctx, character)
-				err := charService.Delete(ctx, character.ID)
+				mockRepository.EXPECT().FindById(ctx, char.ID).Return(char, nil)
+				mockRepository.EXPECT().Delete(ctx, char)
+				err := charService.Delete(ctx, char.ID)
 				Expect(err).To(BeNil())
 			})
 		})
 
 		When("given invalid input", func() {
 			It("should error on find error", func() {
-				mockRepository.EXPECT().FindById(ctx, character.ID).Return(nil, fakeError)
-				err := charService.Delete(ctx, character.ID)
+				mockRepository.EXPECT().FindById(ctx, char.ID).Return(nil, fakeError)
+				err := charService.Delete(ctx, char.ID)
 				Expect(err).To(HaveOccurred())
 			})
 
 			It("should error on no character found", func() {
-				mockRepository.EXPECT().FindById(ctx, character.ID).Return(nil, nil)
-				err := charService.Delete(ctx, character.ID)
+				mockRepository.EXPECT().FindById(ctx, char.ID).Return(nil, nil)
+				err := charService.Delete(ctx, char.ID)
 				Expect(err).To(HaveOccurred())
 			})
 		})
@@ -354,7 +356,7 @@ var _ = Describe("Character service", func() {
 
 	Describe("FindAll", func() {
 		It("should call repo directly", func() {
-			characters := []*model.Character{character}
+			characters := []*character.Character{char}
 			mockRepository.EXPECT().FindAll(ctx).Return(characters, fakeError)
 			out, err := charService.FindAll(ctx)
 			Expect(err).To(MatchError(fakeError))
@@ -364,9 +366,9 @@ var _ = Describe("Character service", func() {
 
 	Describe("FindAllByOwner", func() {
 		It("should call repo directly", func() {
-			characters := []*model.Character{character}
-			mockRepository.EXPECT().FindAllByOwner(ctx, character.OwnerId).Return(characters, fakeError)
-			out, err := charService.FindAllByOwner(ctx, character.OwnerId)
+			characters := []*character.Character{char}
+			mockRepository.EXPECT().FindAllByOwner(ctx, char.OwnerId).Return(characters, fakeError)
+			out, err := charService.FindAllByOwner(ctx, char.OwnerId)
 			Expect(err).To(MatchError(fakeError))
 			Expect(out).To(ContainElements(characters))
 		})
@@ -383,12 +385,12 @@ var _ = Describe("Character service", func() {
 
 		When("given valid input", func() {
 			It("should try to update playtime", func() {
-				mockRepository.EXPECT().FindById(ctx, character.ID).Return(character, nil)
-				charOut := new(model.Character)
-				*charOut = *character
+				mockRepository.EXPECT().FindById(ctx, char.ID).Return(char, nil)
+				charOut := new(character.Character)
+				*charOut = *char
 				charOut.PlayTime += amount
 				mockRepository.EXPECT().Save(ctx, gomock.Any()).Return(charOut, fakeError)
-				out, err := charService.AddPlayTime(ctx, character.ID, amount)
+				out, err := charService.AddPlayTime(ctx, char.ID, amount)
 				Expect(err).To(MatchError(fakeError))
 				Expect(out.PlayTime).To(BeEquivalentTo(charOut.PlayTime))
 			})
@@ -396,8 +398,8 @@ var _ = Describe("Character service", func() {
 
 		When("given invalid input", func() {
 			It("should error on find error", func() {
-				mockRepository.EXPECT().FindById(ctx, character.ID).Return(nil, fakeError)
-				out, err := charService.AddPlayTime(ctx, character.ID, amount)
+				mockRepository.EXPECT().FindById(ctx, char.ID).Return(nil, fakeError)
+				out, err := charService.AddPlayTime(ctx, char.ID, amount)
 				Expect(err).To(MatchError(fakeError))
 				Expect(out).To(BeNil())
 			})

@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	model "github.com/ShatteredRealms/go-backend/pkg/model"
+	character "github.com/ShatteredRealms/go-backend/pkg/model/character"
 	repository "github.com/ShatteredRealms/go-backend/pkg/repository"
 	gomock "go.uber.org/mock/gomock"
 	gorm "gorm.io/gorm"
@@ -43,39 +43,39 @@ func (m *MockCharacterRepository) EXPECT() *MockCharacterRepositoryMockRecorder 
 }
 
 // Create mocks base method.
-func (m *MockCharacterRepository) Create(ctx context.Context, character *model.Character) (*model.Character, error) {
+func (m *MockCharacterRepository) Create(ctx context.Context, char *character.Character) (*character.Character, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", ctx, character)
-	ret0, _ := ret[0].(*model.Character)
+	ret := m.ctrl.Call(m, "Create", ctx, char)
+	ret0, _ := ret[0].(*character.Character)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockCharacterRepositoryMockRecorder) Create(ctx, character any) *gomock.Call {
+func (mr *MockCharacterRepositoryMockRecorder) Create(ctx, char any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockCharacterRepository)(nil).Create), ctx, character)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockCharacterRepository)(nil).Create), ctx, char)
 }
 
 // Delete mocks base method.
-func (m *MockCharacterRepository) Delete(ctx context.Context, character *model.Character) error {
+func (m *MockCharacterRepository) Delete(ctx context.Context, char *character.Character) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, character)
+	ret := m.ctrl.Call(m, "Delete", ctx, char)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockCharacterRepositoryMockRecorder) Delete(ctx, character any) *gomock.Call {
+func (mr *MockCharacterRepositoryMockRecorder) Delete(ctx, char any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockCharacterRepository)(nil).Delete), ctx, character)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockCharacterRepository)(nil).Delete), ctx, char)
 }
 
 // FindAll mocks base method.
-func (m *MockCharacterRepository) FindAll(arg0 context.Context) ([]*model.Character, error) {
+func (m *MockCharacterRepository) FindAll(arg0 context.Context) ([]*character.Character, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindAll", arg0)
-	ret0, _ := ret[0].([]*model.Character)
+	ret0, _ := ret[0].([]*character.Character)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -87,10 +87,10 @@ func (mr *MockCharacterRepositoryMockRecorder) FindAll(arg0 any) *gomock.Call {
 }
 
 // FindAllByOwner mocks base method.
-func (m *MockCharacterRepository) FindAllByOwner(ctx context.Context, owner string) (model.Characters, error) {
+func (m *MockCharacterRepository) FindAllByOwner(ctx context.Context, owner string) (character.Characters, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindAllByOwner", ctx, owner)
-	ret0, _ := ret[0].(model.Characters)
+	ret0, _ := ret[0].(character.Characters)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -102,10 +102,10 @@ func (mr *MockCharacterRepositoryMockRecorder) FindAllByOwner(ctx, owner any) *g
 }
 
 // FindById mocks base method.
-func (m *MockCharacterRepository) FindById(ctx context.Context, id uint) (*model.Character, error) {
+func (m *MockCharacterRepository) FindById(ctx context.Context, id uint) (*character.Character, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindById", ctx, id)
-	ret0, _ := ret[0].(*model.Character)
+	ret0, _ := ret[0].(*character.Character)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -117,10 +117,10 @@ func (mr *MockCharacterRepositoryMockRecorder) FindById(ctx, id any) *gomock.Cal
 }
 
 // FindByName mocks base method.
-func (m *MockCharacterRepository) FindByName(ctx context.Context, name string) (*model.Character, error) {
+func (m *MockCharacterRepository) FindByName(ctx context.Context, name string) (*character.Character, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindByName", ctx, name)
-	ret0, _ := ret[0].(*model.Character)
+	ret0, _ := ret[0].(*character.Character)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -146,18 +146,18 @@ func (mr *MockCharacterRepositoryMockRecorder) Migrate(ctx any) *gomock.Call {
 }
 
 // Save mocks base method.
-func (m *MockCharacterRepository) Save(ctx context.Context, character *model.Character) (*model.Character, error) {
+func (m *MockCharacterRepository) Save(ctx context.Context, char *character.Character) (*character.Character, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Save", ctx, character)
-	ret0, _ := ret[0].(*model.Character)
+	ret := m.ctrl.Call(m, "Save", ctx, char)
+	ret0, _ := ret[0].(*character.Character)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Save indicates an expected call of Save.
-func (mr *MockCharacterRepositoryMockRecorder) Save(ctx, character any) *gomock.Call {
+func (mr *MockCharacterRepositoryMockRecorder) Save(ctx, char any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockCharacterRepository)(nil).Save), ctx, character)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockCharacterRepository)(nil).Save), ctx, char)
 }
 
 // WithTrx mocks base method.

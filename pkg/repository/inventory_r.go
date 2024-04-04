@@ -3,15 +3,15 @@ package repository
 import (
 	"context"
 
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/character"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type InventoryRepository interface {
-	GetInventory(ctx context.Context, characterId uint) (*model.CharacterInventory, error)
-	UpdateInventory(ctx context.Context, inventory *model.CharacterInventory) error
+	GetInventory(ctx context.Context, characterId uint) (*character.Inventory, error)
+	UpdateInventory(ctx context.Context, inventory *character.Inventory) error
 }
 
 type inventoryRepository struct {
@@ -25,7 +25,7 @@ func NewInventoryRepository(db *mongo.Database) InventoryRepository {
 }
 
 // GetInventory implements InventoryRepository.
-func (r *inventoryRepository) GetInventory(ctx context.Context, characterId uint) (inventory *model.CharacterInventory, err error) {
+func (r *inventoryRepository) GetInventory(ctx context.Context, characterId uint) (inventory *character.Inventory, err error) {
 	err = r.inventoryCollection().FindOne(ctx, bson.D{{"_id", characterId}}).Decode(&inventory)
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func (r *inventoryRepository) GetInventory(ctx context.Context, characterId uint
 }
 
 // UpdateInventory implements InventoryRepository.
-func (r *inventoryRepository) UpdateInventory(ctx context.Context, inventory *model.CharacterInventory) error {
+func (r *inventoryRepository) UpdateInventory(ctx context.Context, inventory *character.Inventory) error {
 	_, err := r.inventoryCollection().ReplaceOne(ctx, bson.D{{"_id", inventory.CharacterId}}, inventory, options.Replace().SetUpsert(true))
 	return err
 }

@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	model "github.com/ShatteredRealms/go-backend/pkg/model"
+	character "github.com/ShatteredRealms/go-backend/pkg/model/character"
 	pb "github.com/ShatteredRealms/go-backend/pkg/pb"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -42,10 +42,10 @@ func (m *MockCharacterService) EXPECT() *MockCharacterServiceMockRecorder {
 }
 
 // AddPlayTime mocks base method.
-func (m *MockCharacterService) AddPlayTime(ctx context.Context, characterId uint, amount uint64) (*model.Character, error) {
+func (m *MockCharacterService) AddPlayTime(ctx context.Context, characterId uint, amount uint64) (*character.Character, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddPlayTime", ctx, characterId, amount)
-	ret0, _ := ret[0].(*model.Character)
+	ret0, _ := ret[0].(*character.Character)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -57,10 +57,10 @@ func (mr *MockCharacterServiceMockRecorder) AddPlayTime(ctx, characterId, amount
 }
 
 // Create mocks base method.
-func (m *MockCharacterService) Create(ctx context.Context, ownerId, name, gender, realm string) (*model.Character, error) {
+func (m *MockCharacterService) Create(ctx context.Context, ownerId, name, gender, realm string) (*character.Character, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", ctx, ownerId, name, gender, realm)
-	ret0, _ := ret[0].(*model.Character)
+	ret0, _ := ret[0].(*character.Character)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -86,25 +86,25 @@ func (mr *MockCharacterServiceMockRecorder) Delete(ctx, id any) *gomock.Call {
 }
 
 // Edit mocks base method.
-func (m *MockCharacterService) Edit(ctx context.Context, character *pb.EditCharacterRequest) (*model.Character, error) {
+func (m *MockCharacterService) Edit(ctx context.Context, char *pb.EditCharacterRequest) (*character.Character, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Edit", ctx, character)
-	ret0, _ := ret[0].(*model.Character)
+	ret := m.ctrl.Call(m, "Edit", ctx, char)
+	ret0, _ := ret[0].(*character.Character)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Edit indicates an expected call of Edit.
-func (mr *MockCharacterServiceMockRecorder) Edit(ctx, character any) *gomock.Call {
+func (mr *MockCharacterServiceMockRecorder) Edit(ctx, char any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Edit", reflect.TypeOf((*MockCharacterService)(nil).Edit), ctx, character)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Edit", reflect.TypeOf((*MockCharacterService)(nil).Edit), ctx, char)
 }
 
 // FindAll mocks base method.
-func (m *MockCharacterService) FindAll(arg0 context.Context) (model.Characters, error) {
+func (m *MockCharacterService) FindAll(arg0 context.Context) (character.Characters, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindAll", arg0)
-	ret0, _ := ret[0].(model.Characters)
+	ret0, _ := ret[0].(character.Characters)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -116,10 +116,10 @@ func (mr *MockCharacterServiceMockRecorder) FindAll(arg0 any) *gomock.Call {
 }
 
 // FindAllByOwner mocks base method.
-func (m *MockCharacterService) FindAllByOwner(ctx context.Context, ownerId string) (model.Characters, error) {
+func (m *MockCharacterService) FindAllByOwner(ctx context.Context, ownerId string) (character.Characters, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindAllByOwner", ctx, ownerId)
-	ret0, _ := ret[0].(model.Characters)
+	ret0, _ := ret[0].(character.Characters)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -131,10 +131,10 @@ func (mr *MockCharacterServiceMockRecorder) FindAllByOwner(ctx, ownerId any) *go
 }
 
 // FindById mocks base method.
-func (m *MockCharacterService) FindById(ctx context.Context, id uint) (*model.Character, error) {
+func (m *MockCharacterService) FindById(ctx context.Context, id uint) (*character.Character, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindById", ctx, id)
-	ret0, _ := ret[0].(*model.Character)
+	ret0, _ := ret[0].(*character.Character)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -146,10 +146,10 @@ func (mr *MockCharacterServiceMockRecorder) FindById(ctx, id any) *gomock.Call {
 }
 
 // FindByName mocks base method.
-func (m *MockCharacterService) FindByName(ctx context.Context, name string) (*model.Character, error) {
+func (m *MockCharacterService) FindByName(ctx context.Context, name string) (*character.Character, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindByName", ctx, name)
-	ret0, _ := ret[0].(*model.Character)
+	ret0, _ := ret[0].(*character.Character)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

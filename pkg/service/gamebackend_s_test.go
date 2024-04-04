@@ -16,6 +16,9 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/mocks"
 	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/character"
+	"github.com/ShatteredRealms/go-backend/pkg/model/game"
+	"github.com/ShatteredRealms/go-backend/pkg/model/gamebackend"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/service"
 )
@@ -28,9 +31,9 @@ var _ = Describe("Gamebackend service", func() {
 
 		gbService service.GamebackendService
 
-		character *model.Character
-		dimension *model.Dimension
-		m         *model.Map
+		char      *character.Character
+		dimension *game.Dimension
+		m         *game.Map
 		ctx       context.Context
 		fakeErr   error
 	)
@@ -50,7 +53,7 @@ var _ = Describe("Gamebackend service", func() {
 
 		ctx = context.Background()
 		fakeErr = fmt.Errorf("error: %s", faker.Username())
-		character = &model.Character{
+		char = &character.Character{
 			ID:        0,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -60,7 +63,7 @@ var _ = Describe("Gamebackend service", func() {
 			Gender:    "Male",
 			Realm:     "Human",
 			PlayTime:  100,
-			Location: model.Location{
+			Location: game.Location{
 				World: faker.Username(),
 				X:     1.1,
 				Y:     1.2,
@@ -75,7 +78,7 @@ var _ = Describe("Gamebackend service", func() {
 		Expect(err).NotTo(HaveOccurred())
 		uuid2, err := uuid.NewRandom()
 		Expect(err).NotTo(HaveOccurred())
-		m = &model.Map{
+		m = &game.Map{
 			Model: model.Model{
 				Id:        &uuid2,
 				CreatedAt: time.Now(),
@@ -87,7 +90,7 @@ var _ = Describe("Gamebackend service", func() {
 			MaxPlayers: 40,
 			Instanced:  false,
 		}
-		dimension = &model.Dimension{
+		dimension = &game.Dimension{
 			Model: model.Model{
 				Id:        &uuid1,
 				CreatedAt: time.Now(),
@@ -97,9 +100,9 @@ var _ = Describe("Gamebackend service", func() {
 			Name:     faker.Username(),
 			Location: "us-central",
 			Version:  faker.Username(),
-			Maps:     []*model.Map{m},
+			Maps:     []*game.Map{m},
 		}
-		m.Dimensions = []*model.Dimension{dimension}
+		m.Dimensions = []*game.Dimension{dimension}
 	})
 
 	Describe("NewGamebackendService", func() {
@@ -113,10 +116,10 @@ var _ = Describe("Gamebackend service", func() {
 
 	Describe("CreatePendingConnection", func() {
 		It("should work", func() {
-			pendingConnection := &model.PendingConnection{}
+			pendingConnection := &gamebackend.PendingConnection{}
 			Expect(faker.FakeData(pendingConnection)).To(Succeed())
-			mockRepository.EXPECT().CreatePendingConnection(ctx, character.Name, pendingConnection.ServerName).Return(pendingConnection, fakeErr)
-			out, err := gbService.CreatePendingConnection(ctx, character.Name, pendingConnection.ServerName)
+			mockRepository.EXPECT().CreatePendingConnection(ctx, char.Name, pendingConnection.ServerName).Return(pendingConnection, fakeErr)
+			out, err := gbService.CreatePendingConnection(ctx, char.Name, pendingConnection.ServerName)
 			Expect(err).To(MatchError(fakeErr))
 			Expect(out).To(Equal(pendingConnection))
 		})
@@ -125,7 +128,7 @@ var _ = Describe("Gamebackend service", func() {
 	Describe("CheckPlayerConnection", func() {
 		When("given valid input", func() {
 			It("should work", func() {
-				pendingConnection := &model.PendingConnection{}
+				pendingConnection := &gamebackend.PendingConnection{}
 				Expect(faker.FakeData(pendingConnection)).To(Succeed())
 				pendingConnection.CreatedAt = time.Now()
 
@@ -139,7 +142,7 @@ var _ = Describe("Gamebackend service", func() {
 
 		When("given invalid input", func() {
 			It("should fail due to no pending connection found", func() {
-				pendingConnection := &model.PendingConnection{}
+				pendingConnection := &gamebackend.PendingConnection{}
 				Expect(faker.FakeData(pendingConnection)).To(Succeed())
 				pendingConnection.CreatedAt = time.Now()
 
@@ -150,7 +153,7 @@ var _ = Describe("Gamebackend service", func() {
 			})
 
 			It("should fail if the pending connection server names don't match", func() {
-				pendingConnection := &model.PendingConnection{}
+				pendingConnection := &gamebackend.PendingConnection{}
 				Expect(faker.FakeData(pendingConnection)).To(Succeed())
 				pendingConnection.CreatedAt = time.Now()
 
@@ -161,7 +164,7 @@ var _ = Describe("Gamebackend service", func() {
 			})
 
 			It("should fail if the connection expired", func() {
-				pendingConnection := &model.PendingConnection{}
+				pendingConnection := &gamebackend.PendingConnection{}
 				Expect(faker.FakeData(pendingConnection)).To(Succeed())
 				pendingConnection.CreatedAt = time.Now().Add(-time.Minute)
 
@@ -303,7 +306,7 @@ var _ = Describe("Gamebackend service", func() {
 					OptionalInstanced:  &pb.EditMapRequest_Instanced{Instanced: true},
 				}
 				// Note: Maps were not changed so do not need to change
-				expectedOut := &model.Map{}
+				expectedOut := &game.Map{}
 				*expectedOut = *m
 				expectedOut.Name = req.GetName()
 				expectedOut.Path = req.GetPath()
@@ -376,7 +379,7 @@ var _ = Describe("Gamebackend service", func() {
 					},
 				}
 				// Note: Maps were not changed so do not need to change
-				expectedOut := &model.Dimension{}
+				expectedOut := &game.Dimension{}
 				*expectedOut = *dimension
 				expectedOut.Name = req.GetName()
 				expectedOut.Version = req.GetVersion()
@@ -384,7 +387,7 @@ var _ = Describe("Gamebackend service", func() {
 
 				mockRepository.EXPECT().FindDimensionByName(gomock.Any(), dimension.Name).Return(dimension, nil)
 				mockRepository.EXPECT().SaveDimension(gomock.Any(), expectedOut).Return(expectedOut, fakeErr)
-				mockRepository.EXPECT().FindMapsByIds(gomock.Any(), gomock.Any()).Return(model.Maps{m}, nil)
+				mockRepository.EXPECT().FindMapsByIds(gomock.Any(), gomock.Any()).Return(game.Maps{m}, nil)
 				out, err := gbService.EditDimension(ctx, req)
 				Expect(err).To(MatchError(fakeErr))
 				Expect(out).To(Equal(expectedOut))
@@ -507,9 +510,9 @@ var _ = Describe("Gamebackend service", func() {
 				}
 				randUUID := uuid.New()
 				mockRepository.EXPECT().FindDimensionByName(gomock.Any(), dimension.Name).Return(dimension, nil)
-				mockRepository.EXPECT().FindMapsByIds(gomock.Any(), gomock.Any()).Return(model.Maps{
-					&model.Map{Model: model.Model{Id: &randUUID}},
-					&model.Map{Model: model.Model{Id: &randUUID}},
+				mockRepository.EXPECT().FindMapsByIds(gomock.Any(), gomock.Any()).Return(game.Maps{
+					&game.Map{Model: model.Model{Id: &randUUID}},
+					&game.Map{Model: model.Model{Id: &randUUID}},
 				}, nil)
 				out, err := gbService.EditDimension(ctx, req)
 				Expect(err).To(HaveOccurred())
@@ -553,7 +556,7 @@ var _ = Describe("Gamebackend service", func() {
 
 	Describe("FindAllDimensions", func() {
 		It("should work", func() {
-			mockRepository.EXPECT().FindAllDimensions(ctx).Return(model.Dimensions{dimension}, fakeErr)
+			mockRepository.EXPECT().FindAllDimensions(ctx).Return(game.Dimensions{dimension}, fakeErr)
 			out, err := gbService.FindAllDimensions(ctx)
 			Expect(err).To(MatchError(fakeErr))
 			Expect(out).To(ContainElement(dimension))
@@ -562,7 +565,7 @@ var _ = Describe("Gamebackend service", func() {
 
 	Describe("FindAllMap", func() {
 		It("should work", func() {
-			mockRepository.EXPECT().FindAllMaps(ctx).Return(model.Maps{m}, fakeErr)
+			mockRepository.EXPECT().FindAllMaps(ctx).Return(game.Maps{m}, fakeErr)
 			out, err := gbService.FindAllMaps(ctx)
 			Expect(err).To(MatchError(fakeErr))
 			Expect(out).To(ContainElement(m))
@@ -589,7 +592,7 @@ var _ = Describe("Gamebackend service", func() {
 
 	Describe("FindDimensionsByIds", func() {
 		It("should work", func() {
-			mockRepository.EXPECT().FindDimensionsByIds(ctx, []*uuid.UUID{dimension.Id}).Return(model.Dimensions{dimension}, fakeErr)
+			mockRepository.EXPECT().FindDimensionsByIds(ctx, []*uuid.UUID{dimension.Id}).Return(game.Dimensions{dimension}, fakeErr)
 			out, err := gbService.FindDimensionsByIds(ctx, []*uuid.UUID{dimension.Id})
 			Expect(err).To(MatchError(fakeErr))
 			Expect(out).To(ContainElement(dimension))
@@ -598,7 +601,7 @@ var _ = Describe("Gamebackend service", func() {
 
 	Describe("FindDimensionsByNames", func() {
 		It("should work", func() {
-			mockRepository.EXPECT().FindDimensionsByNames(ctx, []string{dimension.Name}).Return(model.Dimensions{dimension}, fakeErr)
+			mockRepository.EXPECT().FindDimensionsByNames(ctx, []string{dimension.Name}).Return(game.Dimensions{dimension}, fakeErr)
 			out, err := gbService.FindDimensionsByNames(ctx, []string{dimension.Name})
 			Expect(err).To(MatchError(fakeErr))
 			Expect(out).To(ContainElement(dimension))
@@ -607,7 +610,7 @@ var _ = Describe("Gamebackend service", func() {
 
 	Describe("FindDimensionsWithmapIds", func() {
 		It("should work", func() {
-			mockRepository.EXPECT().FindDimensionsWithMapIds(ctx, []*uuid.UUID{m.Id}).Return(model.Dimensions{dimension}, fakeErr)
+			mockRepository.EXPECT().FindDimensionsWithMapIds(ctx, []*uuid.UUID{m.Id}).Return(game.Dimensions{dimension}, fakeErr)
 			out, err := gbService.FindDimensionsWithMapIds(ctx, []*uuid.UUID{m.Id})
 			Expect(err).To(MatchError(fakeErr))
 			Expect(out).To(ContainElement(dimension))
@@ -634,7 +637,7 @@ var _ = Describe("Gamebackend service", func() {
 
 	Describe("FindMapsByIds", func() {
 		It("should work", func() {
-			mockRepository.EXPECT().FindMapsByIds(ctx, []*uuid.UUID{m.Id}).Return(model.Maps{m}, fakeErr)
+			mockRepository.EXPECT().FindMapsByIds(ctx, []*uuid.UUID{m.Id}).Return(game.Maps{m}, fakeErr)
 			out, err := gbService.FindMapsByIds(ctx, []*uuid.UUID{m.Id})
 			Expect(err).To(MatchError(fakeErr))
 			Expect(out).To(ContainElement(m))
@@ -643,7 +646,7 @@ var _ = Describe("Gamebackend service", func() {
 
 	Describe("FindMapsByNames", func() {
 		It("should work", func() {
-			mockRepository.EXPECT().FindMapsByNames(ctx, []string{m.Name}).Return(model.Maps{m}, fakeErr)
+			mockRepository.EXPECT().FindMapsByNames(ctx, []string{m.Name}).Return(game.Maps{m}, fakeErr)
 			out, err := gbService.FindMapsByNames(ctx, []string{m.Name})
 			Expect(err).To(MatchError(fakeErr))
 			Expect(out).To(ContainElement(m))

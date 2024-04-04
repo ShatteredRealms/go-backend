@@ -9,13 +9,14 @@ import (
 	. "github.com/onsi/gomega"
 	"gorm.io/gorm"
 
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/character"
+	"github.com/ShatteredRealms/go-backend/pkg/model/game"
 )
 
 var _ = Describe("Character repository", func() {
 	var (
-		createCharacter = func() *model.Character {
-			character := &model.Character{
+		createCharacter = func() *character.Character {
+			char := &character.Character{
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 				DeletedAt: 0,
@@ -24,7 +25,7 @@ var _ = Describe("Character repository", func() {
 				Gender:    "Male",
 				Realm:     "Human",
 				PlayTime:  100,
-				Location: model.Location{
+				Location: game.Location{
 					World: faker.Username(),
 					X:     1.1,
 					Y:     1.2,
@@ -35,15 +36,15 @@ var _ = Describe("Character repository", func() {
 				},
 			}
 
-			outCharacter, err := characterRepo.Create(nil, character)
+			outCharacter, err := characterRepo.Create(nil, char)
 			Expect(err).To(BeNil())
 			Expect(outCharacter).NotTo(BeNil())
 			Expect(outCharacter.Validate()).To(Succeed())
-			Expect(outCharacter.ID).To(BeEquivalentTo(character.ID))
-			character = outCharacter
+			Expect(outCharacter.ID).To(BeEquivalentTo(char.ID))
+			char = outCharacter
 			hook.Reset()
 
-			return character
+			return char
 		}
 	)
 
@@ -83,7 +84,7 @@ var _ = Describe("Character repository", func() {
 	Describe("Create", func() {
 		When("no conflicts exist", func() {
 			It("should work", func() {
-				newCharacter := &model.Character{
+				newCharacter := &character.Character{
 					ID:        0,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -93,7 +94,7 @@ var _ = Describe("Character repository", func() {
 					Gender:    "Male",
 					Realm:     "Human",
 					PlayTime:  100,
-					Location: model.Location{
+					Location: game.Location{
 						World: faker.Username(),
 						X:     1.1,
 						Y:     1.2,
@@ -223,7 +224,7 @@ var _ = Describe("Character repository", func() {
 
 	Describe("FindAll", func() {
 		findAll := (func(ctx context.Context) {
-			_, err := characterRepo.Create(ctx, &model.Character{
+			_, err := characterRepo.Create(ctx, &character.Character{
 				OwnerId: faker.Username(),
 				Name:    faker.Username(),
 				Gender:  "Male",
@@ -246,7 +247,7 @@ var _ = Describe("Character repository", func() {
 	Describe("FindAllByOwner", func() {
 		When("a match exists", func() {
 			findAllByOwner := (func(ctx context.Context) {
-				newCharacter := &model.Character{
+				newCharacter := &character.Character{
 					ID:        0,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -256,7 +257,7 @@ var _ = Describe("Character repository", func() {
 					Gender:    "Male",
 					Realm:     "Human",
 					PlayTime:  100,
-					Location: model.Location{
+					Location: game.Location{
 						World: faker.Username(),
 						X:     1.1,
 						Y:     1.2,

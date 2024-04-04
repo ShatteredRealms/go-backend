@@ -2,35 +2,20 @@ package helpers
 
 import (
 	"context"
-	"strings"
 
+	sroauth "github.com/ShatteredRealms/go-backend/pkg/auth"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
-	"github.com/ShatteredRealms/go-backend/pkg/model"
-	"github.com/ShatteredRealms/go-backend/pkg/srospan"
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/WilSimpson/gocloak/v13"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/status"
-)
-
-const (
-	AuthorizationHeader = "authorization"
-	AuthorizationScheme = "Bearer "
-)
-
-type BasicClaims struct {
-	Subject string `json:"sub"`
-}
-
-var (
-	jwtParser = jwt.NewParser()
 )
 
 func GrpcDialOpts() []grpc.DialOption {
@@ -44,106 +29,36 @@ func GrpcClientWithOtel(address string) (*grpc.ClientConn, error) {
 	return grpc.Dial(address, GrpcDialOpts()...)
 }
 
-func InitServerDefaults() (*grpc.Server, *runtime.ServeMux) {
+func InitServerDefaults(kcClient gocloak.KeycloakClient, realm string) (*grpc.Server, *runtime.ServeMux) {
 	opts := []logging.Option{
-		logging.WithLogOnEvents(logging.StartCall),
 		logging.WithCodes(logging.DefaultErrorToCode),
+		logging.WithFieldsFromContextAndCallMeta(logSroData),
 	}
 
 	return grpc.NewServer(
 			grpc.StatsHandler(otelgrpc.NewServerHandler()),
 			grpc.ChainUnaryInterceptor(
 				logging.UnaryServerInterceptor(interceptorLogger(log.Logger), opts...),
+				selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(sroauth.AuthFunc(kcClient, realm)), selector.MatchFunc(sroauth.NotPublicServiceMatcher)),
 			),
 			grpc.ChainStreamInterceptor(
 				logging.StreamServerInterceptor(interceptorLogger(log.Logger), opts...),
+				selector.StreamServerInterceptor(auth.StreamServerInterceptor(sroauth.AuthFunc(kcClient, realm)), selector.MatchFunc(sroauth.NotPublicServiceMatcher)),
 			)),
 		runtime.NewServeMux()
-}
-
-func ExtractToken(ctx context.Context) (string, error) {
-	if ctx == nil {
-		return "", model.ErrMissingContext
-	}
-
-	val := metautils.ExtractIncoming(ctx).Get(AuthorizationHeader)
-	if val == "" {
-		return "", model.ErrMissingAuthorization
-	}
-
-	if !strings.HasPrefix(val, AuthorizationScheme) {
-		return "", model.ErrInvalidAuthorization
-	}
-
-	return val[len(AuthorizationScheme):], nil
-}
-
-func ExtractClaims(ctx context.Context) (*model.SROClaims, error) {
-	if ctx == nil {
-		return nil, model.ErrMissingContext
-	}
-
-	token, err := ExtractToken(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	jwtToken, _, err := jwtParser.ParseUnverified(token, &model.SROClaims{})
-	if err != nil {
-		log.Logger.WithContext(ctx).Infof("invalid token: %s", token)
-		return nil, err
-	}
-
-	claims := jwtToken.Claims.(*model.SROClaims)
-	return claims, nil
-}
-
-func VerifyClaims(ctx context.Context, client model.KeycloakClient, realm string) (*jwt.Token, *model.SROClaims, error) {
-	if client == nil {
-		return nil, nil, status.Errorf(codes.Internal, model.ErrMissingGocloak.Error())
-	}
-
-	tokenString, err := ExtractToken(ctx)
-	if err != nil {
-		return nil, nil, status.Errorf(codes.Unauthenticated, "invalid authentication")
-	}
-
-	var claims model.SROClaims
-	token, err := client.DecodeAccessTokenCustomClaims(
-		ctx,
-		tokenString,
-		realm,
-		&claims,
-	)
-
-	if err != nil {
-		log.Logger.WithContext(ctx).Infof("issues extracting claims: %v", err)
-		return nil, nil, model.ErrUnauthorized.Err()
-	}
-
-	if !token.Valid {
-		return nil, nil, model.ErrUnauthorized.Err()
-	}
-
-	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(
-		srospan.SourceOwnerId(claims.Subject),
-		srospan.SourceOwnerUsername(claims.Username),
-	)
-
-	return token, &claims, nil
 }
 
 // InterceptorLogger adapts logrus logger to interceptor logger.
 // This code is simple enough to be copied and not imported.
 func interceptorLogger(l logrus.FieldLogger) logging.Logger {
-	return logging.LoggerFunc(func(_ context.Context, lvl logging.Level, msg string, fields ...any) {
+	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
 		f := make(map[string]any, len(fields)/2)
 		i := logging.Fields(fields).Iterator()
 		for i.Next() {
 			k, v := i.At()
 			f[k] = v
 		}
+
 		l := l.WithFields(f)
 
 		switch lvl {
@@ -156,7 +71,20 @@ func interceptorLogger(l logrus.FieldLogger) logging.Logger {
 		case logging.LevelError:
 			l.Error(msg)
 		default:
-			l.Fatalf("unknown level %v", lvl)
+			l.Debugf("unknown level %v: %s", lvl, msg)
 		}
 	})
+}
+
+func logSroData(ctx context.Context, c interceptors.CallMeta) logging.Fields {
+	out := logging.Fields{}
+	if spanCtx := trace.SpanContextFromContext(ctx); spanCtx.IsValid() {
+		out = append(out, "traceId", spanCtx.TraceID().String())
+	}
+
+	if claims, ok := sroauth.RetrieveClaims(ctx); ok {
+		out = append(out, "requestor", claims.Username+":"+claims.Subject)
+	}
+
+	return out
 }

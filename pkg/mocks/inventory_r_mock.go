@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	model "github.com/ShatteredRealms/go-backend/pkg/model"
+	character "github.com/ShatteredRealms/go-backend/pkg/model/character"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,10 +41,10 @@ func (m *MockInventoryRepository) EXPECT() *MockInventoryRepositoryMockRecorder 
 }
 
 // GetInventory mocks base method.
-func (m *MockInventoryRepository) GetInventory(ctx context.Context, characterId uint) (*model.CharacterInventory, error) {
+func (m *MockInventoryRepository) GetInventory(ctx context.Context, characterId uint) (*character.Inventory, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetInventory", ctx, characterId)
-	ret0, _ := ret[0].(*model.CharacterInventory)
+	ret0, _ := ret[0].(*character.Inventory)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -56,7 +56,7 @@ func (mr *MockInventoryRepositoryMockRecorder) GetInventory(ctx, characterId any
 }
 
 // UpdateInventory mocks base method.
-func (m *MockInventoryRepository) UpdateInventory(ctx context.Context, inventory *model.CharacterInventory) error {
+func (m *MockInventoryRepository) UpdateInventory(ctx context.Context, inventory *character.Inventory) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateInventory", ctx, inventory)
 	ret0, _ := ret[0].(error)

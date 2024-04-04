@@ -154,7 +154,7 @@ services:
     volumes:
       - keycloak:/opt/keycloak/data/h2
 
-  # sro-characters:
+  # sro-character:
   #   build:
   #     context: .
   #     dockerfile: build/characters.Dockerfile
@@ -176,7 +176,7 @@ services:
   #   ports:
   #     - 8180:8180
   #   depends_on:
-  #     - sro-characters
+  #     - sro-character
   #     - kafka
   #     - uptrace
   #     - postgres
@@ -193,7 +193,7 @@ services:
   #   ports:
   #     - 8082:8082
   #   depends_on:
-  #     - sro-characters
+  #     - sro-character
   #     - uptrace
   #   volumes:
   #     - ./test/docker_config.yaml:/etc/sro/config.yaml

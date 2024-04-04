@@ -10,6 +10,8 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/srv"
+	"github.com/ShatteredRealms/go-backend/pkg/telemetry"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -22,15 +24,18 @@ var (
 )
 
 func init() {
-	helpers.SetupLogger(character.ServiceName)
-	conf = config.NewGlobalConfig(context.Background())
+	var err error
+	conf, err = config.NewGlobalConfig(context.Background())
+	if err != nil {
+		log.Logger.Fatalf("initialization: %v", err)
+	}
 }
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	otelShutdown, err := helpers.SetupOTelSDK(ctx, character.ServiceName, config.Version, conf.OpenTelemetry.Addr)
+	otelShutdown, err := telemetry.SetupOTelSDK(ctx, character.ServiceName, conf.Version, conf.OpenTelemetry.Addr)
 	defer func() {
 		err = errors.Join(err, otelShutdown(context.Background()))
 		if err != nil {
@@ -39,24 +44,43 @@ func main() {
 	}()
 
 	if err != nil {
-		log.Logger.Fatal(err)
+		log.Logger.WithContext(ctx).Errorf("connecting to otel: %v", err)
+		return
 	}
 
-	server := character.NewServerContext(ctx, conf)
-	grpcServer, gwmux := helpers.InitServerDefaults()
+	tracer := otel.Tracer("CharactersService")
+	ctx, span := tracer.Start(ctx, "initialize")
+	defer span.End()
+
+	server, err := character.NewServerContext(ctx, conf, tracer)
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("creating server context: %v", err)
+		return
+	}
+	grpcServer, gwmux := helpers.InitServerDefaults(server.KeycloakClient, server.GlobalConfig.Keycloak.Realm)
 	address := server.GlobalConfig.Character.Local.Address()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
 	pb.RegisterHealthServiceServer(grpcServer, srv.NewHealthServiceServer())
 	err = pb.RegisterHealthServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
-	helpers.Check(ctx, err, "register health service handler endpoint")
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("register health service handler endpoint: %v", err)
+		return
+	}
 
 	css, err := srv.NewCharacterServiceServer(ctx, server)
-	helpers.Check(ctx, err, "create characters service server")
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("create character service server: %v", err)
+		return
+	}
 	pb.RegisterCharacterServiceServer(grpcServer, css)
 	err = pb.RegisterCharacterServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
-	helpers.Check(ctx, err, "registering characters service handler endpoint")
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("registering character service handler endpoint: %v", err)
+		return
+	}
 
+	span.End()
 	srvErr := make(chan error, 1)
 	go func() {
 		srvErr <- helpers.StartServer(ctx, grpcServer, gwmux, server.GlobalConfig.Character.Local.Address())
@@ -64,7 +88,7 @@ func main() {
 
 	select {
 	case err = <-srvErr:
-		log.Logger.Fatalf("listen server: %v", err)
+		log.Logger.WithContext(ctx).Errorf("listen server: %v", err)
 
 	case <-ctx.Done():
 		log.Logger.Info("Server canceled by user input.")

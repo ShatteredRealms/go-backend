@@ -6,7 +6,8 @@ import (
 	"fmt"
 
 	"github.com/ShatteredRealms/go-backend/pkg/log"
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/game"
+	"github.com/ShatteredRealms/go-backend/pkg/model/gamebackend"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -23,14 +24,14 @@ type dimensionRepository interface {
 		location string,
 		version string,
 		mapIds []*uuid.UUID,
-	) (*model.Dimension, error)
-	FindDimensionByName(ctx context.Context, name string) (*model.Dimension, error)
-	FindDimensionById(ctx context.Context, id *uuid.UUID) (*model.Dimension, error)
-	FindDimensionsByNames(ctx context.Context, names []string) (model.Dimensions, error)
-	FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error)
-	FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error)
-	FindAllDimensions(ctx context.Context) (model.Dimensions, error)
-	SaveDimension(ctx context.Context, dimension *model.Dimension) (*model.Dimension, error)
+	) (*game.Dimension, error)
+	FindDimensionByName(ctx context.Context, name string) (*game.Dimension, error)
+	FindDimensionById(ctx context.Context, id *uuid.UUID) (*game.Dimension, error)
+	FindDimensionsByNames(ctx context.Context, names []string) (game.Dimensions, error)
+	FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (game.Dimensions, error)
+	FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (game.Dimensions, error)
+	FindAllDimensions(ctx context.Context) (game.Dimensions, error)
+	SaveDimension(ctx context.Context, dimension *game.Dimension) (*game.Dimension, error)
 	DeleteDimensionByName(ctx context.Context, name string) error
 	DeleteDimensionById(ctx context.Context, id *uuid.UUID) error
 }
@@ -42,21 +43,21 @@ type mapRepository interface {
 		path string,
 		maxPlayers uint64,
 		instanced bool,
-	) (*model.Map, error)
-	FindMapByName(ctx context.Context, name string) (*model.Map, error)
-	FindMapById(ctx context.Context, id *uuid.UUID) (*model.Map, error)
-	FindMapsByNames(ctx context.Context, names []string) (model.Maps, error)
-	FindMapsByIds(ctx context.Context, ids []*uuid.UUID) (model.Maps, error)
-	FindAllMaps(ctx context.Context) (model.Maps, error)
-	SaveMap(ctx context.Context, m *model.Map) (*model.Map, error)
+	) (*game.Map, error)
+	FindMapByName(ctx context.Context, name string) (*game.Map, error)
+	FindMapById(ctx context.Context, id *uuid.UUID) (*game.Map, error)
+	FindMapsByNames(ctx context.Context, names []string) (game.Maps, error)
+	FindMapsByIds(ctx context.Context, ids []*uuid.UUID) (game.Maps, error)
+	FindAllMaps(ctx context.Context) (game.Maps, error)
+	SaveMap(ctx context.Context, m *game.Map) (*game.Map, error)
 	DeleteMapByName(ctx context.Context, name string) error
 	DeleteMapById(ctx context.Context, id *uuid.UUID) error
 }
 
 type GamebackendRepository interface {
-	CreatePendingConnection(ctx context.Context, character string, serverName string) (*model.PendingConnection, error)
+	CreatePendingConnection(ctx context.Context, character string, serverName string) (*gamebackend.PendingConnection, error)
 	DeletePendingConnection(ctx context.Context, id *uuid.UUID) error
-	FindPendingConnection(ctx context.Context, id *uuid.UUID) *model.PendingConnection
+	FindPendingConnection(ctx context.Context, id *uuid.UUID) *gamebackend.PendingConnection
 
 	dimensionRepository
 	mapRepository
@@ -76,12 +77,12 @@ func (r *gamebackendRepository) CreatePendingConnection(
 	ctx context.Context,
 	character string,
 	serverName string,
-) (*model.PendingConnection, error) {
+) (*gamebackend.PendingConnection, error) {
 	if character == "" {
 		return nil, errors.New("no character given")
 	}
 
-	pc := &model.PendingConnection{
+	pc := &gamebackend.PendingConnection{
 		Character:  character,
 		ServerName: serverName,
 	}
@@ -99,16 +100,16 @@ func (r *gamebackendRepository) DeletePendingConnection(ctx context.Context, id 
 		return fmt.Errorf("character is nil")
 	}
 
-	return r.DB.WithContext(ctx).Delete(&model.PendingConnection{}, id).Error
+	return r.DB.WithContext(ctx).Delete(&gamebackend.PendingConnection{}, id).Error
 }
 
 // FindPendingConnection implements GamebackendRepository.
-func (r *gamebackendRepository) FindPendingConnection(ctx context.Context, id *uuid.UUID) *model.PendingConnection {
+func (r *gamebackendRepository) FindPendingConnection(ctx context.Context, id *uuid.UUID) *gamebackend.PendingConnection {
 	if id == nil {
 		return nil
 	}
 
-	var pendingConnection *model.PendingConnection
+	var pendingConnection *gamebackend.PendingConnection
 	result := r.DB.WithContext(ctx).Where("id = ?", id).Find(&pendingConnection)
 	if result.Error != nil {
 		log.Logger.WithContext(ctx).Errorf("find by id err: %v", result.Error)
@@ -131,13 +132,13 @@ func (r *gamebackendRepository) CreateDimension(
 	location string,
 	version string,
 	mapIds []*uuid.UUID,
-) (*model.Dimension, error) {
+) (*game.Dimension, error) {
 	maps, err := r.FindMapsByIds(ctx, mapIds)
 	if err != nil {
 		return nil, err
 	}
 
-	dimension := &model.Dimension{
+	dimension := &game.Dimension{
 		Name:     name,
 		Location: location,
 		Version:  version,
@@ -158,8 +159,8 @@ func (r *gamebackendRepository) CreateMap(
 	path string,
 	maxPlayers uint64,
 	instanced bool,
-) (*model.Map, error) {
-	newMap := &model.Map{
+) (*game.Map, error) {
+	newMap := &game.Map{
 		Name:       name,
 		Path:       path,
 		MaxPlayers: maxPlayers,
@@ -175,34 +176,34 @@ func (r *gamebackendRepository) CreateMap(
 
 // DeleteDimension implements GamebackendRepository.
 func (r *gamebackendRepository) DeleteDimension(ctx context.Context, id *uuid.UUID) error {
-	return r.DB.WithContext(ctx).Delete(&model.Dimension{}, id).Error
+	return r.DB.WithContext(ctx).Delete(&game.Dimension{}, id).Error
 }
 
 // DeleteDimensionByName implements GamebackendRepository.
 func (r *gamebackendRepository) DeleteDimensionByName(ctx context.Context, name string) error {
-	return r.DB.WithContext(ctx).Delete(&model.Dimension{}, "name = ?", name).Error
+	return r.DB.WithContext(ctx).Delete(&game.Dimension{}, "name = ?", name).Error
 }
 
 // DeleteDimensionById implements GamebackendRepository.
 func (r *gamebackendRepository) DeleteDimensionById(ctx context.Context, id *uuid.UUID) error {
-	return r.DB.WithContext(ctx).Delete(&model.Dimension{}, "id = ?", id.String()).Error
+	return r.DB.WithContext(ctx).Delete(&game.Dimension{}, "id = ?", id.String()).Error
 }
 
 // DeleteMapById implements GamebackendRepository.
 func (r *gamebackendRepository) DeleteMapById(ctx context.Context, id *uuid.UUID) error {
-	return r.DB.WithContext(ctx).Delete(&model.Map{}, id).Error
+	return r.DB.WithContext(ctx).Delete(&game.Map{}, id).Error
 }
 
 // DeleteMapByName implements GamebackendRepository.
 func (r *gamebackendRepository) DeleteMapByName(ctx context.Context, name string) error {
-	return r.DB.WithContext(ctx).Delete(&model.Map{}, "name = ?", name).Error
+	return r.DB.WithContext(ctx).Delete(&game.Map{}, "name = ?", name).Error
 }
 
 // SaveDimension implements GamebackendRepository.
 func (r *gamebackendRepository) SaveDimension(
 	ctx context.Context,
-	dimension *model.Dimension,
-) (*model.Dimension, error) {
+	dimension *game.Dimension,
+) (*game.Dimension, error) {
 	if dimension == nil {
 		return nil, fmt.Errorf("dimension nil")
 	}
@@ -221,7 +222,7 @@ func (r *gamebackendRepository) SaveDimension(
 }
 
 // SaveMap implements GamebackendRepository.
-func (r *gamebackendRepository) SaveMap(ctx context.Context, m *model.Map) (*model.Map, error) {
+func (r *gamebackendRepository) SaveMap(ctx context.Context, m *game.Map) (*game.Map, error) {
 	err := r.DB.WithContext(ctx).Save(&m).Error
 	if err != nil {
 		return nil, err
@@ -231,20 +232,20 @@ func (r *gamebackendRepository) SaveMap(ctx context.Context, m *model.Map) (*mod
 }
 
 // FindAllDimensions implements GamebackendRepository.
-func (r *gamebackendRepository) FindAllDimensions(ctx context.Context) (model.Dimensions, error) {
-	var dimensions model.Dimensions
+func (r *gamebackendRepository) FindAllDimensions(ctx context.Context) (game.Dimensions, error) {
+	var dimensions game.Dimensions
 	return dimensions, r.DB.WithContext(ctx).Preload(clause.Associations).Find(&dimensions).Error
 }
 
 // FindAllMaps implements GamebackendRepository.
-func (r *gamebackendRepository) FindAllMaps(ctx context.Context) (model.Maps, error) {
-	var maps model.Maps
+func (r *gamebackendRepository) FindAllMaps(ctx context.Context) (game.Maps, error) {
+	var maps game.Maps
 	return maps, r.DB.WithContext(ctx).Find(&maps).Error
 }
 
 // FindDimensionById implements GamebackendRepository.
-func (r *gamebackendRepository) FindDimensionById(ctx context.Context, id *uuid.UUID) (*model.Dimension, error) {
-	var dimension *model.Dimension
+func (r *gamebackendRepository) FindDimensionById(ctx context.Context, id *uuid.UUID) (*game.Dimension, error) {
+	var dimension *game.Dimension
 	result := r.DB.WithContext(ctx).Preload(clause.Associations).Find(&dimension, id)
 	if result.Error != nil {
 		return nil, result.Error
@@ -258,8 +259,8 @@ func (r *gamebackendRepository) FindDimensionById(ctx context.Context, id *uuid.
 }
 
 // FindDimensionByName implements GamebackendRepository.
-func (r *gamebackendRepository) FindDimensionByName(ctx context.Context, name string) (*model.Dimension, error) {
-	var dimension *model.Dimension
+func (r *gamebackendRepository) FindDimensionByName(ctx context.Context, name string) (*game.Dimension, error) {
+	var dimension *game.Dimension
 	result := r.DB.WithContext(ctx).Preload(clause.Associations).Find(&dimension, "name = ?", name)
 	if result.Error != nil {
 		return nil, result.Error
@@ -273,11 +274,11 @@ func (r *gamebackendRepository) FindDimensionByName(ctx context.Context, name st
 }
 
 // FindMapById implements GamebackendRepository.
-func (r *gamebackendRepository) FindMapById(ctx context.Context, id *uuid.UUID) (*model.Map, error) {
+func (r *gamebackendRepository) FindMapById(ctx context.Context, id *uuid.UUID) (*game.Map, error) {
 	if id == nil {
 		return nil, fmt.Errorf("error nil: id")
 	}
-	var m *model.Map
+	var m *game.Map
 	result := r.DB.WithContext(ctx).Find(&m, id)
 	if result.Error != nil {
 		return nil, result.Error
@@ -291,8 +292,8 @@ func (r *gamebackendRepository) FindMapById(ctx context.Context, id *uuid.UUID) 
 }
 
 // FindMapByName implements GamebackendRepository.
-func (r *gamebackendRepository) FindMapByName(ctx context.Context, name string) (*model.Map, error) {
-	var m *model.Map
+func (r *gamebackendRepository) FindMapByName(ctx context.Context, name string) (*game.Map, error) {
+	var m *game.Map
 	result := r.DB.WithContext(ctx).Find(&m, "name = ?", name)
 	if result.Error != nil {
 		return nil, result.Error
@@ -306,38 +307,38 @@ func (r *gamebackendRepository) FindMapByName(ctx context.Context, name string) 
 }
 
 // FindDimensionsByIds implements GamebackendRepository.
-func (r *gamebackendRepository) FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error) {
-	var found model.Dimensions
+func (r *gamebackendRepository) FindDimensionsByIds(ctx context.Context, ids []*uuid.UUID) (game.Dimensions, error) {
+	var found game.Dimensions
 	return found, r.DB.WithContext(ctx).Preload(clause.Associations).Find(&found, "id IN ?", ids).Error
 }
 
 // FindDimensionsByNames implements GamebackendRepository.
-func (r *gamebackendRepository) FindDimensionsByNames(ctx context.Context, names []string) (model.Dimensions, error) {
-	var found model.Dimensions
+func (r *gamebackendRepository) FindDimensionsByNames(ctx context.Context, names []string) (game.Dimensions, error) {
+	var found game.Dimensions
 	return found, r.DB.WithContext(ctx).Preload(clause.Associations).Find(&found, "name IN ?", names).Error
 }
 
 // FindMapsByIds implements GamebackendRepository.
-func (r *gamebackendRepository) FindMapsByIds(ctx context.Context, ids []*uuid.UUID) (model.Maps, error) {
-	var found model.Maps
+func (r *gamebackendRepository) FindMapsByIds(ctx context.Context, ids []*uuid.UUID) (game.Maps, error) {
+	var found game.Maps
 	return found, r.DB.WithContext(ctx).Find(&found, "id IN ?", ids).Error
 }
 
 // FindMapsByNames implements GamebackendRepository.
-func (r *gamebackendRepository) FindMapsByNames(ctx context.Context, names []string) (model.Maps, error) {
-	var found model.Maps
+func (r *gamebackendRepository) FindMapsByNames(ctx context.Context, names []string) (game.Maps, error) {
+	var found game.Maps
 	return found, r.DB.WithContext(ctx).Find(&found, "name IN ?", names).Error
 }
 
 // FindDimensionsWithMapIds implements GamebackendRepository.
-func (r *gamebackendRepository) FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (model.Dimensions, error) {
-	var dimensions model.Dimensions
+func (r *gamebackendRepository) FindDimensionsWithMapIds(ctx context.Context, ids []*uuid.UUID) (game.Dimensions, error) {
+	var dimensions game.Dimensions
 	return dimensions, r.DB.WithContext(ctx).
-		Model(&model.Dimension{}).
+		Model(&game.Dimension{}).
 		Joins("JOIN dimension_maps ON dimensions.id = dimension_maps.dimension_id").
 		Where("dimension_maps.map_id IN ?", ids).
 		Find(&dimensions).Error
-	// Model(&model.Map{}).
+	// Model(&game.Map{}).
 	// Where("id IN ?", ids).
 	// Association("Dimensions").
 	// Find(&dimensions)
@@ -356,8 +357,8 @@ func (r *gamebackendRepository) WithTrx(trx *gorm.DB) GamebackendRepository {
 // Migrate implements GamebackendRepository.
 func (r *gamebackendRepository) Migrate(ctx context.Context) error {
 	return r.DB.WithContext(ctx).AutoMigrate(
-		&model.PendingConnection{},
-		&model.Dimension{},
-		&model.Map{},
+		&gamebackend.PendingConnection{},
+		&game.Dimension{},
+		&game.Map{},
 	)
 }

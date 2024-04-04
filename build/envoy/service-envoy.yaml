@@ -89,7 +89,7 @@ static_resources:
           - endpoint:
               address:
                 socket_address:
-                  address: "sro-characters"
+                  address: "sro-character"
                   port_value: 8081
     http2_protocol_options: {}
   - name: gamebackend_service

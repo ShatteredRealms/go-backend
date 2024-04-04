@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
+	"github.com/WilSimpson/gocloak/v13"
 )
 
 type KeycloakManager struct {
@@ -18,7 +18,7 @@ type KeycloakManager struct {
 	Users      []*gocloak.User
 	GuestCount int
 
-	keycloak *gocloak.GoCloak
+	keycloak gocloak.KeycloakClient
 	token    *gocloak.JWT
 }
 

@@ -2,16 +2,15 @@ package character
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/Nerzal/gocloak/v13"
 	"github.com/ShatteredRealms/go-backend/pkg/config"
-	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/ShatteredRealms/go-backend/pkg/service"
+	"github.com/WilSimpson/gocloak/v13"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -19,37 +18,50 @@ var (
 	ServiceName = "character"
 )
 
-type CharactersServerContext struct {
-	GlobalConfig     *config.GlobalConfig
+type CharacterServerContext struct {
+	*config.ServerContext
 	CharacterService service.CharacterService
 	InventoryService service.InventoryService
-	KeycloakClient   *gocloak.GoCloak
-	Tracer           trace.Tracer
 }
 
-func NewServerContext(ctx context.Context, conf *config.GlobalConfig) *CharactersServerContext {
-	server := &CharactersServerContext{
-		GlobalConfig:   conf,
-		Tracer:         otel.Tracer("CharactersService"),
-		KeycloakClient: gocloak.NewClient(conf.Keycloak.BaseURL),
+func NewServerContext(ctx context.Context, conf *config.GlobalConfig, tracer trace.Tracer) (*CharacterServerContext, error) {
+	server := &CharacterServerContext{
+		ServerContext: &config.ServerContext{
+			GlobalConfig:   conf,
+			Tracer:         tracer,
+			KeycloakClient: gocloak.NewClient(conf.Keycloak.BaseURL),
+			RefSROServer:   &conf.Character.SROServer,
+		},
 	}
+	ctx, span := server.Tracer.Start(ctx, "server.new")
+	defer span.End()
+
+	server.KeycloakClient.RegisterMiddlewares(gocloak.OpenTelemetryMiddleware)
 
 	postgres, err := repository.ConnectDB(server.GlobalConfig.Character.Postgres)
-	helpers.Check(ctx, err, "connecting to postgres database")
+	if err != nil {
+		return nil, fmt.Errorf("connecting to postgres: %w", err)
+	}
 
 	characterRepo, err := repository.NewCharacterRepository(postgres)
-	helpers.Check(ctx, err, "character repo")
+	if err != nil {
+		return nil, fmt.Errorf("postgres: %w", err)
+	}
 	characterService, err := service.NewCharacterService(ctx, characterRepo)
-	helpers.Check(ctx, err, "character serivce")
+	if err != nil {
+		return nil, fmt.Errorf("character service: %w", err)
+	}
 	server.CharacterService = characterService
 
 	opts := options.Client()
 	opts.Monitor = otelmongo.NewMonitor()
 	opts.ApplyURI(server.GlobalConfig.Character.Mongo.Master.MongoDSN())
 	mongoDb, err := mongo.Connect(ctx, opts)
-	helpers.Check(ctx, err, "connecting to mongo database")
+	if err != nil {
+		return nil, fmt.Errorf("connecting to mongo database: %w", err)
+	}
 	invRepo := repository.NewInventoryRepository(mongoDb.Database(server.GlobalConfig.Character.Mongo.Master.Name))
 	server.InventoryService = service.NewInventoryService(invRepo)
 
-	return server
+	return server, nil
 }

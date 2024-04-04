@@ -1,6 +1,6 @@
 characters:
   remote:
-    host: sro-characters
+    host: sro-character
   db:
     master:
       host: postgres

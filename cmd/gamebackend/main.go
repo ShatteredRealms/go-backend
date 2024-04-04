@@ -6,12 +6,13 @@ import (
 	"os"
 	"os/signal"
 
-	character "github.com/ShatteredRealms/go-backend/cmd/character/app"
 	gamebackend "github.com/ShatteredRealms/go-backend/cmd/gamebackend/app"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/srv"
+	"github.com/ShatteredRealms/go-backend/pkg/telemetry"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -23,15 +24,18 @@ var (
 )
 
 func init() {
-	helpers.SetupLogger(gamebackend.ServiceName)
-	conf = config.NewGlobalConfig(context.Background())
+	var err error
+	conf, err = config.NewGlobalConfig(context.Background())
+	if err != nil {
+		log.Logger.Fatalf("initialization: %v", err)
+	}
 }
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	otelShutdown, err := helpers.SetupOTelSDK(ctx, character.ServiceName, config.Version, conf.OpenTelemetry.Addr)
+	otelShutdown, err := telemetry.SetupOTelSDK(ctx, gamebackend.ServiceName, config.Version, conf.OpenTelemetry.Addr)
 	defer func() {
 		err = errors.Join(err, otelShutdown(context.Background()))
 		if err != nil {
@@ -40,29 +44,55 @@ func main() {
 	}()
 
 	if err != nil {
-		log.Logger.Fatal(err)
+		log.Logger.WithContext(ctx).Errorf("connecting to otel: %v", err)
+		return
 	}
-	server := gamebackend.NewServerContext(ctx, conf)
-	grpcServer, gwmux := helpers.InitServerDefaults()
+
+	tracer := otel.Tracer("GameBackendService")
+	ctx, span := tracer.Start(ctx, "initialize")
+	defer span.End()
+
+	server, err := gamebackend.NewServerContext(ctx, conf, tracer)
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("creating server context: %v", err)
+		return
+	}
+	grpcServer, gwmux := helpers.InitServerDefaults(server.KeycloakClient, server.GlobalConfig.Keycloak.Realm)
 	address := server.GlobalConfig.GameBackend.Local.Address()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
 	pb.RegisterHealthServiceServer(grpcServer, srv.NewHealthServiceServer())
 	err = pb.RegisterHealthServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
-	helpers.Check(ctx, err, "register health service handler endpoint")
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("register health service handler endpoint: %v", err)
+		return
+	}
 
 	connServer, err := srv.NewConnectionServiceServer(ctx, server)
-	helpers.Check(ctx, err, "creating connection service server")
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("creating connection service server: %v", err)
+		return
+	}
 	pb.RegisterConnectionServiceServer(grpcServer, connServer)
 	err = pb.RegisterConnectionServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
-	helpers.Check(ctx, err, "register connection service handler endpoint")
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("register connection service handler endpoint: %v", err)
+		return
+	}
 
 	serverManagerServer, err := srv.NewServerManagerServiceServer(ctx, server)
-	helpers.Check(ctx, err, "creating server manager service server")
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("creating server manager service server: %v", err)
+		return
+	}
 	pb.RegisterServerManagerServiceServer(grpcServer, serverManagerServer)
 	err = pb.RegisterServerManagerServiceHandlerFromEndpoint(ctx, gwmux, address, opts)
-	helpers.Check(ctx, err, "register server manager service handler endpoint")
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("register server manager service handler endpoint: %v", err)
+		return
+	}
 
+	span.End()
 	srvErr := make(chan error, 1)
 	go func() {
 		srvErr <- helpers.StartServer(ctx, grpcServer, gwmux, server.GlobalConfig.GameBackend.Local.Address())
@@ -70,7 +100,7 @@ func main() {
 
 	select {
 	case err = <-srvErr:
-		log.Logger.Fatalf("listen server: %v", err)
+		log.Logger.WithContext(ctx).Errorf("listen server: %v", err)
 
 	case <-ctx.Done():
 		log.Logger.Info("Server canceled by user input.")

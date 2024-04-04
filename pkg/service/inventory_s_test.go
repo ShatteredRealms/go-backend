@@ -12,7 +12,7 @@ import (
 
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/mocks"
-	"github.com/ShatteredRealms/go-backend/pkg/model"
+	"github.com/ShatteredRealms/go-backend/pkg/model/character"
 	"github.com/ShatteredRealms/go-backend/pkg/service"
 )
 
@@ -24,12 +24,12 @@ var _ = Describe("Inventory service", func() {
 
 		invService service.InventoryService
 
-		inventoryItem      = &model.InventoryItem{}
-		inventoryItem2     = &model.InventoryItem{}
-		inventoryItem3     = &model.InventoryItem{}
-		characterInventory = &model.CharacterInventory{}
-		ctx                context.Context
-		fakeErr            error
+		invItem  = &character.InventoryItem{}
+		invItem2 = &character.InventoryItem{}
+		invItem3 = &character.InventoryItem{}
+		charInv  = &character.Inventory{}
+		ctx      context.Context
+		fakeErr  error
 	)
 
 	BeforeEach(func() {
@@ -45,30 +45,30 @@ var _ = Describe("Inventory service", func() {
 
 		ctx = context.Background()
 		fakeErr = fmt.Errorf("error: %s", faker.Username())
-		Expect(faker.FakeData(inventoryItem)).To(Succeed())
-		Expect(faker.FakeData(inventoryItem2)).To(Succeed())
-		Expect(faker.FakeData(inventoryItem3)).To(Succeed())
+		Expect(faker.FakeData(invItem)).To(Succeed())
+		Expect(faker.FakeData(invItem2)).To(Succeed())
+		Expect(faker.FakeData(invItem3)).To(Succeed())
 
 		ints, err := faker.RandomInt(1, 1e3, 1)
 		Expect(err).To(BeNil())
-		characterInventory.CharacterId = uint(ints[0])
-		characterInventory.Inventory = []*model.InventoryItem{inventoryItem}
-		characterInventory.Bank = []*model.InventoryItem{inventoryItem2}
+		charInv.CharacterId = uint(ints[0])
+		charInv.Inventory = []*character.InventoryItem{invItem}
+		charInv.Bank = []*character.InventoryItem{invItem2}
 	})
 
 	Describe("GetInventory", func() {
 		It("should work", func() {
-			mockRepository.EXPECT().GetInventory(ctx, characterInventory.CharacterId).Return(characterInventory, fakeErr)
-			out, err := invService.GetInventory(ctx, characterInventory.CharacterId)
+			mockRepository.EXPECT().GetInventory(ctx, charInv.CharacterId).Return(charInv, fakeErr)
+			out, err := invService.GetInventory(ctx, charInv.CharacterId)
 			Expect(err).To(MatchError(fakeErr))
-			Expect(out).To(Equal(characterInventory))
+			Expect(out).To(Equal(charInv))
 		})
 	})
 
 	Describe("UpdateInventory", func() {
 		It("should work", func() {
-			mockRepository.EXPECT().UpdateInventory(ctx, characterInventory).Return(fakeErr)
-			err := invService.UpdateInventory(ctx, characterInventory)
+			mockRepository.EXPECT().UpdateInventory(ctx, charInv).Return(fakeErr)
+			err := invService.UpdateInventory(ctx, charInv)
 			Expect(err).To(MatchError(fakeErr))
 		})
 	})
