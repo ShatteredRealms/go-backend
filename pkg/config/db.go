@@ -4,8 +4,7 @@ import "fmt"
 
 // DBConfig Information on how to connect to the database
 type DBConfig struct {
-	Host     string `yaml:"host"`
-	Port     string `yaml:"port"`
+	ServerAddress
 	Name     string `yaml:"name"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
@@ -47,4 +46,13 @@ func (c DBConfig) MongoDSN() string {
 		c.Host,
 		c.Port,
 	)
+}
+
+func (p DBPoolConfig) Addresses() []string {
+	addrs := make([]string, len(p.Slaves)+1)
+	for idx, dbConf := range p.Slaves {
+		addrs[idx+1] = dbConf.Address()
+	}
+
+	return addrs
 }

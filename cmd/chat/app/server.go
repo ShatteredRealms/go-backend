@@ -39,7 +39,7 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig, tracer tra
 
 	server.KeycloakClient.RegisterMiddlewares(gocloak.OpenTelemetryMiddleware)
 
-	db, err := repository.ConnectDB(conf.Chat.Postgres)
+	db, err := repository.ConnectDB(conf.Chat.Postgres, conf.Redis)
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres database: %w", err)
 	}

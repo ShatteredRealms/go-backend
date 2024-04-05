@@ -31,7 +31,7 @@ var _ = Describe("Chat service", Ordered, func() {
 
 		chatService service.ChatService
 
-		kafkaPort uint
+		kafkaPort string
 
 		err       error
 		fakeError = fmt.Errorf("error")
@@ -81,7 +81,7 @@ var _ = Describe("Chat service", Ordered, func() {
 			It("should fail if kafka connect fails", func() {
 				mockRepository.EXPECT().Migrate(gomock.Any()).Return(nil)
 				chatService, err = service.NewChatService(context.Background(), mockRepository, config.ServerAddress{
-					Port: 0,
+					Port: "0",
 					Host: "nowhere",
 				})
 

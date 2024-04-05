@@ -6,6 +6,7 @@ import (
 
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
+	"github.com/ShatteredRealms/go-backend/pkg/repository/cacher"
 	"github.com/go-gorm/caches/v4"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -18,8 +19,8 @@ import (
 )
 
 // ConnectDB Initializes the connection to a Postgres database
-func ConnectDB(pool config.DBPoolConfig) (*gorm.DB, error) {
-	conf, err := pgx.ParseConfig(pool.Master.PostgresDSN())
+func ConnectDB(pgPool config.DBPoolConfig, redisPool config.DBPoolConfig) (*gorm.DB, error) {
+	conf, err := pgx.ParseConfig(pgPool.Master.PostgresDSN())
 	if err != nil {
 		return nil, fmt.Errorf("parse config: %w", err)
 	}
@@ -46,9 +47,9 @@ func ConnectDB(pool config.DBPoolConfig) (*gorm.DB, error) {
 		return nil, fmt.Errorf("gorm: %w", err)
 	}
 
-	if len(pool.Slaves) > 0 {
-		replicas := make([]gorm.Dialector, len(pool.Slaves))
-		for _, slave := range pool.Slaves {
+	if len(pgPool.Slaves) > 0 {
+		replicas := make([]gorm.Dialector, len(pgPool.Slaves))
+		for _, slave := range pgPool.Slaves {
 			replicas = append(replicas, postgres.Open(slave.PostgresDSN()))
 		}
 
@@ -62,14 +63,18 @@ func ConnectDB(pool config.DBPoolConfig) (*gorm.DB, error) {
 		}
 	}
 
-	if err := db.Use(otelgorm.NewPlugin(otelgorm.WithDBName(pool.Master.Name))); err != nil {
+	if err := db.Use(otelgorm.NewPlugin(otelgorm.WithDBName(pgPool.Master.Name))); err != nil {
 		return nil, fmt.Errorf("opentelemetry: %w", err)
 	}
 
+	c, err := cacher.NewRedisCache(redisPool)
+	if err != nil {
+		return nil, fmt.Errorf("redis cache: %w", err)
+	}
 	cachesPlugin := caches.Caches{
 		Conf: &caches.Config{
 			Easer:  true,
-			Cacher: NewMemoryCacher(),
+			Cacher: c,
 		},
 	}
 	if err = db.Use(&cachesPlugin); err != nil {

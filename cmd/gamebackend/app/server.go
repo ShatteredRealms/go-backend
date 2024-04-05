@@ -70,7 +70,7 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig, tracer tra
 		}
 	}
 
-	db, err := repository.ConnectDB(conf.GameBackend.Postgres)
+	db, err := repository.ConnectDB(conf.GameBackend.Postgres, conf.Redis)
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres database: %w", err)
 	}

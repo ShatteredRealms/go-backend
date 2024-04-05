@@ -32,6 +32,7 @@ type GlobalConfig struct {
 	Agones        AgonesConfig        `json:"agones"`
 	Keycloak      KeycloakGlobal      `yaml:"keycloak"`
 	Version       string
+	Redis         DBPoolConfig
 }
 
 type SROServer struct {
@@ -80,7 +81,7 @@ type AgonesConfig struct {
 }
 
 type ServerAddress struct {
-	Port uint   `yaml:"port"`
+	Port string `yaml:"port"`
 	Host string `yaml:"host"`
 }
 
@@ -89,11 +90,11 @@ func NewGlobalConfig(ctx context.Context) (*GlobalConfig, error) {
 		Character: CharacterServer{
 			SROServer: SROServer{
 				Local: ServerAddress{
-					Port: 8081,
+					Port: "8081",
 					Host: "",
 				},
 				Remote: ServerAddress{
-					Port: 8081,
+					Port: "8081",
 					Host: "",
 				},
 				Mode:     LocalMode,
@@ -106,8 +107,10 @@ func NewGlobalConfig(ctx context.Context) (*GlobalConfig, error) {
 			},
 			Postgres: DBPoolConfig{
 				Master: DBConfig{
-					Host:     "localhost",
-					Port:     "5432",
+					ServerAddress: ServerAddress{
+						Host: "localhost",
+						Port: "5432",
+					},
 					Name:     "characters",
 					Username: "postgres",
 					Password: "password",
@@ -115,8 +118,10 @@ func NewGlobalConfig(ctx context.Context) (*GlobalConfig, error) {
 			},
 			Mongo: DBPoolConfig{
 				Master: DBConfig{
-					Host:     "localhost",
-					Port:     "27017",
+					ServerAddress: ServerAddress{
+						Host: "localhost",
+						Port: "27017",
+					},
 					Username: "mongo",
 					Password: "password",
 					Name:     "sro",
@@ -126,11 +131,11 @@ func NewGlobalConfig(ctx context.Context) (*GlobalConfig, error) {
 		GameBackend: GamebackendServer{
 			SROServer: SROServer{
 				Local: ServerAddress{
-					Port: 8082,
+					Port: "8082",
 					Host: "",
 				},
 				Remote: ServerAddress{
-					Port: 8082,
+					Port: "8082",
 					Host: "",
 				},
 				Mode:     LocalMode,
@@ -143,8 +148,10 @@ func NewGlobalConfig(ctx context.Context) (*GlobalConfig, error) {
 			},
 			Postgres: DBPoolConfig{
 				Master: DBConfig{
-					Host:     "localhost",
-					Port:     "5432",
+					ServerAddress: ServerAddress{
+						Host: "localhost",
+						Port: "5432",
+					},
 					Name:     "gamebackend",
 					Username: "postgres",
 					Password: "password",
@@ -155,11 +162,11 @@ func NewGlobalConfig(ctx context.Context) (*GlobalConfig, error) {
 		Chat: ChatServer{
 			SROServer: SROServer{
 				Local: ServerAddress{
-					Port: 8180,
+					Port: "8180",
 					Host: "",
 				},
 				Remote: ServerAddress{
-					Port: 8180,
+					Port: "8180",
 					Host: "",
 				},
 				Mode:     LocalMode,
@@ -171,13 +178,15 @@ func NewGlobalConfig(ctx context.Context) (*GlobalConfig, error) {
 				},
 			},
 			Kafka: ServerAddress{
-				Port: 29092,
+				Port: "29092",
 				Host: "localhost",
 			},
 			Postgres: DBPoolConfig{
 				Master: DBConfig{
-					Host:     "localhost",
-					Port:     "5432",
+					ServerAddress: ServerAddress{
+						Host: "localhost",
+						Port: "5432",
+					},
 					Name:     "chat",
 					Username: "postgres",
 					Password: "password",
@@ -194,13 +203,53 @@ func NewGlobalConfig(ctx context.Context) (*GlobalConfig, error) {
 			CaCertFile: "/etc/sro/auth/agones/ca/ca",
 			Namespace:  "default",
 			Allocator: ServerAddress{
-				Port: 443,
+				Port: "443",
 				Host: "localhost",
 			},
 		},
 		Keycloak: KeycloakGlobal{
 			BaseURL: "http://localhost:80801/",
 			Realm:   "default",
+		},
+		Redis: DBPoolConfig{
+			Master: DBConfig{
+				ServerAddress: ServerAddress{
+					Port: "7000",
+					Host: "localhost",
+				},
+			},
+			Slaves: []DBConfig{
+				{
+					ServerAddress: ServerAddress{
+						Port: "7001",
+						Host: "localhost",
+					},
+				},
+				{
+					ServerAddress: ServerAddress{
+						Port: "7002",
+						Host: "localhost",
+					},
+				},
+				{
+					ServerAddress: ServerAddress{
+						Port: "7003",
+						Host: "localhost",
+					},
+				},
+				{
+					ServerAddress: ServerAddress{
+						Port: "7004",
+						Host: "localhost",
+					},
+				},
+				{
+					ServerAddress: ServerAddress{
+						Port: "7005",
+						Host: "localhost",
+					},
+				},
+			},
 		},
 		Version: Version,
 	}
@@ -274,5 +323,5 @@ func bindRecursive(key string, val reflect.Value) {
 }
 
 func (s *ServerAddress) Address() string {
-	return fmt.Sprintf("%s:%d", s.Host, s.Port)
+	return fmt.Sprintf("%s:%s", s.Host, s.Port)
 }

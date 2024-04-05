@@ -1,10 +1,12 @@
 package repository_test
 
 import (
+	"bytes"
 	"context"
-	"strings"
+	"encoding/gob"
 	"testing"
 
+	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
 	testdb "github.com/ShatteredRealms/go-backend/test/db"
@@ -15,16 +17,21 @@ import (
 	"gorm.io/gorm"
 )
 
+type initializeData struct {
+	gormConfig  config.DBConfig
+	mdbConnStr  string
+	redisConfig config.DBPoolConfig
+}
+
 var (
 	hook *test.Hook
 
 	gdb          *gorm.DB
 	gdbCloseFunc func()
-	gormHost     string
-	gormPort     string
-
 	mdb          *mongo.Database
 	mdbCloseFunc func()
+
+	data initializeData
 
 	characterRepo   repository.CharacterRepository
 	chatRepo        repository.ChatRepository
@@ -33,20 +40,28 @@ var (
 )
 
 func TestRepository(t *testing.T) {
-	splitter := "\n"
 	SynchronizedBeforeSuite(func() []byte {
 		log.Logger, hook = test.NewNullLogger()
-		var gdbConnStr, mdbConnStr string
 
-		gdbCloseFunc, gdbConnStr = testdb.SetupGormWithDocker()
+		var gormPort string
+		gdbCloseFunc, gormPort = testdb.SetupGormWithDocker()
 		Expect(gdbCloseFunc).NotTo(BeNil())
 
-		mdbCloseFunc, mdbConnStr = testdb.SetupMongoWithDocker()
+		mdbCloseFunc, data.mdbConnStr = testdb.SetupMongoWithDocker()
 		Expect(mdbCloseFunc).NotTo(BeNil())
 
-		gdb = testdb.ConnectGormDocker(gdbConnStr)
+		data.gormConfig = config.DBConfig{
+			ServerAddress: config.ServerAddress{
+				Port: gormPort,
+				Host: "localhost",
+			},
+			Name:     testdb.DbName,
+			Username: testdb.Username,
+			Password: testdb.Password,
+		}
+		gdb = testdb.ConnectGormDocker(data.gormConfig.PostgresDSN())
 		Expect(gdb).NotTo(BeNil())
-		mdb = testdb.ConnectMongoDocker(mdbConnStr)
+		mdb = testdb.ConnectMongoDocker(data.mdbConnStr)
 		Expect(mdb).NotTo(BeNil())
 
 		var err error
@@ -63,30 +78,21 @@ func TestRepository(t *testing.T) {
 		Expect(gamebackendRepo).NotTo(BeNil())
 		Expect(gamebackendRepo.Migrate(context.Background())).NotTo(HaveOccurred())
 
-		return []byte(gdbConnStr + splitter + mdbConnStr)
-	}, func(hostsBytes []byte) {
+		var buf bytes.Buffer
+		enc := gob.NewEncoder(&buf)
+		Expect(enc.Encode(data)).To(Succeed())
+
+		return buf.Bytes()
+	}, func(inBytes []byte) {
 		log.Logger, hook = test.NewNullLogger()
 
-		hosts := strings.Split(string(hostsBytes), splitter)
-		splitGormConnStr := strings.Split(hosts[0], " ")
-		Expect(len(splitGormConnStr)).To(BeNumerically(">=", 2))
-		for _, attr := range splitGormConnStr {
-			split := strings.Split(attr, "=")
-			Expect(split).To(HaveLen(2))
-			switch split[0] {
-			case "host":
-				gormHost = split[1]
-			case "port":
-				gormPort = split[1]
-			}
+		var buf bytes.Buffer
+		dec := gob.NewDecoder(&buf)
+		Expect(dec.Decode(inBytes)).To(Succeed())
 
-		}
-		Expect(gormHost).NotTo(BeEmpty())
-		Expect(gormPort).NotTo(BeEmpty())
-
-		gdb = testdb.ConnectGormDocker(hosts[0])
+		gdb = testdb.ConnectGormDocker(data.gormConfig.PostgresDSN())
 		Expect(gdb).NotTo(BeNil())
-		mdb = testdb.ConnectMongoDocker(hosts[1])
+		mdb = testdb.ConnectMongoDocker(data.mdbConnStr)
 		Expect(mdb).NotTo(BeNil())
 
 		var err error

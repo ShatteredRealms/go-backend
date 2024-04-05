@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ory/dockertest/v3"
@@ -22,9 +23,9 @@ import (
 )
 
 const (
-	username = "postgres"
-	password = "password"
-	dbName   = "test"
+	Username = "postgres"
+	Password = "password"
+	DbName   = "test"
 )
 
 var (
@@ -94,7 +95,7 @@ func SetupKeycloakWithDocker() (func(), string) {
 	return closeFunc, host
 }
 
-func SetupKafkaWithDocker() (func(), uint) {
+func SetupKafkaWithDocker() (func(), string) {
 	pool, err := dockertest.NewPool("")
 	chk(err)
 
@@ -165,7 +166,7 @@ func SetupKafkaWithDocker() (func(), uint) {
 		chk(err3)
 	}
 
-	return fnCleanup, uint(kafkaPortUint)
+	return fnCleanup, strconv.Itoa(kafkaPortUint)
 }
 
 func SetupMongoWithDocker() (func(), string) {
@@ -221,7 +222,7 @@ func SetupGormWithDocker() (func(), string) {
 	runDockerOpt := &dockertest.RunOptions{
 		Repository: "postgres", // image
 		Tag:        "14",       // version
-		Env:        []string{"POSTGRES_PASSWORD=" + password, "POSTGRES_DB=" + dbName},
+		Env:        []string{"POSTGRES_PASSWORD=" + Password, "POSTGRES_DB=" + DbName},
 	}
 
 	fnConfig := func(config *docker.HostConfig) {
@@ -237,14 +238,8 @@ func SetupGormWithDocker() (func(), string) {
 		chk(err)
 	}
 
-	connStr := fmt.Sprintf("host=localhost port=%s user=postgres dbname=%s password=%s sslmode=disable",
-		resource.GetPort("5432/tcp"), // get port of localhost
-		dbName,
-		password,
-	)
-
 	// container is ready, return *gorm.Db for testing
-	return fnCleanup, connStr
+	return fnCleanup, resource.GetPort("5432/tcp")
 }
 
 func ConnectGormDocker(connStr string) *gorm.DB {
@@ -275,6 +270,76 @@ func ConnectGormDocker(connStr string) *gorm.DB {
 
 	// container is ready, return *gorm.Db for testing
 	return gdb
+}
+
+func SetupRedisWithDocker() (fnCleanup func(), redisPoolConfig *config.DBPoolConfig) {
+	pool, err := dockertest.NewPool("")
+	chk(err)
+
+	runDockerOpt := &dockertest.RunOptions{
+		Repository: "grokzen/redis-cluster", // image
+		Tag:        "7.0.10",                // version
+		Env: []string{
+			"INITIAL_PORT=7000",
+			"MASTERS=3",
+			"SLAVES_PER_MASTER=1",
+		},
+	}
+
+	fnConfig := func(config *docker.HostConfig) {
+		config.AutoRemove = true                     // set AutoRemove to true so that stopped container goes away by itself
+		config.RestartPolicy = docker.NeverRestart() // don't restart container
+	}
+
+	resource, err := pool.RunWithOptions(runDockerOpt, fnConfig)
+	chk(err)
+	// call clean up function to release resource
+	fnCleanup = func() {
+		err := resource.Close()
+		chk(err)
+	}
+
+	// container is ready, return *gorm.Db for testing
+	return fnCleanup, &config.DBPoolConfig{
+		Master: config.DBConfig{
+			ServerAddress: config.ServerAddress{
+				Port: resource.GetPort("7000/tcp"),
+				Host: "localhost",
+			},
+		},
+		Slaves: []config.DBConfig{
+			{
+				ServerAddress: config.ServerAddress{
+					Port: resource.GetPort("7001/tcp"),
+					Host: "localhost",
+				},
+			},
+			{
+				ServerAddress: config.ServerAddress{
+					Port: resource.GetPort("7002/tcp"),
+					Host: "localhost",
+				},
+			},
+			{
+				ServerAddress: config.ServerAddress{
+					Port: resource.GetPort("7003/tcp"),
+					Host: "localhost",
+				},
+			},
+			{
+				ServerAddress: config.ServerAddress{
+					Port: resource.GetPort("7004/tcp"),
+					Host: "localhost",
+				},
+			},
+			{
+				ServerAddress: config.ServerAddress{
+					Port: resource.GetPort("7005/tcp"),
+					Host: "localhost",
+				},
+			},
+		},
+	}
 }
 
 func chk(err error) {

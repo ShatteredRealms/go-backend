@@ -42,7 +42,7 @@ var _ = Describe("Db config", func() {
 	AfterEach(func() {
 		Expect(dsn).To(ContainSubstring(config.Username))
 		Expect(dsn).To(ContainSubstring(config.Password))
-		Expect(dsn).To(ContainSubstring(config.Host))
-		Expect(dsn).To(ContainSubstring(config.Port))
+		Expect(dsn).To(ContainSubstring(config.ServerAddress.Host))
+		Expect(dsn).To(ContainSubstring(config.ServerAddress.Port))
 	})
 })

@@ -131,7 +131,7 @@ var _ = Describe("Chat", func() {
 			Eventually(func(g Gomega) error {
 				var err error
 				kafkaConn, err = repository.ConnectKafka(config.ServerAddress{
-					Port: uint(kafkaPort),
+					Port: kafkaPort,
 					Host: "127.0.0.1",
 				})
 				if err != nil {

@@ -3,7 +3,6 @@ package srv_test
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -92,7 +91,7 @@ var (
 	incGuestCtx  context.Context
 
 	// Kafka
-	kafkaPort uint
+	kafkaPort string
 )
 
 func TestSrv(t *testing.T) {
@@ -149,7 +148,6 @@ func TestSrv(t *testing.T) {
 		)
 		Expect(err).NotTo(HaveOccurred())
 
-		var kafkaPort uint
 		kafkaCloseFunc, kafkaPort = testdb.SetupKafkaWithDocker()
 
 		out := fmt.Sprintf("%s\n%d", host, kafkaPort)
@@ -161,9 +159,8 @@ func TestSrv(t *testing.T) {
 		Expect(splitData).To(HaveLen(2))
 
 		host := splitData[0]
-		kafkaPort64, err := strconv.ParseUint(splitData[1], 10, 32)
+		kafkaPort = splitData[1]
 		Expect(err).NotTo(HaveOccurred())
-		kafkaPort = uint(kafkaPort64)
 
 		keycloak = gocloak.NewClient(string(host))
 		globalConfig, err = config.NewGlobalConfig(context.Background())
