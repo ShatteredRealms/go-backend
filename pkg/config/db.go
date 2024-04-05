@@ -4,10 +4,10 @@ import "fmt"
 
 // DBConfig Information on how to connect to the database
 type DBConfig struct {
-	ServerAddress
-	Name     string `yaml:"name"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
+	ServerAddress `yaml:",inline" mapstructure:",squash"`
+	Name          string `yaml:"name"`
+	Username      string `yaml:"username"`
+	Password      string `yaml:"password"`
 }
 
 // DBPoolConfig Defines the master and slave connections to a replicated database. Slaves may be empty.
