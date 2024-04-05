@@ -18,18 +18,19 @@ import (
 )
 
 type initializeData struct {
-	gormConfig  config.DBConfig
-	mdbConnStr  string
-	redisConfig config.DBPoolConfig
+	GormConfig  config.DBConfig
+	MdbConnStr  string
+	RedisConfig config.DBPoolConfig
 }
 
 var (
 	hook *test.Hook
 
-	gdb          *gorm.DB
-	gdbCloseFunc func()
-	mdb          *mongo.Database
-	mdbCloseFunc func()
+	gdb            *gorm.DB
+	gdbCloseFunc   func()
+	mdb            *mongo.Database
+	mdbCloseFunc   func()
+	redisCloseFunc func()
 
 	data initializeData
 
@@ -47,10 +48,12 @@ func TestRepository(t *testing.T) {
 		gdbCloseFunc, gormPort = testdb.SetupGormWithDocker()
 		Expect(gdbCloseFunc).NotTo(BeNil())
 
-		mdbCloseFunc, data.mdbConnStr = testdb.SetupMongoWithDocker()
+		mdbCloseFunc, data.MdbConnStr = testdb.SetupMongoWithDocker()
 		Expect(mdbCloseFunc).NotTo(BeNil())
 
-		data.gormConfig = config.DBConfig{
+		redisCloseFunc, data.RedisConfig = testdb.SetupRedisWithDocker()
+
+		data.GormConfig = config.DBConfig{
 			ServerAddress: config.ServerAddress{
 				Port: gormPort,
 				Host: "localhost",
@@ -59,9 +62,9 @@ func TestRepository(t *testing.T) {
 			Username: testdb.Username,
 			Password: testdb.Password,
 		}
-		gdb = testdb.ConnectGormDocker(data.gormConfig.PostgresDSN())
+		gdb = testdb.ConnectGormDocker(data.GormConfig.PostgresDSN())
 		Expect(gdb).NotTo(BeNil())
-		mdb = testdb.ConnectMongoDocker(data.mdbConnStr)
+		mdb = testdb.ConnectMongoDocker(data.MdbConnStr)
 		Expect(mdb).NotTo(BeNil())
 
 		var err error
@@ -86,13 +89,12 @@ func TestRepository(t *testing.T) {
 	}, func(inBytes []byte) {
 		log.Logger, hook = test.NewNullLogger()
 
-		var buf bytes.Buffer
-		dec := gob.NewDecoder(&buf)
-		Expect(dec.Decode(inBytes)).To(Succeed())
+		dec := gob.NewDecoder(bytes.NewBuffer(inBytes))
+		Expect(dec.Decode(&data)).To(Succeed())
 
-		gdb = testdb.ConnectGormDocker(data.gormConfig.PostgresDSN())
+		gdb = testdb.ConnectGormDocker(data.GormConfig.PostgresDSN())
 		Expect(gdb).NotTo(BeNil())
-		mdb = testdb.ConnectMongoDocker(data.mdbConnStr)
+		mdb = testdb.ConnectMongoDocker(data.MdbConnStr)
 		Expect(mdb).NotTo(BeNil())
 
 		var err error
@@ -115,6 +117,7 @@ func TestRepository(t *testing.T) {
 	}, func() {
 		gdbCloseFunc()
 		mdbCloseFunc()
+		redisCloseFunc()
 	})
 
 	RegisterFailHandler(Fail)

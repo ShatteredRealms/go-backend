@@ -139,7 +139,7 @@ var _ = Describe("Chat", func() {
 				}
 				Expect(kafkaConn).NotTo(BeNil())
 
-				readerConfig.Brokers = []string{fmt.Sprintf("127.0.0.1:%d", kafkaPort)}
+				readerConfig.Brokers = []string{fmt.Sprintf("127.0.0.1:%s", kafkaPort)}
 				kafkaWriter = &kafka.Writer{
 					Addr:     kafkaConn.RemoteAddr(),
 					Topic:    topicName,

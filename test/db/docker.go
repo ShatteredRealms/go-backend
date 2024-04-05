@@ -272,7 +272,7 @@ func ConnectGormDocker(connStr string) *gorm.DB {
 	return gdb
 }
 
-func SetupRedisWithDocker() (fnCleanup func(), redisPoolConfig *config.DBPoolConfig) {
+func SetupRedisWithDocker() (fnCleanup func(), redisPoolConfig config.DBPoolConfig) {
 	pool, err := dockertest.NewPool("")
 	chk(err)
 
@@ -300,7 +300,7 @@ func SetupRedisWithDocker() (fnCleanup func(), redisPoolConfig *config.DBPoolCon
 	}
 
 	// container is ready, return *gorm.Db for testing
-	return fnCleanup, &config.DBPoolConfig{
+	return fnCleanup, config.DBPoolConfig{
 		Master: config.DBConfig{
 			ServerAddress: config.ServerAddress{
 				Port: resource.GetPort("7000/tcp"),

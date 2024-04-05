@@ -150,7 +150,7 @@ func TestSrv(t *testing.T) {
 
 		kafkaCloseFunc, kafkaPort = testdb.SetupKafkaWithDocker()
 
-		out := fmt.Sprintf("%s\n%d", host, kafkaPort)
+		out := fmt.Sprintf("%s\n%s", host, kafkaPort)
 
 		return []byte(out)
 	}, func(data []byte) {
