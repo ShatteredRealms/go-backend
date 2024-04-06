@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	"github.com/ShatteredRealms/go-backend/pkg/config"
-	"github.com/ShatteredRealms/go-backend/pkg/helpers"
-	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/ShatteredRealms/go-backend/pkg/service"
 	"github.com/WilSimpson/gocloak/v13"
@@ -19,27 +17,20 @@ var (
 
 type ChatServerContext struct {
 	*config.ServerContext
-	ChatService      service.ChatService
-	CharacterService pb.CharacterServiceClient
+	ChatService service.ChatService
 }
 
 func NewServerContext(ctx context.Context, conf *config.GlobalConfig, tracer trace.Tracer) (*ChatServerContext, error) {
-	server := &ChatServerContext{
-		ServerContext: &config.ServerContext{
-			GlobalConfig:   conf,
-			Tracer:         tracer,
-			KeycloakClient: gocloak.NewClient(conf.Keycloak.BaseURL),
-			RefSROServer:   &conf.Chat.SROServer,
-		},
-		ChatService:      nil,
-		CharacterService: nil,
-	}
-	ctx, span := server.Tracer.Start(ctx, "server.connect")
+	ctx, span := tracer.Start(ctx, "server.context.new")
 	defer span.End()
+
+	server := &ChatServerContext{
+		ServerContext: config.NewServerContext(ctx, conf, tracer, &conf.Chat.SROServer),
+	}
 
 	server.KeycloakClient.RegisterMiddlewares(gocloak.OpenTelemetryMiddleware)
 
-	db, err := repository.ConnectDB(conf.Chat.Postgres, conf.Redis)
+	db, err := repository.ConnectDB(ctx, conf.Chat.Postgres, conf.Redis)
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres database: %w", err)
 	}
@@ -50,12 +41,6 @@ func NewServerContext(ctx context.Context, conf *config.GlobalConfig, tracer tra
 		return nil, fmt.Errorf("creating chat service: %w", err)
 	}
 	server.ChatService = chatService
-
-	charactersConn, err := helpers.GrpcClientWithOtel(conf.Character.Remote.Address())
-	if err != nil {
-		return nil, fmt.Errorf("connecting characters service: %w", err)
-	}
-	server.CharacterService = pb.NewCharacterServiceClient(charactersConn)
 
 	return server, nil
 }

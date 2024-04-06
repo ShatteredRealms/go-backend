@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"os"
 	"os/signal"
 
@@ -37,9 +36,10 @@ func main() {
 
 	otelShutdown, err := telemetry.SetupOTelSDK(ctx, character.ServiceName, conf.Version, conf.OpenTelemetry.Addr)
 	defer func() {
-		err = errors.Join(err, otelShutdown(context.Background()))
+		log.Logger.Infof("Shutting down")
+		err = otelShutdown(context.Background())
 		if err != nil {
-			log.Logger.Infof("Error shutting down: %v", err)
+			log.Logger.Warnf("Error shutting down: %v", err)
 		}
 	}()
 
@@ -88,11 +88,10 @@ func main() {
 
 	select {
 	case err = <-srvErr:
-		log.Logger.WithContext(ctx).Errorf("listen server: %v", err)
+		log.Logger.Errorf("listen server: %v", err)
 
 	case <-ctx.Done():
 		log.Logger.Info("Server canceled by user input.")
 		stop()
 	}
-
 }

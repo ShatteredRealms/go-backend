@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ShatteredRealms/go-backend/pkg/config"
+	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/go-gorm/caches/v4"
 	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
@@ -64,15 +65,34 @@ func (c *redisCacher) Invalidate(ctx context.Context) error {
 
 	if len(keys) > 0 {
 		if _, err := c.rdb.Del(ctx, keys...).Result(); err != nil {
-			return err
+			log.Logger.WithContext(ctx).Infof("failed to delete %d keys, retrying indiviually: %v", len(keys), err)
+			for _, key := range keys {
+				if _, err := c.rdb.Del(ctx, key).Result(); err != nil {
+					log.Logger.WithContext(ctx).Errorf("failed to delete key %s: %v", key, err)
+					return err
+				}
+			}
 		}
 	}
 	return nil
 }
 
-func NewRedisCache(dbPoolConf config.DBPoolConfig) (caches.Cacher, error) {
+func NewRedisCache(ctx context.Context, dbPoolConf config.DBPoolConfig) (caches.Cacher, error) {
 	rdb := redis.NewClusterClient(&redis.ClusterOptions{
-		Addrs:    dbPoolConf.Addresses(),
+		Addrs: dbPoolConf.Addresses(),
+		OnConnect: func(ctx context.Context, cn *redis.Conn) error {
+			withPassword := "no password"
+			if dbPoolConf.Master.Password != "" {
+				withPassword = "password"
+			}
+			withUsername := "no username"
+			if dbPoolConf.Master.Username != "" {
+				withUsername = "a username"
+			}
+			log.Logger.WithContext(ctx).Debugf("Connecting to redis with %s and %s", withUsername, withPassword)
+			_, err := cn.Ping(context.Background()).Result()
+			return err
+		},
 		Username: dbPoolConf.Master.Username,
 		Password: dbPoolConf.Master.Password,
 	})
@@ -83,10 +103,6 @@ func NewRedisCache(dbPoolConf config.DBPoolConfig) (caches.Cacher, error) {
 
 	if err := redisotel.InstrumentMetrics(rdb); err != nil {
 		return nil, fmt.Errorf("metrics instrumentation: %w", err)
-	}
-
-	if _, err := rdb.Ping(context.Background()).Result(); err != nil {
-		return nil, fmt.Errorf("ping redis: %w", err)
 	}
 
 	return &redisCacher{

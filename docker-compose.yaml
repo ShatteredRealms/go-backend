@@ -53,10 +53,10 @@ services:
       INITIAL_PORT: 7000
       MASTERS: 3
       SLAVES_PER_MASTER: 1
+      DEFAULT_PASSWORD: password
     restart: always
     ports:
-      - '7000-7050:7000-7050'
-      - '5000-5010:5000-5010'
+      - '7000-7005:7000-7005'
     networks:
       - backend
   
@@ -148,6 +148,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak
+    user: root
     environment:
       DB_VENDOR: postgres
       DB_ADDR: postgres
@@ -157,7 +158,6 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
     command:
       - "start-dev"
-      - "--features=declarative-user-profile"
     ports:
       - 8080:8080
     depends_on:
@@ -165,7 +165,7 @@ services:
     networks:
       - backend
     volumes:
-      - keycloak:/opt/keycloak/data/h2
+      - keycloak:/opt/keycloak/data/h2:rw
 
   # sro-character:
   #   build:
@@ -229,10 +229,6 @@ services:
   #     - backend
 
 volumes:
-  uptrace_data:
-    driver: local
-  ch_data_2:
-    driver: local
   alertmanager_data:
     driver: local
   postgres:

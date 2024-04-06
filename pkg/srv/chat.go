@@ -9,7 +9,6 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/common"
 	"github.com/ShatteredRealms/go-backend/pkg/helpers"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
-	"github.com/ShatteredRealms/go-backend/pkg/model/character"
 	"github.com/ShatteredRealms/go-backend/pkg/model/chat"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/WilSimpson/gocloak/v13"
@@ -221,7 +220,7 @@ func (s chatServiceServer) SendDirectMessage(
 		log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
 		return nil, common.ErrHandleRequest.Err()
 	}
-	targetCharacterName, err := character.GetCharacterNameFromTarget(srvCtx, s.server.CharacterService, request.Target)
+	targetCharacterName, err := s.server.GetCharacterNameFromTarget(srvCtx, request.Target)
 	if err != nil {
 		return nil, err
 	}
@@ -431,7 +430,7 @@ func (s chatServiceServer) UpdateUserChatChannelAuthorizations(
 		log.Logger.WithContext(ctx).Errorf("create server context: %v", err)
 		return nil, common.ErrHandleRequest.Err()
 	}
-	targetCharacterId, err := character.GetCharacterIdFromTarget(srvCtx, s.server.CharacterService, request.Character)
+	targetCharacterId, err := s.server.GetCharacterIdFromTarget(srvCtx, request.Character)
 	if err != nil {
 		return nil, err
 	}
@@ -502,7 +501,11 @@ func (s chatServiceServer) verifyUserOwnsCharacter(ctx context.Context, request 
 		return nil, common.ErrHandleRequest.Err()
 	}
 
-	character, err := s.server.CharacterService.GetCharacter(srvCtx, request)
+	charClient, err := s.server.GetCharacterClient()
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("character client: %v", err)
+	}
+	character, err := charClient.GetCharacter(srvCtx, request)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("chat character service get for user: %v", err)
 		return nil, status.Errorf(codes.Internal, "unable to verify character")
@@ -525,7 +528,11 @@ func (s chatServiceServer) checkUserChannelAuth(ctx context.Context, userId stri
 		return common.ErrHandleRequest.Err()
 	}
 
-	characters, err := s.server.CharacterService.GetAllCharactersForUser(serverAuthCtx, &pb.UserTarget{Target: &pb.UserTarget_Id{Id: userId}})
+	charClient, err := s.server.GetCharacterClient()
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("character client: %v", err)
+	}
+	characters, err := charClient.GetAllCharactersForUser(serverAuthCtx, &pb.UserTarget{Target: &pb.UserTarget_Id{Id: userId}})
 
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("get characters: %v", err)

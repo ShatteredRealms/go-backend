@@ -1,6 +1,8 @@
 package repository_test
 
 import (
+	"context"
+
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
@@ -23,7 +25,7 @@ var _ = Describe("Db repository", func() {
 	Describe("ConnectDb", func() {
 		When("given valid input", func() {
 			It("should work", func() {
-				out, err := repository.ConnectDB(pool, data.RedisConfig)
+				out, err := repository.ConnectDB(context.TODO(), pool, data.RedisConfig)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 			})
@@ -32,7 +34,7 @@ var _ = Describe("Db repository", func() {
 		When("given invalid input", func() {
 			It("should error", func() {
 				pool.Master.Host = "a"
-				out, err := repository.ConnectDB(pool, data.RedisConfig)
+				out, err := repository.ConnectDB(context.TODO(), pool, data.RedisConfig)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 			})

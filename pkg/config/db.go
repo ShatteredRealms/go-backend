@@ -12,8 +12,8 @@ type DBConfig struct {
 
 // DBPoolConfig Defines the master and slave connections to a replicated database. Slaves may be empty.
 type DBPoolConfig struct {
-	Master DBConfig   `yaml:"master"`
-	Slaves []DBConfig `yaml:"slaves"`
+	Master DBConfig   `yaml:"master" json:"master"`
+	Slaves []DBConfig `yaml:"slaves" json:"slaves"`
 }
 
 func (c DBConfig) MySQLDSN() string {
@@ -50,6 +50,7 @@ func (c DBConfig) MongoDSN() string {
 
 func (p DBPoolConfig) Addresses() []string {
 	addrs := make([]string, len(p.Slaves)+1)
+	addrs[0] = p.Master.Address()
 	for idx, dbConf := range p.Slaves {
 		addrs[idx+1] = dbConf.Address()
 	}

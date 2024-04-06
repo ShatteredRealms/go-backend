@@ -13,7 +13,7 @@ import (
 )
 
 type CharacterService interface {
-	Create(ctx context.Context, ownerId string, name string, gender string, realm string) (*character.Character, error)
+	Create(ctx context.Context, ownerId string, name string, gender string, realm string, dimension string) (*character.Character, error)
 	Edit(ctx context.Context, char *pb.EditCharacterRequest) (*character.Character, error)
 	Delete(ctx context.Context, id uint) error
 
@@ -50,13 +50,14 @@ func NewCharacterService(
 	}, nil
 }
 
-func (s characterService) Create(ctx context.Context, ownerId string, name string, gender string, realm string) (*character.Character, error) {
+func (s characterService) Create(ctx context.Context, ownerId string, name string, gender string, realm string, dimension string) (*character.Character, error) {
 	character := character.Character{
-		OwnerId:  ownerId,
-		Name:     name,
-		Gender:   gender,
-		Realm:    realm,
-		PlayTime: 0,
+		OwnerId:   ownerId,
+		Name:      name,
+		Gender:    gender,
+		Realm:     realm,
+		Dimension: dimension,
+		PlayTime:  0,
 	}
 
 	if err := character.Validate(); err != nil {

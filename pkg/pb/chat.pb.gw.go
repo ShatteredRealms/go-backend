@@ -67,7 +67,7 @@ func request_ChatService_ConnectChannel_0(ctx context.Context, marshaler runtime
 }
 
 var (
-	filter_ChatService_ConnectDirectMessage_0 = &utilities.DoubleArray{Encoding: map[string]int{"name": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
+	filter_ChatService_ConnectDirectMessage_0 = &utilities.DoubleArray{Encoding: map[string]int{"name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_ChatService_ConnectDirectMessage_0(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (ChatService_ConnectDirectMessageClient, runtime.ServerMetadata, error) {
@@ -117,7 +117,7 @@ func request_ChatService_ConnectDirectMessage_0(ctx context.Context, marshaler r
 }
 
 var (
-	filter_ChatService_ConnectDirectMessage_1 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
+	filter_ChatService_ConnectDirectMessage_1 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_ChatService_ConnectDirectMessage_1(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (ChatService_ConnectDirectMessageClient, runtime.ServerMetadata, error) {
@@ -170,11 +170,7 @@ func request_ChatService_SendChatMessage_0(ctx context.Context, marshaler runtim
 	var protoReq SendChatMessageRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -204,11 +200,7 @@ func local_request_ChatService_SendChatMessage_0(ctx context.Context, marshaler 
 	var protoReq SendChatMessageRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -238,11 +230,7 @@ func request_ChatService_SendDirectMessage_0(ctx context.Context, marshaler runt
 	var protoReq SendDirectMessageRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -272,11 +260,7 @@ func local_request_ChatService_SendDirectMessage_0(ctx context.Context, marshale
 	var protoReq SendDirectMessageRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -303,7 +287,7 @@ func local_request_ChatService_SendDirectMessage_0(ctx context.Context, marshale
 }
 
 var (
-	filter_ChatService_SendDirectMessage_1 = &utilities.DoubleArray{Encoding: map[string]int{"target": 0, "id": 1}, Base: []int{1, 2, 3, 2, 0, 0}, Check: []int{0, 1, 1, 2, 4, 3}}
+	filter_ChatService_SendDirectMessage_1 = &utilities.DoubleArray{Encoding: map[string]int{"target": 0, "id": 1}, Base: []int{1, 1, 1, 0}, Check: []int{0, 1, 2, 3}}
 )
 
 func request_ChatService_SendDirectMessage_1(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -446,11 +430,7 @@ func request_ChatService_CreateChannel_0(ctx context.Context, marshaler runtime.
 	var protoReq CreateChannelMessage
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -463,11 +443,7 @@ func local_request_ChatService_CreateChannel_0(ctx context.Context, marshaler ru
 	var protoReq CreateChannelMessage
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -532,11 +508,7 @@ func request_ChatService_EditChannel_0(ctx context.Context, marshaler runtime.Ma
 	var protoReq UpdateChatChannelRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -566,11 +538,7 @@ func local_request_ChatService_EditChannel_0(ctx context.Context, marshaler runt
 	var protoReq UpdateChatChannelRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -597,7 +565,7 @@ func local_request_ChatService_EditChannel_0(ctx context.Context, marshaler runt
 }
 
 var (
-	filter_ChatService_GetAuthorizedChatChannels_0 = &utilities.DoubleArray{Encoding: map[string]int{"name": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
+	filter_ChatService_GetAuthorizedChatChannels_0 = &utilities.DoubleArray{Encoding: map[string]int{"name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_ChatService_GetAuthorizedChatChannels_0(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -677,7 +645,7 @@ func local_request_ChatService_GetAuthorizedChatChannels_0(ctx context.Context, 
 }
 
 var (
-	filter_ChatService_GetAuthorizedChatChannels_1 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 2, 0, 0}, Check: []int{0, 1, 2, 2}}
+	filter_ChatService_GetAuthorizedChatChannels_1 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_ChatService_GetAuthorizedChatChannels_1(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -760,11 +728,7 @@ func request_ChatService_UpdateUserChatChannelAuthorizations_0(ctx context.Conte
 	var protoReq RequestChatChannelAuthChange
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -794,11 +758,7 @@ func local_request_ChatService_UpdateUserChatChannelAuthorizations_0(ctx context
 	var protoReq RequestChatChannelAuthChange
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -828,11 +788,7 @@ func request_ChatService_UpdateUserChatChannelAuthorizations_1(ctx context.Conte
 	var protoReq RequestChatChannelAuthChange
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -862,11 +818,7 @@ func local_request_ChatService_UpdateUserChatChannelAuthorizations_1(ctx context
 	var protoReq RequestChatChannelAuthChange
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -893,7 +845,7 @@ func local_request_ChatService_UpdateUserChatChannelAuthorizations_1(ctx context
 }
 
 var (
-	filter_ChatService_SetUserChatChannelAuthorizations_0 = &utilities.DoubleArray{Encoding: map[string]int{"character": 0, "name": 1}, Base: []int{1, 2, 3, 2, 0, 0}, Check: []int{0, 1, 1, 2, 4, 3}}
+	filter_ChatService_SetUserChatChannelAuthorizations_0 = &utilities.DoubleArray{Encoding: map[string]int{"character": 0, "name": 1}, Base: []int{1, 1, 1, 0}, Check: []int{0, 1, 2, 3}}
 )
 
 func request_ChatService_SetUserChatChannelAuthorizations_0(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -963,7 +915,7 @@ func local_request_ChatService_SetUserChatChannelAuthorizations_0(ctx context.Co
 }
 
 var (
-	filter_ChatService_SetUserChatChannelAuthorizations_1 = &utilities.DoubleArray{Encoding: map[string]int{"character": 0, "id": 1}, Base: []int{1, 2, 3, 2, 0, 0}, Check: []int{0, 1, 1, 2, 4, 3}}
+	filter_ChatService_SetUserChatChannelAuthorizations_1 = &utilities.DoubleArray{Encoding: map[string]int{"character": 0, "id": 1}, Base: []int{1, 1, 1, 0}, Check: []int{0, 1, 2, 3}}
 )
 
 func request_ChatService_SetUserChatChannelAuthorizations_1(ctx context.Context, marshaler runtime.Marshaler, client ChatServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {

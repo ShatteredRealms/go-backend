@@ -57,18 +57,18 @@ func (mr *MockCharacterServiceMockRecorder) AddPlayTime(ctx, characterId, amount
 }
 
 // Create mocks base method.
-func (m *MockCharacterService) Create(ctx context.Context, ownerId, name, gender, realm string) (*character.Character, error) {
+func (m *MockCharacterService) Create(ctx context.Context, ownerId, name, gender, realm, dimension string) (*character.Character, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", ctx, ownerId, name, gender, realm)
+	ret := m.ctrl.Call(m, "Create", ctx, ownerId, name, gender, realm, dimension)
 	ret0, _ := ret[0].(*character.Character)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockCharacterServiceMockRecorder) Create(ctx, ownerId, name, gender, realm any) *gomock.Call {
+func (mr *MockCharacterServiceMockRecorder) Create(ctx, ownerId, name, gender, realm, dimension any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockCharacterService)(nil).Create), ctx, ownerId, name, gender, realm)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockCharacterService)(nil).Create), ctx, ownerId, name, gender, realm, dimension)
 }
 
 // Delete mocks base method.

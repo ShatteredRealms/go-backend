@@ -2,6 +2,7 @@ package srv
 
 import (
 	context "context"
+	"errors"
 	"reflect"
 
 	"github.com/ShatteredRealms/go-backend/pkg/auth"
@@ -106,11 +107,33 @@ func (s *charactersServiceServer) CreateCharacter(
 		return nil, common.ErrUnauthorized.Err()
 	}
 
+	srvManagerClient, err := s.server.GetServerManagerClient()
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("get server manager client: %v", err)
+		return nil, ErrInternalCreateCharacter
+	}
+
+	authCtx, err := s.server.OutgoingClientAuth(ctx)
+	if err != nil {
+		log.Logger.WithContext(ctx).Errorf("outgoing client auth: %v", err)
+		return nil, ErrInternalCreateCharacter
+	}
+
+	_, err = srvManagerClient.GetDimension(authCtx, &pb.DimensionTarget{FindBy: &pb.DimensionTarget_Name{Name: request.Dimension}})
+	if err != nil {
+		if errors.Is(err, common.ErrDoesNotExist.Err()) {
+			log.Logger.WithContext(ctx).Errorf("invalid dimension requested: %v", err)
+			return nil, ErrInvalidDimension
+		}
+		log.Logger.WithContext(ctx).Errorf("get dimension: %v", err)
+		return nil, ErrInternalCreateCharacter
+	}
+
 	// Create new character
-	char, err := s.server.CharacterService.Create(ctx, ownerId, request.Name, request.Gender, request.Realm)
+	char, err := s.server.CharacterService.Create(ctx, ownerId, request.Name, request.Gender, request.Realm, request.Dimension)
 	if err != nil || char == nil {
 		log.Logger.WithContext(ctx).Errorf("create char: %v", err)
-		return nil, status.Error(codes.Internal, "unable to create character")
+		return nil, ErrInternalCreateCharacter
 	}
 
 	return &pb.CharacterDetails{

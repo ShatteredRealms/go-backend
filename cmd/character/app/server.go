@@ -7,7 +7,6 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/config"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
 	"github.com/ShatteredRealms/go-backend/pkg/service"
-	"github.com/WilSimpson/gocloak/v13"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
@@ -25,20 +24,14 @@ type CharacterServerContext struct {
 }
 
 func NewServerContext(ctx context.Context, conf *config.GlobalConfig, tracer trace.Tracer) (*CharacterServerContext, error) {
-	server := &CharacterServerContext{
-		ServerContext: &config.ServerContext{
-			GlobalConfig:   conf,
-			Tracer:         tracer,
-			KeycloakClient: gocloak.NewClient(conf.Keycloak.BaseURL),
-			RefSROServer:   &conf.Character.SROServer,
-		},
-	}
-	ctx, span := server.Tracer.Start(ctx, "server.new")
+	ctx, span := tracer.Start(ctx, "server.context.new")
 	defer span.End()
 
-	server.KeycloakClient.RegisterMiddlewares(gocloak.OpenTelemetryMiddleware)
+	server := &CharacterServerContext{
+		ServerContext: config.NewServerContext(ctx, conf, tracer, &conf.Character.SROServer),
+	}
 
-	postgres, err := repository.ConnectDB(conf.Character.Postgres, conf.Redis)
+	postgres, err := repository.ConnectDB(ctx, conf.Character.Postgres, conf.Redis)
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres: %w", err)
 	}

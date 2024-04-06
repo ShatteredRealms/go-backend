@@ -14,6 +14,7 @@ require (
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/segmentio/kafka-go v0.4.39
 	github.com/sirupsen/logrus v1.9.3
+	github.com/spf13/cobra-cli v1.3.0
 	github.com/spf13/viper v1.18.2
 	github.com/t-tomalak/logrus-easy-formatter v0.0.0-20190827215021-c074f06c5816
 	github.com/uptrace/opentelemetry-go-extra/otelgorm v0.2.3
@@ -65,7 +66,6 @@ require (
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/cobra v1.8.0 // indirect
-	github.com/spf13/cobra-cli v1.3.0 // indirect
 	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect

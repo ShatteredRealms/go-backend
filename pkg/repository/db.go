@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -19,7 +20,7 @@ import (
 )
 
 // ConnectDB Initializes the connection to a Postgres database
-func ConnectDB(pgPool config.DBPoolConfig, redisPool config.DBPoolConfig) (*gorm.DB, error) {
+func ConnectDB(ctx context.Context, pgPool config.DBPoolConfig, redisPool config.DBPoolConfig) (*gorm.DB, error) {
 	conf, err := pgx.ParseConfig(pgPool.Master.PostgresDSN())
 	if err != nil {
 		return nil, fmt.Errorf("parse config: %w", err)
@@ -67,7 +68,7 @@ func ConnectDB(pgPool config.DBPoolConfig, redisPool config.DBPoolConfig) (*gorm
 		return nil, fmt.Errorf("opentelemetry: %w", err)
 	}
 
-	c, err := cacher.NewRedisCache(redisPool)
+	c, err := cacher.NewRedisCache(ctx, redisPool)
 	if err != nil {
 		return nil, fmt.Errorf("redis cache: %w", err)
 	}
@@ -78,7 +79,7 @@ func ConnectDB(pgPool config.DBPoolConfig, redisPool config.DBPoolConfig) (*gorm
 		},
 	}
 	if err = db.Use(&cachesPlugin); err != nil {
-		return nil, fmt.Errorf("memory cacher: %w", err)
+		return nil, fmt.Errorf("cacher: %w", err)
 	}
 
 	return db, err

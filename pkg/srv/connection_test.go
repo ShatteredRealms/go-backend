@@ -30,7 +30,6 @@ var _ = Describe("Connection server (local)", func() {
 
 		conf           *app.GameBackendServerContext
 		mockCharClient *mocks.MockCharacterServiceClient
-		mockChatClient *mocks.MockChatServiceClient
 		mockService    *mocks.MockGamebackendService
 		server         pb.ConnectionServiceServer
 
@@ -44,7 +43,6 @@ var _ = Describe("Connection server (local)", func() {
 		log.Logger, hook = test.NewNullLogger()
 		mockController = gomock.NewController(GinkgoT())
 		mockCharClient = mocks.NewMockCharacterServiceClient(mockController)
-		mockChatClient = mocks.NewMockChatServiceClient(mockController)
 		mockService = mocks.NewMockGamebackendService(mockController)
 
 		globalConfig.GameBackend.Mode = config.LocalMode
@@ -55,10 +53,7 @@ var _ = Describe("Connection server (local)", func() {
 				Tracer:         otel.Tracer("test-connection"),
 				RefSROServer:   &globalConfig.GameBackend.SROServer,
 			},
-			CharacterClient:    mockCharClient,
-			ChatClient:         mockChatClient,
 			GamebackendService: mockService,
-			AgonesClient:       nil,
 		}
 
 		server, err = srv.NewConnectionServiceServer(ctx, conf)

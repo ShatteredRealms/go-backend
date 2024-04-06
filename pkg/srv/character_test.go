@@ -172,20 +172,21 @@ var _ = Describe("Character server", func() {
 						Id: *player.ID,
 					},
 				},
-				Name:   faker.Username(),
-				Gender: char.Gender,
-				Realm:  char.Realm,
+				Name:      faker.Username(),
+				Gender:    char.Gender,
+				Realm:     char.Realm,
+				Dimension: char.Dimension,
 			}
 		})
 		When("given valid input", func() {
 			It("should work for players creating for themselves", func() {
-				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(char, nil)
+				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm, req.Dimension).Return(char, nil)
 				out, err := server.CreateCharacter(incPlayerCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 
 				req.Owner.Target = &pb.UserTarget_Username{Username: *player.Username}
-				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(char, nil)
+				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm, req.Dimension).Return(char, nil)
 				out, err = server.CreateCharacter(incPlayerCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
@@ -193,26 +194,26 @@ var _ = Describe("Character server", func() {
 
 			It("should work for admins creating for themselves", func() {
 				req.Owner.Target = &pb.UserTarget_Id{Id: *admin.ID}
-				mockCharService.EXPECT().Create(gomock.Any(), *admin.ID, req.Name, req.Gender, req.Realm).Return(char, nil)
+				mockCharService.EXPECT().Create(gomock.Any(), *admin.ID, req.Name, req.Gender, req.Realm, req.Dimension).Return(char, nil)
 				out, err := server.CreateCharacter(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 
 				req.Owner.Target = &pb.UserTarget_Username{Username: *admin.Username}
-				mockCharService.EXPECT().Create(gomock.Any(), *admin.ID, req.Name, req.Gender, req.Realm).Return(char, nil)
+				mockCharService.EXPECT().Create(gomock.Any(), *admin.ID, req.Name, req.Gender, req.Realm, req.Dimension).Return(char, nil)
 				out, err = server.CreateCharacter(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 			})
 
 			It("should work for admins creating for others", func() {
-				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(char, nil)
+				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm, req.Dimension).Return(char, nil)
 				out, err := server.CreateCharacter(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
 
 				req.Owner.Target = &pb.UserTarget_Username{Username: *player.Username}
-				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(char, nil)
+				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm, req.Dimension).Return(char, nil)
 				out, err = server.CreateCharacter(incAdminCtx, req)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(out).NotTo(BeNil())
@@ -247,12 +248,12 @@ var _ = Describe("Character server", func() {
 			})
 
 			It("should error if creating fails", func() {
-				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(char, fakeErr)
+				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm, req.Dimension).Return(char, fakeErr)
 				out, err := server.CreateCharacter(incPlayerCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())
 
-				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm).Return(nil, nil)
+				mockCharService.EXPECT().Create(gomock.Any(), *player.ID, req.Name, req.Gender, req.Realm, req.Dimension).Return(nil, nil)
 				out, err = server.CreateCharacter(incPlayerCtx, req)
 				Expect(err).To(HaveOccurred())
 				Expect(out).To(BeNil())

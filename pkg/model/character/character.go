@@ -34,10 +34,11 @@ type Character struct {
 	DeletedAt soft_delete.DeletedAt `gorm:"uniqueIndex:udx_name"`
 
 	// Owner The username/account that owns the character
-	OwnerId string `gorm:"not null" json:"owner"`
-	Name    string `gorm:"not null;uniqueIndex:udx_name" json:"name"`
-	Gender  string `gorm:"not null" json:"gender"`
-	Realm   string `gorm:"not null" json:"realm"`
+	OwnerId   string `gorm:"not null" json:"owner"`
+	Name      string `gorm:"not null;uniqueIndex:udx_name" json:"name"`
+	Gender    string `gorm:"not null" json:"gender"`
+	Realm     string `gorm:"not null" json:"realm"`
+	Dimension string `gorm:"not null;uniqueIndex:udx_name" json:"dimension"`
 
 	// PlayTime Time in minutes the character has played
 	PlayTime uint64 `gorm:"not null" json:"play_time"`

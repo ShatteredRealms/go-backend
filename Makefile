@@ -1,4 +1,4 @@
-#####################################################################################
+#)####################################################################################
 #   _____ _           _   _                    _   _____            _               #
 #  / ____| |         | | | |                  | | |  __ \          | |              #
 # | (___ | |__   __ _| |_| |_ ___ _ __ ___  __| | | |__) |___  __ _| |_ __ ___  ___ #
@@ -34,7 +34,6 @@ REGISTRY = $(SRO_REGISTRY)/accounts
 time=$(shell date +%s)
 
 PROTO_DIR=$(ROOT_DIR)/api
-PROTO_THIRD_PARTY_DIR=$(ROOT_DIR)/third_party
 
 PROTO_FILES = $(shell find $(PROTO_DIR) -name '*.proto')
 
@@ -42,6 +41,11 @@ MOCK_INTERFACES = $(shell egrep -rl --include="*.go" "type (\w*) interface {" $(
 
 ALL_CMDS = $(shell find $(ROOT_DIR)/cmd -maxdepth 1 -mindepth 1 -type d | sed "s/^.*\///")
 CMDS = $(filter-out stressy, $(ALL_CMDS))
+
+# Output folder for TS files for the frontend
+# If it's empty, nothing will be generated
+TS_ROOT_DIR = $(shell realpath $(ROOT_DIR)/../)/frontend
+TS_OUT_DIR = $(TS_ROOT_DIR)/src/app/generated
 
 #   _____                    _
 #  |_   _|                  | |
@@ -130,16 +134,18 @@ push-%: buildi-%
 clean-protos:
 	rm -rf "$(ROOT_DIR)/pkg/pb"
 
-protos: clean-protos $(PROTO_FILES)
+protos: clean-protos $(PROTO_FILES) mocks
 
 $(PROTO_FILES):
 	protoc "$@" \
 		-I "$(PROTO_DIR)" \
-		-I "$(PROTO_THIRD_PARTY_DIR)" \
 		--go_out="$(ROOT_DIR)" \
 		--go-grpc_out="$(ROOT_DIR)" \
 		--grpc-gateway_out="$(ROOT_DIR)" \
-		--grpc-gateway_opt logtostderr=true 
+		--grpc-gateway_opt "logtostderr=true" \
+		--plugin=protoc-gen-ts="$(TS_ROOT_DIR)/node_modules/.bin/protoc-gen-ts" \
+		--ts_out=service=grpc-web:"$(TS_OUT_DIR)" \
+		--js_out=import_style=commonjs:"$(TS_OUT_DIR)"
 
 download:
 	go mod download

@@ -55,6 +55,7 @@ var _ = Describe("Character service", func() {
 			Name:      "unreal",
 			Gender:    "Male",
 			Realm:     "Human",
+			Dimension: "default",
 			PlayTime:  100,
 			Location: game.Location{
 				World: faker.Username(),
@@ -94,7 +95,7 @@ var _ = Describe("Character service", func() {
 		When("given valid input", func() {
 			It("should succeed", func() {
 				mockRepository.EXPECT().Create(ctx, gomock.Any()).Return(char, fakeError)
-				out, err := charService.Create(ctx, char.OwnerId, char.Name, char.Gender, char.Realm)
+				out, err := charService.Create(ctx, char.OwnerId, char.Name, char.Gender, char.Realm, char.Dimension)
 				Expect(err).To(MatchError(fakeError))
 				Expect(out).To(Equal(char))
 			})
@@ -102,7 +103,7 @@ var _ = Describe("Character service", func() {
 
 		When("given invalid input", func() {
 			It("should fail on invalid character", func() {
-				out, err := charService.Create(ctx, char.OwnerId, char.Name, "", char.Realm)
+				out, err := charService.Create(ctx, char.OwnerId, char.Name, "", char.Realm, char.Dimension)
 				Expect(err).To(MatchError(common.ErrInvalidGender))
 				Expect(out).To(BeNil())
 			})

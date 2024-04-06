@@ -27,8 +27,7 @@ func GRPCHandlerFunc(grpcServer http.Handler, otherHandler http.Handler) http.Ha
 			if r.Method == "OPTIONS" {
 				return
 			}
-
-			otherHandler.ServeHTTP(w, r)
+			otelhttp.WithRouteTag(r.URL.Path, otherHandler).ServeHTTP(w, r)
 		}
 	}), &http2.Server{})
 }
@@ -47,8 +46,7 @@ func StartServer(
 
 	httpSrv := &http.Server{
 		Addr:    address,
-		Handler: GRPCHandlerFunc(grpcServer, otelhttp.NewHandler(gwmux, "/")),
+		Handler: GRPCHandlerFunc(grpcServer, gwmux),
 	}
-
 	return httpSrv.Serve(listen)
 }

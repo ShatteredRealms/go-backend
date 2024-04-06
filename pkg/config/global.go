@@ -31,8 +31,8 @@ type GlobalConfig struct {
 	OpenTelemetry OpenTelemetryConfig `json:"otel" yaml:"otel"`
 	Agones        AgonesConfig        `json:"agones"`
 	Keycloak      KeycloakGlobal      `yaml:"keycloak"`
+	Redis         DBPoolConfig        `yaml:"redis" json:"redis"`
 	Version       string
-	Redis         DBPoolConfig
 }
 
 type SROServer struct {
@@ -81,8 +81,8 @@ type AgonesConfig struct {
 }
 
 type ServerAddress struct {
-	Port string `yaml:"port"`
-	Host string `yaml:"host"`
+	Host string `yaml:"host" json:"host"`
+	Port string `yaml:"port" json:"port"`
 }
 
 func NewGlobalConfig(ctx context.Context) (*GlobalConfig, error) {
@@ -210,46 +210,6 @@ func NewGlobalConfig(ctx context.Context) (*GlobalConfig, error) {
 		Keycloak: KeycloakGlobal{
 			BaseURL: "http://localhost:80801/",
 			Realm:   "default",
-		},
-		Redis: DBPoolConfig{
-			Master: DBConfig{
-				ServerAddress: ServerAddress{
-					Port: "7000",
-					Host: "localhost",
-				},
-			},
-			Slaves: []DBConfig{
-				{
-					ServerAddress: ServerAddress{
-						Port: "7001",
-						Host: "localhost",
-					},
-				},
-				{
-					ServerAddress: ServerAddress{
-						Port: "7002",
-						Host: "localhost",
-					},
-				},
-				{
-					ServerAddress: ServerAddress{
-						Port: "7003",
-						Host: "localhost",
-					},
-				},
-				{
-					ServerAddress: ServerAddress{
-						Port: "7004",
-						Host: "localhost",
-					},
-				},
-				{
-					ServerAddress: ServerAddress{
-						Port: "7005",
-						Host: "localhost",
-					},
-				},
-			},
 		},
 		Version: Version,
 	}

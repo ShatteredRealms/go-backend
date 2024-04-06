@@ -67,8 +67,7 @@ var _ = Describe("Chat", func() {
 				Tracer:         otel.Tracer("test-chat"),
 				RefSROServer:   &globalConfig.Chat.SROServer,
 			},
-			ChatService:      mockChatService,
-			CharacterService: mockCharService,
+			ChatService: mockChatService,
 		}
 
 		var err error

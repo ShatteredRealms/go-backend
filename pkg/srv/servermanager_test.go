@@ -35,12 +35,10 @@ var _ = Describe("Servermanager server", func() {
 		mockController *gomock.Controller
 		ctx            context.Context
 
-		conf           *app.GameBackendServerContext
-		mockCharClient *mocks.MockCharacterServiceClient
-		mockChatClient *mocks.MockChatServiceClient
-		mockService    *mocks.MockGamebackendService
-		mockAgones     testing.Mocks
-		server         pb.ServerManagerServiceServer
+		conf        *app.GameBackendServerContext
+		mockService *mocks.MockGamebackendService
+		mockAgones  testing.Mocks
+		server      pb.ServerManagerServiceServer
 
 		dimension *game.Dimension
 		m         *game.Map
@@ -51,8 +49,6 @@ var _ = Describe("Servermanager server", func() {
 		ctx = context.Background()
 		log.Logger, hook = test.NewNullLogger()
 		mockController = gomock.NewController(GinkgoT())
-		mockCharClient = mocks.NewMockCharacterServiceClient(mockController)
-		mockChatClient = mocks.NewMockChatServiceClient(mockController)
 		mockService = mocks.NewMockGamebackendService(mockController)
 		mockAgones = testing.NewMocks()
 
@@ -63,8 +59,6 @@ var _ = Describe("Servermanager server", func() {
 				Tracer:         otel.Tracer("test-servermanager"),
 				RefSROServer:   &globalConfig.GameBackend.SROServer,
 			},
-			CharacterClient:    mockCharClient,
-			ChatClient:         mockChatClient,
 			GamebackendService: mockService,
 			AgonesClient:       mockAgones.AgonesClient,
 		}
