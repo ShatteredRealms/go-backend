@@ -241,7 +241,8 @@ func (s connectionServiceServer) requestConnection(
 						},
 						LabelSelector: metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								"world": location.World,
+								"world":     location.World,
+								"dimension": character.Dimension,
 							},
 						},
 					},
@@ -253,7 +254,8 @@ func (s connectionServiceServer) requestConnection(
 						},
 						LabelSelector: metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								"world": location.World,
+								"world":     location.World,
+								"dimension": character.Dimension,
 							},
 						},
 					},
@@ -289,6 +291,10 @@ func (s connectionServiceServer) requestConnection(
 			return nil, fmt.Errorf("updating character location: %w", err)
 		}
 
+	}
+
+	if len(gsAlloc.Status.Ports) == 0 {
+		return nil, status.Error(codes.Internal, "no servers available")
 	}
 
 	// Create pending connection

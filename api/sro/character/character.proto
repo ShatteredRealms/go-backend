@@ -133,6 +133,7 @@ message CharacterDetails {
   string realm = 5;
   uint64 play_time = 6;
   sro.Location location = 8;
+  string dimension = 9;
 }
 
 message CharactersDetails { repeated CharacterDetails characters = 1; }

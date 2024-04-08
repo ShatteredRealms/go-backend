@@ -100,13 +100,14 @@ func (c *Character) ValidateRealm() error {
 
 func (c *Character) ToPb() *pb.CharacterDetails {
 	return &pb.CharacterDetails{
-		Id:       uint64(c.ID),
-		Owner:    c.OwnerId,
-		Name:     c.Name,
-		Gender:   c.Gender,
-		Realm:    c.Realm,
-		PlayTime: c.PlayTime,
-		Location: c.Location.ToPb(),
+		Id:        uint64(c.ID),
+		Owner:     c.OwnerId,
+		Name:      c.Name,
+		Gender:    c.Gender,
+		Realm:     c.Realm,
+		PlayTime:  c.PlayTime,
+		Location:  c.Location.ToPb(),
+		Dimension: c.Dimension,
 	}
 }
 
