@@ -5,6 +5,7 @@ option go_package = "pkg/pb";
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "sro/globals.proto";
+import "sro/gamebackend/servermanager.proto";
 
 service CharacterService {
   rpc GetCharacters(google.protobuf.Empty) returns (CharactersDetails) {
@@ -100,7 +101,7 @@ message CreateCharacterRequest {
   string name = 2;
   string gender = 3;
   string realm = 4;
-  string dimension = 5;
+  sro.gamebackend.DimensionTarget dimension = 5;
 }
 
 message CharacterTarget {

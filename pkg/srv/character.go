@@ -119,7 +119,7 @@ func (s *charactersServiceServer) CreateCharacter(
 		return nil, ErrInternalCreateCharacter
 	}
 
-	_, err = srvManagerClient.GetDimension(authCtx, &pb.DimensionTarget{FindBy: &pb.DimensionTarget_Name{Name: request.Dimension}})
+	dimension, err := srvManagerClient.GetDimension(authCtx, request.Dimension)
 	if err != nil {
 		if errors.Is(err, common.ErrDoesNotExist.Err()) {
 			log.Logger.WithContext(ctx).Errorf("invalid dimension requested: %v", err)
@@ -130,7 +130,7 @@ func (s *charactersServiceServer) CreateCharacter(
 	}
 
 	// Create new character
-	char, err := s.server.CharacterService.Create(ctx, ownerId, request.Name, request.Gender, request.Realm, request.Dimension)
+	char, err := s.server.CharacterService.Create(ctx, ownerId, request.Name, request.Gender, request.Realm, dimension.Id)
 	if err != nil || char == nil {
 		log.Logger.WithContext(ctx).Errorf("create char: %v", err)
 		return nil, ErrInternalCreateCharacter

@@ -674,8 +674,8 @@ func buildFleet(dimension *game.Dimension, m *game.Map, namespace string) *v1.Fl
 
 func getBaseFleetName(dimension *game.Dimension, m *game.Map) string {
 	return fmt.Sprintf("%s-%s",
-		strings.ToLower(dimension.Name),
-		strings.ToLower(m.Name),
+		strings.ReplaceAll(strings.ToLower(dimension.Name), " ", "-"),
+		strings.ReplaceAll(strings.ToLower(m.Name), " ", "-"),
 	)
 }
 
