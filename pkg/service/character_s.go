@@ -7,18 +7,18 @@ import (
 	"github.com/ShatteredRealms/go-backend/pkg/common"
 	"github.com/ShatteredRealms/go-backend/pkg/log"
 	"github.com/ShatteredRealms/go-backend/pkg/model/character"
-	"github.com/ShatteredRealms/go-backend/pkg/model/game"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	"github.com/ShatteredRealms/go-backend/pkg/repository"
 )
 
 type CharacterService interface {
 	Create(ctx context.Context, ownerId string, name string, gender string, realm string, dimension string) (*character.Character, error)
-	Edit(ctx context.Context, char *pb.EditCharacterRequest) (*character.Character, error)
+	Save(ctx context.Context, char *character.Character) (*character.Character, error)
 	Delete(ctx context.Context, id uint) error
 
 	FindById(ctx context.Context, id uint) (*character.Character, error)
 	FindByName(ctx context.Context, name string) (*character.Character, error)
+	FindByTarget(ctx context.Context, target *pb.CharacterTarget) (*character.Character, error)
 
 	FindAllByOwner(ctx context.Context, ownerId string) (character.Characters, error)
 
@@ -29,10 +29,6 @@ type CharacterService interface {
 
 type characterService struct {
 	repo repository.CharacterRepository
-}
-
-func (s characterService) FindByName(ctx context.Context, name string) (*character.Character, error) {
-	return s.repo.FindByName(ctx, name)
 }
 
 func NewCharacterService(
@@ -48,6 +44,43 @@ func NewCharacterService(
 	return characterService{
 		repo: r,
 	}, nil
+}
+
+// Save implements CharacterService.
+func (s characterService) Save(ctx context.Context, char *character.Character) (*character.Character, error) {
+	err := char.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.Save(ctx, char)
+}
+
+// FindByTarget implements CharacterService.
+func (s characterService) FindByTarget(ctx context.Context, target *pb.CharacterTarget) (*character.Character, error) {
+	var char *character.Character
+	var err error
+
+	switch target := target.Type.(type) {
+	case *pb.CharacterTarget_Id:
+		char, err = s.FindById(ctx, uint(target.Id))
+	case *pb.CharacterTarget_Name:
+		char, err = s.FindByName(ctx, target.Name)
+	default:
+		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
+		return nil, common.ErrHandleRequest.Err()
+
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return char, nil
+}
+
+func (s characterService) FindByName(ctx context.Context, name string) (*character.Character, error) {
+	return s.repo.FindByName(ctx, name)
 }
 
 func (s characterService) Create(ctx context.Context, ownerId string, name string, gender string, realm string, dimension string) (*character.Character, error) {
@@ -69,61 +102,6 @@ func (s characterService) Create(ctx context.Context, ownerId string, name strin
 
 func (s characterService) FindById(ctx context.Context, id uint) (*character.Character, error) {
 	return s.repo.FindById(ctx, id)
-}
-
-func (s characterService) Edit(ctx context.Context, char *pb.EditCharacterRequest) (*character.Character, error) {
-	var currentCharacter *character.Character
-	var err error
-
-	switch target := char.Target.Type.(type) {
-	case *pb.CharacterTarget_Id:
-		currentCharacter, err = s.FindById(ctx, uint(target.Id))
-	case *pb.CharacterTarget_Name:
-		currentCharacter, err = s.FindByName(ctx, target.Name)
-	default:
-		log.Logger.WithContext(ctx).Errorf("target type unknown: %+v", target)
-		return nil, common.ErrHandleRequest.Err()
-
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	if char.OptionalNewName != nil &&
-		char.GetNewName() != "" {
-		currentCharacter.Name = char.GetNewName()
-	}
-	if char.OptionalOwnerId != nil &&
-		char.GetOwnerId() != "" {
-		currentCharacter.OwnerId = char.GetOwnerId()
-	}
-
-	if char.OptionalPlayTime != nil {
-		currentCharacter.PlayTime = char.GetPlayTime()
-	}
-
-	if char.OptionalGender != nil &&
-		char.GetGender() != "" {
-		currentCharacter.Gender = char.GetGender()
-	}
-
-	if char.OptionalRealm != nil &&
-		char.GetRealm() != "" {
-		currentCharacter.Realm = char.GetRealm()
-	}
-
-	if char.OptionalLocation != nil &&
-		char.GetLocation().World != "" {
-		currentCharacter.Location = *game.LocationFromPb(char.GetLocation())
-	}
-
-	err = currentCharacter.Validate()
-	if err != nil {
-		return nil, err
-	}
-
-	return s.repo.Save(ctx, currentCharacter)
 }
 
 func (s characterService) Delete(ctx context.Context, id uint) error {

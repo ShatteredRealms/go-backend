@@ -15,6 +15,7 @@ import (
 
 	characterApp "github.com/ShatteredRealms/go-backend/cmd/character/app"
 	"github.com/ShatteredRealms/go-backend/pkg/model/character"
+	"github.com/ShatteredRealms/go-backend/pkg/model/game"
 	"github.com/ShatteredRealms/go-backend/pkg/pb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
@@ -205,10 +206,58 @@ func (s *charactersServiceServer) EditCharacter(
 		request.OptionalPlayTime = nil
 	}
 
-	_, err := s.server.CharacterService.Edit(ctx, request)
+	char, err := s.server.CharacterService.FindByTarget(ctx, request.Target)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("edit character: %v", err)
 		return nil, status.Error(codes.Internal, "unable to character user")
+	}
+
+	if request.OptionalNewName != nil &&
+		request.GetNewName() != "" {
+		char.Name = request.GetNewName()
+	}
+	if request.OptionalOwnerId != nil &&
+		request.GetOwnerId() != "" {
+		char.OwnerId = request.GetOwnerId()
+	}
+
+	if request.OptionalPlayTime != nil {
+		char.PlayTime = request.GetPlayTime()
+	}
+
+	if request.OptionalGender != nil &&
+		request.GetGender() != "" {
+		char.Gender = request.GetGender()
+	}
+
+	if request.OptionalRealm != nil &&
+		request.GetRealm() != "" {
+		char.Realm = request.GetRealm()
+	}
+
+	if request.OptionalLocation != nil &&
+		request.GetLocation().World != "" {
+		char.Location = *game.LocationFromPb(request.GetLocation())
+	}
+
+	if request.OptionalDimension != nil && request.GetDimension() != nil {
+		client, err := s.server.GetServerManagerClient()
+		if err != nil {
+			log.Logger.WithContext(ctx).Errorf("get dimension: %v", err)
+			return nil, ErrInternalCreateCharacter
+		}
+
+		dimension, err := client.GetDimension(ctx, request.GetDimension())
+		if err != nil {
+			if errors.Is(err, common.ErrDoesNotExist.Err()) {
+				log.Logger.WithContext(ctx).Errorf("invalid dimension requested: %v", err)
+				return nil, ErrInvalidDimension
+			}
+			log.Logger.WithContext(ctx).Errorf("get dimension: %v", err)
+			return nil, ErrInternalCreateCharacter
+		}
+
+		char.Dimension = dimension.Name
 	}
 
 	return &emptypb.Empty{}, nil

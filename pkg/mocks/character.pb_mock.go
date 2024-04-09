@@ -259,3 +259,38 @@ func (mr *MockisEditCharacterRequest_OptionalLocationMockRecorder) isEditCharact
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "isEditCharacterRequest_OptionalLocation", reflect.TypeOf((*MockisEditCharacterRequest_OptionalLocation)(nil).isEditCharacterRequest_OptionalLocation))
 }
+
+// MockisEditCharacterRequest_OptionalDimension is a mock of isEditCharacterRequest_OptionalDimension interface.
+type MockisEditCharacterRequest_OptionalDimension struct {
+	ctrl     *gomock.Controller
+	recorder *MockisEditCharacterRequest_OptionalDimensionMockRecorder
+}
+
+// MockisEditCharacterRequest_OptionalDimensionMockRecorder is the mock recorder for MockisEditCharacterRequest_OptionalDimension.
+type MockisEditCharacterRequest_OptionalDimensionMockRecorder struct {
+	mock *MockisEditCharacterRequest_OptionalDimension
+}
+
+// NewMockisEditCharacterRequest_OptionalDimension creates a new mock instance.
+func NewMockisEditCharacterRequest_OptionalDimension(ctrl *gomock.Controller) *MockisEditCharacterRequest_OptionalDimension {
+	mock := &MockisEditCharacterRequest_OptionalDimension{ctrl: ctrl}
+	mock.recorder = &MockisEditCharacterRequest_OptionalDimensionMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockisEditCharacterRequest_OptionalDimension) EXPECT() *MockisEditCharacterRequest_OptionalDimensionMockRecorder {
+	return m.recorder
+}
+
+// isEditCharacterRequest_OptionalDimension mocks base method.
+func (m *MockisEditCharacterRequest_OptionalDimension) isEditCharacterRequest_OptionalDimension() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "isEditCharacterRequest_OptionalDimension")
+}
+
+// isEditCharacterRequest_OptionalDimension indicates an expected call of isEditCharacterRequest_OptionalDimension.
+func (mr *MockisEditCharacterRequest_OptionalDimensionMockRecorder) isEditCharacterRequest_OptionalDimension() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "isEditCharacterRequest_OptionalDimension", reflect.TypeOf((*MockisEditCharacterRequest_OptionalDimension)(nil).isEditCharacterRequest_OptionalDimension))
+}

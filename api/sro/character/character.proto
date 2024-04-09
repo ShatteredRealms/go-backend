@@ -123,6 +123,7 @@ message EditCharacterRequest {
   oneof optional_play_time { uint64 play_time = 7; }
 
   oneof optional_location { sro.Location location = 8; }
+  oneof optional_dimension { sro.gamebackend.DimensionTarget dimension = 9; }
 }
 
 message CharacterDetails {

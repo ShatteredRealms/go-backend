@@ -226,6 +226,7 @@ func (s connectionServiceServer) requestConnection(
 
 	allocatedState := v1.GameServerStateAllocated
 	readyState := v1.GameServerStateReady
+	log.Logger.WithContext(ctx).Debugf("requesting allocation for %s with world %s in dimension %s", character.Name, location.World, character.Dimension)
 	gsAlloc, err := s.agones.AllocationV1().GameServerAllocations(s.server.GlobalConfig.Agones.Namespace).Create(
 		srvCtx,
 		&aav1.GameServerAllocation{

@@ -83,6 +83,43 @@ service ServerManagerService {
       additional_bindings : {delete : "/v1/maps/id/{id}"}
     };
   }
+
+  /* rpc CreatefhatTemplate(CreateChatTemplateRequest) returns (ChatTemplate) {
+   */
+  /*   option (google.api.http) = { */
+  /*     post : "/v1/chattemplates" */
+  /*     body : "*" */
+  /*   }; */
+  /* } */
+  /**/
+  /* rpc GetChatTemplate(ChatTemplateTarget) returns (ChatTemplate) { */
+  /*   option (google.api.http) = { */
+  /*     get : "/v1/chattemplates/name/{name}" */
+  /*     additional_bindings : {get : "/v1/chattemplates/id/{id}"} */
+  /*   }; */
+  /* } */
+  /**/
+  /* rpc GetAllChatTemplates(google.protobuf.Empty) returns (ChatTemplates) { */
+  /*   option (google.api.http) = { */
+  /*     get : "/v1/chattemplates" */
+  /*   }; */
+  /* } */
+  /**/
+  /* rpc EditChatTemplate(EditChatTemplateRequest) returns (ChatTemplate) { */
+  /*   option (google.api.http) = { */
+  /*     put : "/v1/chattemplates/name/{target.name}" */
+  /*     additional_bindings : {put : "/v1/chattemplates/id/{target.id}"} */
+  /*     body : "*" */
+  /*   }; */
+  /* } */
+  /**/
+  /* rpc DeleteChatTemplate(ChatTemplateTarget) returns (google.protobuf.Empty)
+   * { */
+  /*   option (google.api.http) = { */
+  /*     delete : "/v1/chattemplates/name/{name}" */
+  /*     additional_bindings : {delete : "/v1/chattemplates/id/{id}"} */
+  /*   }; */
+  /* } */
 }
 
 message DimensionTarget {
