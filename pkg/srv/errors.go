@@ -7,5 +7,6 @@ import (
 
 var (
 	ErrInternalCreateCharacter = status.Error(codes.Internal, "unable to create character")
+	ErrInternalEditCharacter   = status.Error(codes.Internal, "unable to edit character")
 	ErrInvalidDimension        = status.Error(codes.InvalidArgument, "invalid dimension requested")
 )

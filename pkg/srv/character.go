@@ -209,7 +209,7 @@ func (s *charactersServiceServer) EditCharacter(
 	char, err := s.server.CharacterService.FindByTarget(ctx, request.Target)
 	if err != nil {
 		log.Logger.WithContext(ctx).Errorf("edit character: %v", err)
-		return nil, status.Error(codes.Internal, "unable to character user")
+		return nil, ErrInternalEditCharacter
 	}
 
 	if request.OptionalNewName != nil &&
@@ -244,17 +244,23 @@ func (s *charactersServiceServer) EditCharacter(
 		client, err := s.server.GetServerManagerClient()
 		if err != nil {
 			log.Logger.WithContext(ctx).Errorf("get dimension: %v", err)
-			return nil, ErrInternalCreateCharacter
+			return nil, ErrInternalEditCharacter
 		}
 
-		dimension, err := client.GetDimension(ctx, request.GetDimension())
+		authCtx, err := s.server.OutgoingClientAuth(ctx)
+		if err != nil {
+			log.Logger.WithContext(ctx).Errorf("outgoing client auth: %v", err)
+			return nil, ErrInternalEditCharacter
+		}
+
+		dimension, err := client.GetDimension(authCtx, request.GetDimension())
 		if err != nil {
 			if errors.Is(err, common.ErrDoesNotExist.Err()) {
 				log.Logger.WithContext(ctx).Errorf("invalid dimension requested: %v", err)
 				return nil, ErrInvalidDimension
 			}
 			log.Logger.WithContext(ctx).Errorf("get dimension: %v", err)
-			return nil, ErrInternalCreateCharacter
+			return nil, ErrInternalEditCharacter
 		}
 
 		char.Dimension = dimension.Name
